@@ -91,9 +91,14 @@ export default function LapanganShow({
     // Check if slot is booked in database
     const isSlotBooked = (start: string, end: string) => {
         return existingBookings.some((b) => {
-            if (b.booking_date !== selectedDate) return false;
+            const bDate = typeof b.booking_date === 'string' ? b.booking_date.split('T')[0].split(' ')[0] : '';
+            if (bDate !== selectedDate) return false;
+
+            const bStart = b.start_time ? b.start_time.substring(0, 5) : '';
+            const bEnd = b.end_time ? b.end_time.substring(0, 5) : '';
+
             // Overlap check
-            return b.start_time < end && b.end_time > start;
+            return bStart < end && bEnd > start;
         });
     };
 
@@ -281,7 +286,7 @@ export default function LapanganShow({
                                                     </div>
                                                     <div>
                                                         <p className="font-semibold text-foreground">{rev.user?.name}</p>
-                                                        <p className="text-[10px] text-muted-foreground">Penyewa Terverifikasi</p>
+                                                        <p className="text-xs text-muted-foreground">Penyewa Terverifikasi</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-1 text-amber-400">
@@ -335,7 +340,7 @@ export default function LapanganShow({
                                                         : 'border-border bg-card/60 text-muted-foreground hover:border-emerald-500/40 hover:text-foreground'
                                                 }`}
                                             >
-                                                <p className="text-[11px] uppercase tracking-wider">{d.day_name}</p>
+                                                <p className="text-xs uppercase tracking-wider">{d.day_name}</p>
                                                 <p className="text-xs font-bold mt-0.5">{d.formatted.split(' ')[0]} {d.formatted.split(' ')[1]}</p>
                                             </button>
                                         );
@@ -349,7 +354,7 @@ export default function LapanganShow({
                                     <Label className="font-semibold uppercase tracking-wider text-muted-foreground">
                                         Pilih Jam Bermain
                                     </Label>
-                                    <span className="text-[10px] text-muted-foreground">
+                                    <span className="text-xs text-muted-foreground">
                                         {lapangan.operational_start} - {lapangan.operational_end} WIB
                                     </span>
                                 </div>
@@ -365,8 +370,8 @@ export default function LapanganShow({
                                             <button
                                                 key={slot.start}
                                                 type="button"
-                                                disabled={disabled}
-                                                onClick={() => handleSlotClick(slot.start)}
+                                                disabled={disabled} aria-disabled={disabled}
+                                                onClick={disabled ? undefined : () => handleSlotClick(slot.start)}
                                                 className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
                                                     selected
                                                         ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20'
@@ -379,9 +384,9 @@ export default function LapanganShow({
                                                 {selected ? (
                                                     <Check className="size-3.5 stroke-[3]" />
                                                 ) : booked ? (
-                                                    <span className="text-[9px] uppercase tracking-tight text-rose-500">Terisi</span>
+                                                    <span className="text-xs uppercase tracking-tight text-rose-500 font-bold">Terisi</span>
                                                 ) : past ? (
-                                                    <span className="text-[9px] uppercase tracking-tight text-muted-foreground">Lewat</span>
+                                                    <span className="text-xs uppercase tracking-tight text-muted-foreground font-bold">Lewat</span>
                                                 ) : null}
                                             </button>
                                         );
@@ -389,7 +394,7 @@ export default function LapanganShow({
                                 </div>
 
                                 {/* Slot Legend */}
-                                <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-2 border-t border-border/60">
+                                <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/60">
                                     <div className="flex items-center gap-1.5">
                                         <div className="size-2.5 rounded bg-emerald-600" />
                                         <span>Terpilih</span>
@@ -482,7 +487,7 @@ export default function LapanganShow({
                                     required
                                     className="h-9 rounded-lg"
                                 />
-                                {errors.customer_name && <p className="text-rose-500 text-[11px]">{errors.customer_name}</p>}
+                                {errors.customer_name && <p className="text-rose-500 text-xs">{errors.customer_name}</p>}
                             </div>
 
                             <div className="space-y-1">
@@ -495,7 +500,7 @@ export default function LapanganShow({
                                     required
                                     className="h-9 rounded-lg"
                                 />
-                                {errors.customer_phone && <p className="text-rose-500 text-[11px]">{errors.customer_phone}</p>}
+                                {errors.customer_phone && <p className="text-rose-500 text-xs">{errors.customer_phone}</p>}
                             </div>
 
                             {/* Payment Method Option */}
@@ -514,7 +519,7 @@ export default function LapanganShow({
                                         <CreditCard className="size-4 mb-1 text-emerald-600" />
                                         <div>
                                             <p className="text-xs text-foreground font-semibold">Transfer Bank</p>
-                                            <p className="text-[10px] text-muted-foreground">Kode unik 3-digit</p>
+                                            <p className="text-xs text-muted-foreground">Kode unik 3-digit</p>
                                         </div>
                                     </button>
 
@@ -530,7 +535,7 @@ export default function LapanganShow({
                                         <Banknote className="size-4 mb-1 text-emerald-600" />
                                         <div>
                                             <p className="text-xs text-foreground font-semibold">Cash di Lokasi</p>
-                                            <p className="text-[10px] text-muted-foreground">Bayar ke kasir</p>
+                                            <p className="text-xs text-muted-foreground">Bayar ke kasir</p>
                                         </div>
                                     </button>
                                 </div>
@@ -560,7 +565,7 @@ export default function LapanganShow({
                                 <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
                                 <div className="space-y-1">
                                     <p className="font-semibold">Email Anda Belum Diverifikasi</p>
-                                    <p className="text-[11px] leading-relaxed">
+                                    <p className="text-xs leading-relaxed">
                                         Untuk melanjutkan pemesanan dan menjamin validitas invoice, silakan verifikasi email Anda ({currentUser.email}).
                                     </p>
                                 </div>

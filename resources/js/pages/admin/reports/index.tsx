@@ -86,25 +86,25 @@ export default function AdminReportsIndex({
                         <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
                             Rp {Number(summary.total_revenue).toLocaleString('id-ID')}
                         </p>
-                        <p className="text-[11px] text-muted-foreground">Pada rentang tanggal yang dipilih</p>
+                        <p className="text-xs text-muted-foreground">Pada rentang tanggal yang dipilih</p>
                     </div>
 
                     <div className="p-5 rounded-2xl border border-border/80 bg-card shadow-sm space-y-1.5">
                         <span className="text-xs font-semibold text-muted-foreground uppercase">Total Pesanan</span>
                         <p className="text-2xl font-black text-foreground">{summary.total_bookings}</p>
-                        <p className="text-[11px] text-muted-foreground">Termasuk pending & lunas</p>
+                        <p className="text-xs text-muted-foreground">Termasuk pending & lunas</p>
                     </div>
 
                     <div className="p-5 rounded-2xl border border-border/80 bg-card shadow-sm space-y-1.5">
                         <span className="text-xs font-semibold text-muted-foreground uppercase">Booking Selesai / Lunas</span>
                         <p className="text-2xl font-black text-foreground">{summary.approved_bookings}</p>
-                        <p className="text-[11px] text-muted-foreground">Telah divalidasi kasir</p>
+                        <p className="text-xs text-muted-foreground">Telah divalidasi kasir</p>
                     </div>
 
                     <div className="p-5 rounded-2xl border border-border/80 bg-card shadow-sm space-y-1.5">
                         <span className="text-xs font-semibold text-muted-foreground uppercase">Booking Dibatalkan</span>
                         <p className="text-2xl font-black text-rose-600">{summary.cancelled_bookings}</p>
-                        <p className="text-[11px] text-muted-foreground">Kadaluarsa atau dibatalkan user</p>
+                        <p className="text-xs text-muted-foreground">Kadaluarsa atau dibatalkan user</p>
                     </div>
                 </div>
 
@@ -170,7 +170,7 @@ export default function AdminReportsIndex({
                 <div className="rounded-2xl border border-border/80 bg-card shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left">
-                            <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border/60">
+                            <thead className="bg-muted/50 text-muted-foreground uppercase text-xs tracking-wider border-b border-border/60">
                                 <tr>
                                     <th className="py-3 px-4">Kode Booking</th>
                                     <th className="py-3 px-4">Tanggal</th>
@@ -205,13 +205,13 @@ export default function AdminReportsIndex({
                                             </td>
                                             <td className="py-3 px-4">
                                                 {b.payment_status === 'approved' ? (
-                                                    <Badge className="bg-emerald-600 text-white text-[10px]">Lunas</Badge>
+                                                    <Badge className="bg-emerald-600 text-white text-xs">Lunas</Badge>
                                                 ) : b.payment_status === 'pending_validation' ? (
-                                                    <Badge className="bg-amber-500 text-white text-[10px]">Validasi</Badge>
+                                                    <Badge className="bg-amber-500 text-white text-xs">Validasi</Badge>
                                                 ) : b.payment_status === 'rejected' ? (
-                                                    <Badge className="bg-rose-600 text-white text-[10px]">Ditolak</Badge>
+                                                    <Badge className="bg-rose-600 text-white text-xs">Ditolak</Badge>
                                                 ) : (
-                                                    <Badge variant="outline" className="text-[10px]">{b.payment_status}</Badge>
+                                                    <Badge variant="outline" className="text-xs">{b.payment_status}</Badge>
                                                 )}
                                             </td>
                                         </tr>

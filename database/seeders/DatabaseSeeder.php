@@ -7,6 +7,8 @@ use App\Models\BankAccount;
 use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Facility;
+use App\Models\InternalConversation;
+use App\Models\InternalMessage;
 use App\Models\Lapangan;
 use App\Models\Review;
 use App\Models\User;
@@ -23,7 +25,7 @@ class DatabaseSeeder extends Seeder
     {
         // 1. Superadmin User
         $superadmin = User::firstOrCreate(
-            ['email' => 'superadmin@sportbooking.id'],
+            ['email' => 'superadmin@gmail.com'],
             [
                 'name' => 'Budi Hartono (Owner)',
                 'password' => Hash::make('password'),
@@ -40,7 +42,7 @@ class DatabaseSeeder extends Seeder
 
         // 2. Admin Lapangan
         $adminFutsal = User::firstOrCreate(
-            ['email' => 'admin.futsal@sportbooking.id'],
+            ['email' => 'admin.futsal@gmail.com'],
             [
                 'name' => 'Rian Pratama (Kasir Futsal)',
                 'password' => Hash::make('password'),
@@ -51,7 +53,7 @@ class DatabaseSeeder extends Seeder
         );
 
         $adminBadminton = User::firstOrCreate(
-            ['email' => 'admin.badminton@sportbooking.id'],
+            ['email' => 'admin.badminton@gmail.com'],
             [
                 'name' => 'Siti Rahma (Kasir Badminton)',
                 'password' => Hash::make('password'),
@@ -63,7 +65,7 @@ class DatabaseSeeder extends Seeder
 
         // 3. Regular Customer User
         $customer = User::firstOrCreate(
-            ['email' => 'user@sportbooking.id'],
+            ['email' => 'user@gmail.com'],
             [
                 'name' => 'Dimas Anggara',
                 'password' => Hash::make('password'),
@@ -333,5 +335,79 @@ class DatabaseSeeder extends Seeder
             ['seeded' => true],
             $superadmin
         );
+
+        // 11. Internal Chat Conversations (admin coordination)
+        // DM: Superadmin ↔ Admin Futsal
+        $directConversation = InternalConversation::where('is_group', false)
+            ->whereHas('participants', fn ($q) => $q->where('users.id', $superadmin->id))
+            ->whereHas('participants', fn ($q) => $q->where('users.id', $adminFutsal->id))
+            ->first();
+
+        if (! $directConversation) {
+            $directConversation = InternalConversation::create([
+                'is_group' => false,
+                'created_by' => $superadmin->id,
+            ]);
+            $directConversation->participants()->attach([
+                $superadmin->id => ['last_read_at' => now()],
+                $adminFutsal->id => ['last_read_at' => now()->subMinutes(5)],
+            ]);
+
+            InternalMessage::create([
+                'conversation_id' => $directConversation->id,
+                'sender_id' => $superadmin->id,
+                'body' => 'Rian, tolong cek lapangan futsal A hari ini. Ada keluhan dari customer soal lampu mati.',
+                'created_at' => now()->subMinutes(30),
+            ]);
+            InternalMessage::create([
+                'conversation_id' => $directConversation->id,
+                'sender_id' => $adminFutsal->id,
+                'body' => 'Siap pak, saya cek sekarang. Nanti saya update hasilnya.',
+                'created_at' => now()->subMinutes(25),
+            ]);
+            InternalMessage::create([
+                'conversation_id' => $directConversation->id,
+                'sender_id' => $adminFutsal->id,
+                'body' => 'Sudah dicek pak, lampu LED panel 3 perlu diganti. Saya sudah hubungi teknisi.',
+                'created_at' => now()->subMinutes(10),
+            ]);
+        }
+
+        // Group chat: all staff
+        $groupConversation = InternalConversation::where('is_group', true)
+            ->where('group_name', 'Koordinasi Tim Harian')
+            ->first();
+
+        if (! $groupConversation) {
+            $groupConversation = InternalConversation::create([
+                'is_group' => true,
+                'group_name' => 'Koordinasi Tim Harian',
+                'created_by' => $superadmin->id,
+            ]);
+            $groupConversation->participants()->attach([
+                $superadmin->id => ['last_read_at' => now()],
+                $adminFutsal->id => ['last_read_at' => now()],
+                $adminBadminton->id => ['last_read_at' => now()->subMinutes(15)],
+            ]);
+
+            InternalMessage::create([
+                'conversation_id' => $groupConversation->id,
+                'sender_id' => $superadmin->id,
+                'body' => 'Selamat pagi semua! Reminder: hari ini ada event turnamen futsal jam 2 siang. Tolong siapkan lapangan dari jam 12.',
+                'created_at' => now()->subHours(2),
+            ]);
+            InternalMessage::create([
+                'conversation_id' => $groupConversation->id,
+                'sender_id' => $adminFutsal->id,
+                'body' => 'Noted pak. Saya akan persiapkan sound system dan net gawang baru.',
+                'created_at' => now()->subHours(1)->subMinutes(45),
+            ]);
+            InternalMessage::create([
+                'conversation_id' => $groupConversation->id,
+                'sender_id' => $adminBadminton->id,
+                'body' => 'Saya bantu siapkan area parkir dan koordinasi dengan vendor minuman ya.',
+                'created_at' => now()->subHour(),
+            ]);
+        }
     }
 }

@@ -102,7 +102,7 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
                 <div className="rounded-2xl border border-border/80 bg-card shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left">
-                            <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border/60">
+                            <thead className="bg-muted/50 text-muted-foreground uppercase text-xs tracking-wider border-b border-border/60">
                                 <tr>
                                     <th className="py-3 px-4">Nama Bank</th>
                                     <th className="py-3 px-4">Nomor Rekening</th>
@@ -136,11 +136,11 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
                                                 className="hover:opacity-80"
                                             >
                                                 {bank.is_active ? (
-                                                    <Badge className="bg-emerald-600 text-white text-[10px] cursor-pointer">
+                                                    <Badge className="bg-emerald-600 text-white text-xs cursor-pointer">
                                                         Aktif (Ditampilkan)
                                                     </Badge>
                                                 ) : (
-                                                    <Badge variant="outline" className="text-muted-foreground text-[10px] cursor-pointer">
+                                                    <Badge variant="outline" className="text-muted-foreground text-xs cursor-pointer">
                                                         Non-Aktif
                                                     </Badge>
                                                 )}
@@ -198,7 +198,7 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
                                 required
                                 className="h-9 rounded-lg"
                             />
-                            {errors.bank_name && <p className="text-rose-500 text-[11px]">{errors.bank_name}</p>}
+                            {errors.bank_name && <p className="text-rose-500 text-xs">{errors.bank_name}</p>}
                         </div>
 
                         <div className="space-y-1">
@@ -211,7 +211,7 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
                                 required
                                 className="h-9 rounded-lg font-mono"
                             />
-                            {errors.account_number && <p className="text-rose-500 text-[11px]">{errors.account_number}</p>}
+                            {errors.account_number && <p className="text-rose-500 text-xs">{errors.account_number}</p>}
                         </div>
 
                         <div className="space-y-1">
@@ -224,7 +224,7 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
                                 required
                                 className="h-9 rounded-lg uppercase"
                             />
-                            {errors.account_name && <p className="text-rose-500 text-[11px]">{errors.account_name}</p>}
+                            {errors.account_name && <p className="text-rose-500 text-xs">{errors.account_name}</p>}
                         </div>
 
                         <div className="flex gap-2 pt-3">

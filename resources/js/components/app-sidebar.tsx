@@ -11,6 +11,7 @@ import {
     Trophy,
     Home,
     Bell,
+    MessageSquare,
 } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -55,6 +56,11 @@ export function AppSidebar() {
             href: '/notifications',
             icon: Bell,
         },
+        {
+            title: 'Live Chat Support',
+            href: '/chat',
+            icon: MessageSquare,
+        },
     ];
 
     // Staff / Admin Workspace Items
@@ -68,6 +74,16 @@ export function AppSidebar() {
             title: 'Validasi & Booking',
             href: '/admin/bookings',
             icon: CalendarCheck,
+        },
+        {
+            title: 'Live Chat Support',
+            href: '/admin/chat',
+            icon: MessageSquare,
+        },
+        {
+            title: 'Chat Internal',
+            href: '/admin/internal-chat',
+            icon: Users,
         },
         {
             title: 'Laporan & Export',
@@ -115,12 +131,12 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href={isStaff ? '/admin' : '/'} className="flex items-center gap-2.5">
-                                <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white">
+                                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
                                     <Trophy className="size-4" />
                                 </div>
-                                <div className="flex flex-col">
+                                <div className="flex flex-col group-data-[collapsible=icon]:hidden">
                                     <span className="text-sm font-bold text-foreground">SportBooking</span>
-                                    <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                                    <span className="text-xs text-muted-foreground uppercase font-semibold">
                                         {isSuperAdmin
                                             ? 'Superadmin Workspace'
                                             : isAdmin
@@ -134,34 +150,19 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent className="space-y-4 pt-2">
+            <SidebarContent className="pt-2">
                 {isStaff ? (
                     <>
-                        <NavMain items={adminNavItems} />
+                        <NavMain items={adminNavItems} label="Menu Utama" />
 
                         {isSuperAdmin && (
-                            <div className="px-3">
-                                <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                                    Superadmin Controls
-                                </p>
-                                <NavMain items={superAdminNavItems} />
-                            </div>
+                            <NavMain items={superAdminNavItems} label="Superadmin Controls" />
                         )}
 
-                        <div className="px-3">
-                            <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                                Navigasi Cepat
-                            </p>
-                            <NavMain items={quickNavItems} />
-                        </div>
+                        <NavMain items={quickNavItems} label="Navigasi Cepat" />
                     </>
                 ) : (
-                    <div className="px-3">
-                        <p className="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                            Menu Akun
-                        </p>
-                        <NavMain items={userNavItems} />
-                    </div>
+                    <NavMain items={userNavItems} label="Menu Akun" />
                 )}
             </SidebarContent>
 

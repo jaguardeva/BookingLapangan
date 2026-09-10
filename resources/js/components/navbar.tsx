@@ -42,7 +42,7 @@ export function Navbar() {
                             <span className="text-base font-bold tracking-tight text-foreground flex items-center gap-1.5">
                                 Sport<span className="text-emerald-600 dark:text-emerald-400">Booking</span>
                             </span>
-                            <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase -mt-1">
+                            <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase -mt-1">
                                 Arena Sports Hub
                             </span>
                         </div>
@@ -106,7 +106,7 @@ export function Navbar() {
                                             <p className="text-sm font-semibold leading-none">{user.name}</p>
                                             <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                                             <div className="pt-1.5">
-                                                <span className="inline-block rounded-md bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                                <span className="inline-block rounded-md bg-muted px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                                     Role: {user.role}
                                                 </span>
                                             </div>

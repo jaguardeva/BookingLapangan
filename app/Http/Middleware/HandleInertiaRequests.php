@@ -8,6 +8,18 @@ use Inertia\Middleware;
 class HandleInertiaRequests extends Middleware
 {
     /**
+     * Handle the incoming request.
+     */
+    public function handle(Request $request, \Closure $next)
+    {
+        if ($request->is('notifications/recent') || $request->is('chat/messages') || $request->is('admin/chat/*/messages') || $request->is('admin/chat/*/claim') || $request->is('admin/chat/*/resolve')) {
+            $request->headers->remove('X-Inertia');
+        }
+
+        return parent::handle($request, $next);
+    }
+
+    /**
      * The root template that's loaded on the first page visit.
      *
      * @see https://inertiajs.com/server-side-setup#root-template

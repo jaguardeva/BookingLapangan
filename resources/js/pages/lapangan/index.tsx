@@ -5,6 +5,7 @@ import { Search, Filter, Star, Clock, ArrowRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { LapanganCard } from '@/components/lapangan-card';
 import type { Category, Facility, Lapangan } from '@/types/booking';
 
 interface Props {
@@ -164,79 +165,9 @@ export default function LapanganIndex({
                         </Button>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
                         {lapangans.data.map((item) => (
-                            <div
-                                key={item.id}
-                                className="group relative flex flex-col rounded-2xl border border-border/70 bg-card overflow-hidden shadow-sm hover:shadow-xl hover:border-emerald-500/40 transition-all duration-300"
-                            >
-                                <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-                                    <img
-                                        src={item.images?.[0] || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80'}
-                                        alt={item.name}
-                                        className="size-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                    />
-                                    <div className="absolute top-3 left-3">
-                                        <Badge className="bg-background/90 text-foreground backdrop-blur-md border-border/50 text-[11px] font-semibold">
-                                            {item.category?.name}
-                                        </Badge>
-                                    </div>
-                                    <div className="absolute bottom-3 right-3">
-                                        <div className="flex items-center gap-1 rounded-lg bg-background/90 px-2 py-1 text-xs font-bold backdrop-blur-md border border-border/40 text-foreground">
-                                            <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                                            <span>{Number(item.reviews_avg_rating ?? 5).toFixed(1)}</span>
-                                            <span className="text-[10px] text-muted-foreground">({item.reviews_count ?? 0})</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                                    <div>
-                                        <h3 className="font-bold text-base sm:text-lg text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
-                                            {item.name}
-                                        </h3>
-                                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
-                                            {item.description}
-                                        </p>
-
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-3 pt-3 border-t border-border/60">
-                                            <Clock className="size-3.5 text-emerald-500 shrink-0" />
-                                            <span>Jam: {item.operational_start} - {item.operational_end} WIB</span>
-                                        </div>
-
-                                        {item.facilities && item.facilities.length > 0 && (
-                                            <div className="flex flex-wrap gap-1.5 mt-2.5">
-                                                {item.facilities.slice(0, 3).map((f) => (
-                                                    <span
-                                                        key={f.id}
-                                                        className="inline-block rounded-md bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
-                                                    >
-                                                        {f.name}
-                                                    </span>
-                                                ))}
-                                                {item.facilities.length > 3 && (
-                                                    <span className="inline-block rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                                        +{item.facilities.length - 3}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center justify-between pt-3 border-t border-border/60">
-                                        <div>
-                                            <span className="text-[11px] text-muted-foreground">Mulai dari</span>
-                                            <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
-                                                Rp {Number(item.price_per_hour).toLocaleString('id-ID')}
-                                                <span className="text-xs font-normal text-muted-foreground">/jam</span>
-                                            </p>
-                                        </div>
-                                        <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-sm">
-                                            <Link href={`/lapangan/${item.slug}`}>Cek Jadwal</Link>
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
+                            <LapanganCard key={item.id} item={item} />
                         ))}
                     </div>
                 )}

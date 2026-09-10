@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('bookings', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('booking_code')->unique();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('lapangan_id')->constrained('lapangans')->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignUuid('lapangan_id')->constrained('lapangans')->cascadeOnDelete();
             $table->date('booking_date');
             $table->string('start_time'); // HH:mm
             $table->string('end_time');   // HH:mm
@@ -30,7 +30,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->unsignedSmallInteger('user_submitted_code')->nullable();
             $table->text('rejection_reason')->nullable();
-            $table->foreignId('validated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUuid('validated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('validated_at')->nullable();
             $table->timestamp('payment_deadline');
             $table->timestamp('cancelled_at')->nullable();

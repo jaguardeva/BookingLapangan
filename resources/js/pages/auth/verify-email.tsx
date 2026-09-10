@@ -87,7 +87,7 @@ export default function VerifyEmail({ status }: Props) {
                         )}
                     </div>
 
-                    <div className="rounded-xl bg-muted/40 p-3 border border-border/50 text-[11px] text-muted-foreground space-y-1.5">
+                    <div className="rounded-xl bg-muted/40 p-3 border border-border/50 text-xs text-muted-foreground space-y-1.5">
                         <p className="font-medium text-foreground flex items-center gap-1.5">
                             <ShieldAlert className="size-3.5 text-amber-500" /> Panduan:
                         </p>

@@ -45,7 +45,7 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLapangan, setEditingLapangan] = useState<Lapangan | null>(null);
 
-    const { data, setData, post, put, processing, reset, errors } = useForm({
+    const { data, setData, post, processing, reset, errors } = useForm({
         name: '',
         category_id: categories[0]?.id || 1,
         description: '',
@@ -54,6 +54,7 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
         operational_end: '23:00',
         slot_duration_minutes: 60,
         image_url: '',
+        image_file: null as File | null,
         facilities: [] as number[],
     });
 
@@ -68,7 +69,8 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
             operational_start: '07:00',
             operational_end: '23:00',
             slot_duration_minutes: 60,
-            image_url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80',
+            image_url: '',
+            image_file: null,
             facilities: [],
         });
         setIsModalOpen(true);
@@ -85,6 +87,7 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
             operational_end: lapangan.operational_end,
             slot_duration_minutes: lapangan.slot_duration_minutes,
             image_url: lapangan.images?.[0] || '',
+            image_file: null,
             facilities: lapangan.facilities?.map((f) => f.id) || [],
         });
         setIsModalOpen(true);
@@ -93,7 +96,10 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (editingLapangan) {
-            put(`/admin/lapangans/${editingLapangan.id}`, {
+            router.post(`/admin/lapangans/${editingLapangan.id}`, {
+                _method: 'put',
+                ...data,
+            }, {
                 onSuccess: () => {
                     setIsModalOpen(false);
                     reset();
@@ -155,7 +161,7 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                 <div className="rounded-2xl border border-border/80 bg-card shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left">
-                            <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border/60">
+                            <thead className="bg-muted/50 text-muted-foreground uppercase text-xs tracking-wider border-b border-border/60">
                                 <tr>
                                     <th className="py-3 px-4">Lapangan</th>
                                     <th className="py-3 px-4">Kategori</th>
@@ -177,12 +183,12 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                                             />
                                             <div>
                                                 <p className="font-bold text-foreground text-sm">{item.name}</p>
-                                                <p className="text-[10px] text-muted-foreground">{item.bookings_count ?? 0} total booking</p>
+                                                <p className="text-xs text-muted-foreground">{item.bookings_count ?? 0} total booking</p>
                                             </div>
                                         </td>
 
                                         <td className="py-3.5 px-4">
-                                            <Badge variant="outline" className="font-semibold text-[10px]">
+                                            <Badge variant="outline" className="font-semibold text-xs">
                                                 {item.category?.name}
                                             </Badge>
                                         </td>
@@ -198,12 +204,12 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                                         <td className="py-3.5 px-4 max-w-xs">
                                             <div className="flex flex-wrap gap-1">
                                                 {item.facilities?.slice(0, 3).map((f) => (
-                                                    <span key={f.id} className="inline-block bg-muted rounded px-1.5 py-0.5 text-[9px] text-muted-foreground">
+                                                    <span key={f.id} className="inline-block bg-muted rounded px-1.5 py-0.5 text-xs text-muted-foreground">
                                                         {f.name}
                                                     </span>
                                                 ))}
                                                 {(item.facilities?.length ?? 0) > 3 && (
-                                                    <span className="text-[9px] text-muted-foreground">
+                                                    <span className="text-xs text-muted-foreground">
                                                         +{(item.facilities?.length ?? 0) - 3} lainnya
                                                     </span>
                                                 )}
@@ -217,11 +223,11 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                                                 className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
                                             >
                                                 {item.is_active ? (
-                                                    <Badge className="bg-emerald-600 text-white text-[10px] cursor-pointer">
+                                                    <Badge className="bg-emerald-600 text-white text-xs cursor-pointer">
                                                         Aktif
                                                     </Badge>
                                                 ) : (
-                                                    <Badge variant="outline" className="text-muted-foreground text-[10px] cursor-pointer">
+                                                    <Badge variant="outline" className="text-muted-foreground text-xs cursor-pointer">
                                                         Non-Aktif
                                                     </Badge>
                                                 )}
@@ -280,7 +286,7 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                                     required
                                     className="h-9 rounded-lg"
                                 />
-                                {errors.name && <p className="text-rose-500 text-[11px]">{errors.name}</p>}
+                                {errors.name && <p className="text-rose-500 text-xs">{errors.name}</p>}
                             </div>
 
                             <div className="space-y-1 col-span-2 sm:col-span-1">
@@ -352,15 +358,51 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                             </div>
                         </div>
 
-                        <div className="space-y-1">
-                            <Label htmlFor="image_url">URL Foto Lapangan</Label>
-                            <Input
-                                id="image_url"
-                                value={data.image_url}
-                                onChange={(e) => setData('image_url', e.target.value)}
-                                placeholder="https://images.unsplash.com/..."
-                                className="h-9 rounded-lg"
-                            />
+                        <div className="space-y-2">
+                            <Label>Foto Lapangan</Label>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <Label htmlFor="image_file" className="text-xs text-muted-foreground">Upload File Gambar (Storage)</Label>
+                                    <Input
+                                        id="image_file"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => setData('image_file', e.target.files?.[0] || null)}
+                                        className="h-9 text-xs rounded-lg cursor-pointer file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:bg-muted"
+                                    />
+                                    {errors.image_file && <p className="text-rose-500 text-xs">{errors.image_file}</p>}
+                                </div>
+
+                                <div className="space-y-1">
+                                    <Label htmlFor="image_url" className="text-xs text-muted-foreground">Atau URL Gambar External</Label>
+                                    <Input
+                                        id="image_url"
+                                        value={data.image_url}
+                                        onChange={(e) => setData('image_url', e.target.value)}
+                                        placeholder="https://images.unsplash.com/..."
+                                        className="h-9 text-xs rounded-lg"
+                                    />
+                                </div>
+                            </div>
+
+                            {(data.image_file || data.image_url) && (
+                                <div className="mt-2 flex items-center gap-3 p-2 rounded-lg border border-border bg-muted/30">
+                                    <img
+                                        src={data.image_file ? URL.createObjectURL(data.image_file) : data.image_url}
+                                        alt="Preview"
+                                        className="size-12 rounded-lg object-cover border border-border shrink-0"
+                                    />
+                                    <div className="text-xs text-muted-foreground truncate flex-1">
+                                        <p className="font-semibold text-foreground truncate">
+                                            {data.image_file ? data.image_file.name : 'Gambar Lapangan'}
+                                        </p>
+                                        <p className="text-xs">
+                                            {data.image_file ? `${(data.image_file.size / 1024).toFixed(1)} KB (Akan disimpan ke Storage public)` : 'Gambar via URL'}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Facilities Selection */}

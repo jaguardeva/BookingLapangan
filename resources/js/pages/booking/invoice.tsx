@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { Booking, BankAccount } from '@/types/booking';
+import ConfirmDialog from '@/components/confirm-dialog';
 
 interface Props {
     booking: Booking;
@@ -33,11 +34,10 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
     const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
     const [copiedAmount, setCopiedAmount] = useState(false);
     const [timeLeft, setTimeLeft] = useState<string>('');
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
     // Payment confirmation form
-    const { data, setData, post, processing } = useForm({
-        submitted_code: booking.validation_code || '',
-    });
+    const { post, processing } = useForm();
 
     // Cancellation form
     const { post: cancelPost, processing: cancelProcessing } = useForm();
@@ -89,11 +89,7 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
     };
 
     const handleCancelBooking = () => {
-        if (confirm('Apakah Anda yakin ingin membatalkan booking ini?')) {
-            cancelPost(`/booking/${booking.booking_code}/cancel`, {
-                preserveScroll: true,
-            });
-        }
+        setShowCancelConfirm(true);
     };
 
     const getStatusBadge = () => {
@@ -237,7 +233,7 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
                                 <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
                                     <span className="flex items-center gap-1">
                                         Kode Unik Validasi
-                                        <span className="text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded">Otomatis</span>
+                                        <span className="text-xs bg-emerald-500/10 px-1.5 py-0.5 rounded">Otomatis</span>
                                     </span>
                                     <span>+ Rp {booking.validation_code}</span>
                                 </div>
@@ -253,7 +249,7 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
                                         <button
                                             type="button"
                                             onClick={() => copyToClipboard(String(booking.total_price), 'amount')}
-                                            className="ml-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground no-print"
+                                            className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground no-print"
                                         >
                                             {copiedAmount ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
                                             {copiedAmount ? 'Tersalin' : 'Salin Nominal'}
@@ -280,7 +276,7 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
                                     {bankAccounts.map((b) => (
                                         <div key={b.id} className="p-3.5 rounded-xl border border-border bg-card space-y-1.5 text-xs">
                                             <div className="flex items-center justify-between">
-                                                <Badge variant="outline" className="font-bold text-[10px]">
+                                                <Badge variant="outline" className="font-bold text-xs">
                                                     {b.bank_name}
                                                 </Badge>
                                                 <button
@@ -299,39 +295,28 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
                                             <p className="font-mono text-sm font-bold text-foreground tracking-wider">
                                                 {b.account_number}
                                             </p>
-                                            <p className="text-[10px] text-muted-foreground uppercase">{b.account_name}</p>
+                                            <p className="text-xs text-muted-foreground uppercase">{b.account_name}</p>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* User Input 3-digit confirmation */}
+                            {/* User payment confirmation */}
                             <form onSubmit={handleConfirmTransfer} className="p-5 rounded-2xl bg-card border border-border/80 space-y-4">
-                                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                                    <Send className="size-4 text-emerald-600" /> Konfirmasi Pembayaran Anda
-                                </h4>
-                                <p className="text-xs text-muted-foreground">
-                                    Sudah melakukan transfer? Masukkan 3-digit kode unik Anda ({booking.validation_code}) untuk mengirim konfirmasi ke kasir.
-                                </p>
-
-                                <div className="flex flex-col sm:flex-row gap-3 items-end">
-                                    <div className="w-full sm:w-48 space-y-1 text-xs">
-                                        <Label htmlFor="submitted_code">Kode Unik 3-Digit</Label>
-                                        <Input
-                                            id="submitted_code"
-                                            type="number"
-                                            value={data.submitted_code}
-                                            onChange={(e) => setData('submitted_code', parseInt(e.target.value, 10))}
-                                            placeholder="Misal: 145"
-                                            required
-                                            className="h-10 text-center font-mono font-bold text-base"
-                                        />
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                                            <Send className="size-4 text-emerald-600" /> Konfirmasi Pembayaran Anda
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Sudah melakukan transfer sesuai nominal tepat <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Rp {Number(booking.total_price).toLocaleString('id-ID')}</strong>? Klik tombol di samping untuk memberi tahu kasir/admin.
+                                        </p>
                                     </div>
 
                                     <Button
                                         type="submit"
                                         disabled={processing}
-                                        className="w-full sm:w-auto h-10 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl px-6"
+                                        className="w-full sm:w-auto h-10 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl px-6 shrink-0 shadow-md shadow-emerald-600/20"
                                     >
                                         {processing ? 'Mengirim...' : 'Saya Sudah Transfer'}
                                     </Button>
@@ -365,6 +350,18 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
                             >
                                 {cancelProcessing ? 'Membatalkan...' : 'Batalkan Booking Ini'}
                             </Button>
+
+                            <ConfirmDialog
+                                open={showCancelConfirm}
+                                onOpenChange={setShowCancelConfirm}
+                                title="Batalkan Booking"
+                                description="Apakah Anda yakin ingin membatalkan booking ini? Tindakan ini tidak dapat dibatalkan."
+                                variant="destructive"
+                                onConfirm={() => {
+                                    cancelPost(`/booking/${booking.booking_code}/cancel`, { preserveScroll: true });
+                                    setShowCancelConfirm(false);
+                                }}
+                            />
                         </div>
                     )}
                 </div>

@@ -2,6 +2,7 @@ import { PropsWithChildren, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/navbar';
+import { ChatWidget } from '@/components/chat-widget';
 import { Trophy, Phone, Mail, MapPin, Heart } from 'lucide-react';
 
 export function PublicLayout({ children }: PropsWithChildren) {
@@ -26,6 +27,8 @@ export function PublicLayout({ children }: PropsWithChildren) {
             <Navbar />
 
             <main className="flex-1">{children}</main>
+
+            <ChatWidget />
 
             {/* Modern Sports Footer */}
             <footer className="border-t border-border/60 bg-muted/30 pt-12 pb-8">

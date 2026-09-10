@@ -10,19 +10,79 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 import type { InAppNotification } from '@/types/booking';
 
 export function NotificationCenter() {
-    const page = usePage<{ auth: { user?: { unread_notifications_count?: number } } }>();
+    const page = usePage<{ auth: { user?: { id?: number; unread_notifications_count?: number } } }>();
+    const userId = page.props.auth?.user?.id;
     const unreadCount = page.props.auth?.user?.unread_notifications_count ?? 0;
 
     const [notifications, setNotifications] = useState<InAppNotification[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Real-time polling for new notifications
+    useEffect(() => {
+        if (!userId) return;
+
+        let isSubscribed = true;
+        const checkNotifications = async () => {
+            try {
+                const res = await fetch('/notifications/recent', {
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin',
+                });
+                if (res.ok && isSubscribed) {
+                    const data = await res.json();
+                    const fetched: InAppNotification[] = data.notifications || [];
+
+                    setNotifications((prev) => {
+                        const prevIds = new Set(prev.map((n) => n.id));
+                        const newItems = fetched.filter((n) => !n.read_at && !prevIds.has(n.id));
+
+                        if (newItems.length > 0 && prev.length > 0) {
+                            newItems.forEach((item) => {
+                                toast.info(item.data.title, {
+                                    description: item.data.message,
+                                    action: item.data.url
+                                        ? {
+                                              label: 'Lihat',
+                                              onClick: () => router.visit(item.data.url!),
+                                          }
+                                        : undefined,
+                                });
+                            });
+                        }
+                        return fetched;
+                    });
+                }
+            } catch (e) {
+                // silent
+            }
+        };
+
+        checkNotifications();
+        const interval = setInterval(checkNotifications, 4000);
+
+        return () => {
+            isSubscribed = false;
+            clearInterval(interval);
+        };
+    }, [userId]);
+
     const fetchNotifications = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch('/notifications/recent');
+            const res = await fetch('/notifications/recent', {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
             if (res.ok) {
                 const data = await res.json();
                 setNotifications(data.notifications || []);
@@ -76,7 +136,7 @@ export function NotificationCenter() {
                 <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full">
                     <Bell className="size-4 text-foreground/80" />
                     {unreadCount > 0 && (
-                        <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white ring-2 ring-background animate-pulse">
+                        <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-xs font-bold text-white ring-2 ring-background animate-pulse">
                             {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                     )}
@@ -138,7 +198,7 @@ export function NotificationCenter() {
                                                 <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
                                             )}
                                         </div>
-                                        <p className="text-[11px] leading-relaxed line-clamp-2 text-foreground/80">
+                                        <p className="text-xs leading-relaxed line-clamp-2 text-foreground/80">
                                             {item.data.message}
                                         </p>
                                     </div>

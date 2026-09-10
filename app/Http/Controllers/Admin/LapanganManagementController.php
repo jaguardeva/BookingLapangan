@@ -9,6 +9,7 @@ use App\Models\Facility;
 use App\Models\Lapangan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -42,13 +43,17 @@ class LapanganManagementController extends Controller
             'operational_start' => ['required', 'string'],
             'operational_end' => ['required', 'string'],
             'slot_duration_minutes' => ['required', 'integer', 'in:30,60,90,120'],
-            'image_url' => ['nullable', 'url'],
+            'image_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
+            'image_url' => ['nullable', 'string'],
             'facilities' => ['nullable', 'array'],
             'facilities.*' => ['exists:facilities,id'],
         ]);
 
         $images = [];
-        if (! empty($validated['image_url'])) {
+        if ($request->hasFile('image_file')) {
+            $path = $request->file('image_file')->store('lapangans', 'public');
+            $images[] = Storage::url($path);
+        } elseif (! empty($validated['image_url'])) {
             $images[] = $validated['image_url'];
         } else {
             $images[] = 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80';
@@ -88,13 +93,18 @@ class LapanganManagementController extends Controller
             'operational_start' => ['required', 'string'],
             'operational_end' => ['required', 'string'],
             'slot_duration_minutes' => ['required', 'integer'],
-            'image_url' => ['nullable', 'url'],
+            'image_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
+            'image_url' => ['nullable', 'string'],
             'facilities' => ['nullable', 'array'],
             'facilities.*' => ['exists:facilities,id'],
         ]);
 
         $images = $lapangan->images ?? [];
-        if (! empty($validated['image_url'])) {
+        if ($request->hasFile('image_file')) {
+            $path = $request->file('image_file')->store('lapangans', 'public');
+            $uploadedUrl = Storage::url($path);
+            $images = array_merge([$uploadedUrl], array_slice($images, 0, 3));
+        } elseif (! empty($validated['image_url'])) {
             $images = array_merge([$validated['image_url']], array_slice($images, 0, 3));
         }
 

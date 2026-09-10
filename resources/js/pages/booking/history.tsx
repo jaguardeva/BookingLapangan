@@ -76,31 +76,31 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
         switch (status) {
             case 'approved':
                 return (
-                    <Badge className="bg-emerald-600 text-white text-[11px] font-semibold">
+                    <Badge className="bg-emerald-600 text-white text-xs font-semibold">
                         <CheckCircle2 className="size-3 mr-1" /> Terkonfirmasi
                     </Badge>
                 );
             case 'pending_validation':
                 return (
-                    <Badge className="bg-amber-500 text-white text-[11px] font-semibold animate-pulse">
+                    <Badge className="bg-amber-500 text-white text-xs font-semibold animate-pulse">
                         <Clock className="size-3 mr-1" /> Menunggu Validasi
                     </Badge>
                 );
             case 'rejected':
                 return (
-                    <Badge className="bg-rose-600 text-white text-[11px] font-semibold">
+                    <Badge className="bg-rose-600 text-white text-xs font-semibold">
                         <XCircle className="size-3 mr-1" /> Ditolak
                     </Badge>
                 );
             case 'cancelled':
                 return (
-                    <Badge variant="destructive" className="text-[11px] font-semibold">
+                    <Badge variant="destructive" className="text-xs font-semibold">
                         Dibatalkan
                     </Badge>
                 );
             default:
                 return (
-                    <Badge className="bg-sky-600 text-white text-[11px] font-semibold">
+                    <Badge className="bg-sky-600 text-white text-xs font-semibold">
                         <Clock className="size-3 mr-1" /> Menunggu Pembayaran
                     </Badge>
                 );
@@ -207,7 +207,7 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
 
                                 <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-3 sm:pt-0 border-border/60 gap-3">
                                     <div className="sm:text-right">
-                                        <span className="text-[10px] text-muted-foreground">Total Tagihan</span>
+                                        <span className="text-xs text-muted-foreground">Total Tagihan</span>
                                         <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
                                             Rp {Number(item.total_price).toLocaleString('id-ID')}
                                         </p>

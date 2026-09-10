@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,12 +35,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 ])]
 class Booking extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     protected function casts(): array
     {
         return [
-            'booking_date' => 'date',
+            'booking_date' => 'date:Y-m-d',
             'duration_hours' => 'integer',
             'base_price' => 'integer',
             'validation_code' => 'integer',

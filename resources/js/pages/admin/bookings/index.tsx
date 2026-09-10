@@ -26,6 +26,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import ConfirmDialog from '@/components/confirm-dialog';
 import type { Booking, Lapangan } from '@/types/booking';
 
 interface Props {
@@ -58,6 +59,9 @@ export default function AdminBookingsIndex({
     const [selectedLapangan, setSelectedLapangan] = useState(typeof filters?.lapangan_id === 'string' && filters.lapangan_id ? filters.lapangan_id : 'all');
     const [selectedDate, setSelectedDate] = useState(typeof filters?.date === 'string' ? filters.date : '');
 
+    // State for Confirm Approval Modal
+    const [approveBooking, setApproveBooking] = useState<Booking | null>(null);
+
     // State for Rejection Modal
     const [rejectBooking, setRejectBooking] = useState<Booking | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
@@ -84,12 +88,16 @@ export default function AdminBookingsIndex({
         applyFilters({ search });
     };
 
-    const handleApprove = (booking: Booking) => {
-        if (confirm(`Setujui pembayaran untuk booking #${booking.booking_code} sebesar Rp ${Number(booking.total_price).toLocaleString('id-ID')}?`)) {
-            router.post(`/admin/bookings/${booking.id}/approve`, {}, {
-                preserveScroll: true,
-            });
-        }
+    const handleApproveClick = (booking: Booking) => {
+        setApproveBooking(booking);
+    };
+
+    const handleConfirmApprove = () => {
+        if (!approveBooking) return;
+        router.post(`/admin/bookings/${approveBooking.id}/approve`, {}, {
+            preserveScroll: true,
+            onFinish: () => setApproveBooking(null),
+        });
     };
 
     const handleOpenReject = (booking: Booking) => {
@@ -116,15 +124,15 @@ export default function AdminBookingsIndex({
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'approved':
-                return <Badge className="bg-emerald-600 text-white text-[10px]">Terkonfirmasi</Badge>;
+                return <Badge className="bg-emerald-600 text-white text-xs">Terkonfirmasi</Badge>;
             case 'pending_validation':
-                return <Badge className="bg-amber-500 text-white text-[10px] animate-pulse">Perlu Validasi</Badge>;
+                return <Badge className="bg-amber-500 text-white text-xs animate-pulse">Perlu Validasi</Badge>;
             case 'rejected':
-                return <Badge className="bg-rose-600 text-white text-[10px]">Ditolak</Badge>;
+                return <Badge className="bg-rose-600 text-white text-xs">Ditolak</Badge>;
             case 'cancelled':
-                return <Badge variant="destructive" className="text-[10px]">Dibatalkan</Badge>;
+                return <Badge variant="destructive" className="text-xs">Dibatalkan</Badge>;
             default:
-                return <Badge className="bg-sky-600 text-white text-[10px]">Menunggu Bayar</Badge>;
+                return <Badge className="bg-sky-600 text-white text-xs">Menunggu Bayar</Badge>;
         }
     };
 
@@ -212,7 +220,7 @@ export default function AdminBookingsIndex({
                 <div className="rounded-2xl border border-border/80 bg-card shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left">
-                            <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border/60">
+                            <thead className="bg-muted/50 text-muted-foreground uppercase text-xs tracking-wider border-b border-border/60">
                                 <tr>
                                     <th className="py-3 px-4">Kode Booking</th>
                                     <th className="py-3 px-4">Lapangan</th>
@@ -238,45 +246,39 @@ export default function AdminBookingsIndex({
                                                 <Link href={`/booking/${b.booking_code}`} target="_blank" className="hover:underline flex items-center gap-1">
                                                     #{b.booking_code}
                                                 </Link>
-                                                <span className="text-[10px] text-muted-foreground font-normal block uppercase">
+                                                <span className="text-xs text-muted-foreground font-normal block uppercase">
                                                     {b.payment_method}
                                                 </span>
                                             </td>
 
                                             <td className="py-3.5 px-4">
                                                 <p className="font-semibold text-foreground">{b.lapangan?.name}</p>
-                                                <span className="text-[10px] text-muted-foreground">{b.lapangan?.category?.name}</span>
+                                                <span className="text-xs text-muted-foreground">{b.lapangan?.category?.name}</span>
                                             </td>
 
                                             <td className="py-3.5 px-4">
                                                 <p className="font-semibold text-foreground">{b.customer_name}</p>
-                                                <p className="text-[10px] text-muted-foreground">{b.customer_phone}</p>
+                                                <p className="text-xs text-muted-foreground">{b.customer_phone}</p>
                                             </td>
 
                                             <td className="py-3.5 px-4">
                                                 <p className="font-medium text-foreground">{b.booking_date}</p>
-                                                <p className="text-[10px] text-muted-foreground">{b.start_time} - {b.end_time} WIB</p>
+                                                <p className="text-xs text-muted-foreground">{b.start_time} - {b.end_time} WIB</p>
                                             </td>
 
-                                            {/* Validation Code Comparison */}
+                                            {/* Validation Code & Total Verification */}
                                             <td className="py-3.5 px-4">
                                                 {b.payment_method === 'transfer' ? (
                                                     <div className="space-y-0.5">
-                                                        <p className="font-mono text-xs font-bold text-foreground">
-                                                            Exp: <span className="text-emerald-600 dark:text-emerald-400">{b.validation_code}</span>
+                                                        <p className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                                            +{b.validation_code} <span className="text-xs text-muted-foreground font-normal">(kode unik)</span>
                                                         </p>
-                                                        <p className="text-[10px] text-muted-foreground">
-                                                            User: {b.user_submitted_code ? (
-                                                                <span className={`font-mono font-bold ${b.user_submitted_code === b.validation_code ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                                    {b.user_submitted_code} {b.user_submitted_code === b.validation_code ? '✓' : '✗'}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="italic">belum input</span>
-                                                            )}
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Cek mutasi: <span className="font-semibold text-foreground">Rp {Number(b.total_price).toLocaleString('id-ID')}</span>
                                                         </p>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-[10px] text-muted-foreground">Cash Tunai</span>
+                                                    <span className="text-xs text-muted-foreground">Cash Tunai</span>
                                                 )}
                                             </td>
 
@@ -295,8 +297,8 @@ export default function AdminBookingsIndex({
                                                         <>
                                                             <Button
                                                                 size="sm"
-                                                                onClick={() => handleApprove(b)}
-                                                                className="h-7 px-2.5 text-[11px] bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold"
+                                                                onClick={() => handleApproveClick(b)}
+                                                                className="h-7 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold"
                                                                 title="Setujui Pembayaran"
                                                             >
                                                                 <CheckCircle2 className="size-3.5 mr-1" /> Setujui
@@ -306,7 +308,7 @@ export default function AdminBookingsIndex({
                                                                 size="sm"
                                                                 variant="outline"
                                                                 onClick={() => handleOpenReject(b)}
-                                                                className="h-7 px-2 text-[11px] text-rose-600 border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
+                                                                className="h-7 px-2 text-xs text-rose-600 border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg"
                                                                 title="Tolak Pembayaran"
                                                             >
                                                                 <XCircle className="size-3.5" />
@@ -314,7 +316,7 @@ export default function AdminBookingsIndex({
                                                         </>
                                                     )}
 
-                                                    <Button asChild size="sm" variant="ghost" className="h-7 px-2 text-[11px] rounded-lg">
+                                                    <Button asChild size="sm" variant="ghost" className="h-7 px-2 text-xs rounded-lg">
                                                         <Link href={`/booking/${b.booking_code}`} target="_blank">
                                                             <Eye className="size-3.5" />
                                                         </Link>
@@ -350,6 +352,18 @@ export default function AdminBookingsIndex({
                     </div>
                 )}
             </div>
+
+            {/* Confirm Approval Dialog */}
+            <ConfirmDialog
+                open={!!approveBooking}
+                onOpenChange={(open) => !open && setApproveBooking(null)}
+                title="Konfirmasi Persetujuan Pembayaran"
+                description={`Apakah Anda yakin ingin menyetujui pembayaran untuk booking #${approveBooking?.booking_code} sebesar Rp ${Number(approveBooking?.total_price || 0).toLocaleString('id-ID')}?`}
+                confirmLabel="Setujui Pembayaran"
+                cancelLabel="Batal"
+                variant="default"
+                onConfirm={handleConfirmApprove}
+            />
 
             {/* Rejection Dialog with Mandatory Reason */}
             <Dialog open={!!rejectBooking} onOpenChange={(open) => !open && setRejectBooking(null)}>

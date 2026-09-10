@@ -124,7 +124,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                 <div className="rounded-2xl border border-border/80 bg-card shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left">
-                            <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border/60">
+                            <thead className="bg-muted/50 text-muted-foreground uppercase text-xs tracking-wider border-b border-border/60">
                                 <tr>
                                     <th className="py-3 px-4">Nama & Email</th>
                                     <th className="py-3 px-4">No. Telepon</th>
@@ -138,7 +138,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                                     <tr key={admin.id} className="hover:bg-muted/30 transition-colors">
                                         <td className="py-3.5 px-4">
                                             <p className="font-bold text-foreground">{admin.name}</p>
-                                            <p className="text-[11px] text-muted-foreground">{admin.email}</p>
+                                            <p className="text-xs text-muted-foreground">{admin.email}</p>
                                         </td>
 
                                         <td className="py-3.5 px-4 text-muted-foreground">
@@ -146,7 +146,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                                         </td>
 
                                         <td className="py-3.5 px-4">
-                                            <Badge variant="outline" className="text-[10px] font-semibold text-emerald-600 border-emerald-500/30">
+                                            <Badge variant="outline" className="text-xs font-semibold text-emerald-600 border-emerald-500/30">
                                                 Kasir / Admin
                                             </Badge>
                                         </td>
@@ -155,12 +155,12 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                                             <div className="flex flex-wrap gap-1">
                                                 {admin.assigned_lapangans && admin.assigned_lapangans.length > 0 ? (
                                                     admin.assigned_lapangans.map((l) => (
-                                                        <Badge key={l.id} className="bg-muted text-foreground text-[10px]">
+                                                        <Badge key={l.id} className="bg-muted text-foreground text-xs">
                                                             {l.name}
                                                         </Badge>
                                                     ))
                                                 ) : (
-                                                    <span className="text-[10px] text-muted-foreground italic">
+                                                    <span className="text-xs text-muted-foreground italic">
                                                         Belum ada lapangan yang ditugaskan
                                                     </span>
                                                 )}
@@ -218,7 +218,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                                 required
                                 className="h-9 rounded-lg"
                             />
-                            {errors.name && <p className="text-rose-500 text-[11px]">{errors.name}</p>}
+                            {errors.name && <p className="text-rose-500 text-xs">{errors.name}</p>}
                         </div>
 
                         <div className="space-y-1">
@@ -232,7 +232,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                                 required
                                 className="h-9 rounded-lg"
                             />
-                            {errors.email && <p className="text-rose-500 text-[11px]">{errors.email}</p>}
+                            {errors.email && <p className="text-rose-500 text-xs">{errors.email}</p>}
                         </div>
 
                         <div className="space-y-1">
@@ -259,7 +259,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                                 required={!editingAdmin}
                                 className="h-9 rounded-lg"
                             />
-                            {errors.password && <p className="text-rose-500 text-[11px]">{errors.password}</p>}
+                            {errors.password && <p className="text-rose-500 text-xs">{errors.password}</p>}
                         </div>
 
                         {/* Assign Lapangan Checkboxes */}

@@ -12,12 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('admin_lapangan', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('lapangan_id')->constrained('lapangans')->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignUuid('lapangan_id')->constrained('lapangans')->cascadeOnDelete();
             $table->timestamps();
 
-            $table->unique(['user_id', 'lapangan_id']);
+            $table->primary(['user_id', 'lapangan_id']);
         });
     }
 

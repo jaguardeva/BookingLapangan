@@ -103,7 +103,7 @@ export default function NotificationsIndex({ notifications }: Props) {
                                             <p className={`text-sm font-bold ${isUnread ? 'text-foreground' : 'text-foreground/80'}`}>
                                                 {item.data.title}
                                             </p>
-                                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                            <span className="text-xs text-muted-foreground whitespace-nowrap">
                                                 {new Date(item.created_at).toLocaleDateString('id-ID', {
                                                     day: 'numeric',
                                                     month: 'short',

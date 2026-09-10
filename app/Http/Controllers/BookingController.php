@@ -168,13 +168,9 @@ class BookingController extends Controller
             return back()->with('error', 'Status pembayaran booking ini tidak dalam status menunggu pembayaran.');
         }
 
-        $validated = $request->validate([
-            'submitted_code' => ['required', 'integer', 'min:100', 'max:999'],
-        ]);
-
         $booking->update([
             'payment_status' => 'pending_validation',
-            'user_submitted_code' => $validated['submitted_code'],
+            'user_submitted_code' => $booking->validation_code,
         ]);
 
         // Notify admins assigned to this lapangan and superadmin
@@ -186,9 +182,10 @@ class BookingController extends Controller
             $admin->notify(new PaymentProofSubmittedNotification($booking));
         }
 
-        ActivityLog::log('payment_submitted', "User mengonfirmasi pembayaran untuk booking #{$booking->booking_code} dengan kode unik {$validated['submitted_code']}", [
+        ActivityLog::log('payment_submitted', "User mengonfirmasi pembayaran untuk booking #{$booking->booking_code} (Total Rp ".number_format($booking->total_price, 0, ',', '.').')', [
             'booking_id' => $booking->id,
-            'code' => $validated['submitted_code'],
+            'total_price' => $booking->total_price,
+            'validation_code' => $booking->validation_code,
         ]);
 
         return back()->with('success', 'Konfirmasi pembayaran berhasil dikirim! Kasir kami akan segera memvalidasi pembayaran Anda.');

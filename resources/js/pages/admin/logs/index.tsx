@@ -20,15 +20,15 @@ export default function AdminLogsIndex({ logs }: Props) {
 
     const getActionBadge = (action: string) => {
         if (action.includes('approved')) {
-            return <Badge className="bg-emerald-600 text-white text-[10px]">{action}</Badge>;
+            return <Badge className="bg-emerald-600 text-white text-xs">{action}</Badge>;
         }
         if (action.includes('rejected') || action.includes('deleted')) {
-            return <Badge className="bg-rose-600 text-white text-[10px]">{action}</Badge>;
+            return <Badge className="bg-rose-600 text-white text-xs">{action}</Badge>;
         }
         if (action.includes('created') || action.includes('submitted')) {
-            return <Badge className="bg-sky-600 text-white text-[10px]">{action}</Badge>;
+            return <Badge className="bg-sky-600 text-white text-xs">{action}</Badge>;
         }
-        return <Badge variant="outline" className="text-[10px]">{action}</Badge>;
+        return <Badge variant="outline" className="text-xs">{action}</Badge>;
     };
 
     return (
@@ -48,7 +48,7 @@ export default function AdminLogsIndex({ logs }: Props) {
                 <div className="rounded-2xl border border-border/80 bg-card shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left">
-                            <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border/60">
+                            <thead className="bg-muted/50 text-muted-foreground uppercase text-xs tracking-wider border-b border-border/60">
                                 <tr>
                                     <th className="py-3 px-4">Waktu</th>
                                     <th className="py-3 px-4">Pengguna</th>
@@ -73,7 +73,7 @@ export default function AdminLogsIndex({ logs }: Props) {
                                         <td className="py-3 px-4 font-semibold text-foreground">
                                             {log.user?.name || 'Sistem Otomatis'}
                                             {log.user?.role && (
-                                                <span className="block text-[10px] text-muted-foreground uppercase font-normal">
+                                                <span className="block text-xs text-muted-foreground uppercase font-normal">
                                                     {log.user.role}
                                                 </span>
                                             )}
@@ -86,13 +86,13 @@ export default function AdminLogsIndex({ logs }: Props) {
                                         <td className="py-3 px-4 max-w-md text-foreground">
                                             <p className="font-medium">{log.description}</p>
                                             {log.properties && (
-                                                <pre className="text-[10px] text-muted-foreground mt-1 bg-muted/40 p-1.5 rounded font-mono overflow-x-auto">
+                                                <pre className="text-xs text-muted-foreground mt-1 bg-muted/40 p-1.5 rounded font-mono overflow-x-auto">
                                                     {JSON.stringify(log.properties)}
                                                 </pre>
                                             )}
                                         </td>
 
-                                        <td className="py-3 px-4 font-mono text-muted-foreground text-[11px]">
+                                        <td className="py-3 px-4 font-mono text-muted-foreground text-xs">
                                             {log.ip_address || '127.0.0.1'}
                                         </td>
                                     </tr>
