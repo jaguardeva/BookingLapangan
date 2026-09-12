@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\WhatsappContact;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -12,7 +13,7 @@ class HandleInertiaRequests extends Middleware
      */
     public function handle(Request $request, \Closure $next)
     {
-        if ($request->is('notifications/recent') || $request->is('chat/messages') || $request->is('admin/chat/*/messages') || $request->is('admin/chat/*/claim') || $request->is('admin/chat/*/resolve')) {
+        if ($request->is('notifications/recent')) {
             $request->headers->remove('X-Inertia');
         }
 
@@ -52,6 +53,11 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'whatsapp_contacts' => WhatsappContact::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'phone', 'description']),
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,

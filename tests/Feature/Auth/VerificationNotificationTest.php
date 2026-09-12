@@ -32,3 +32,12 @@ test('does not send verification notification if email is verified', function ()
 
     Notification::assertNothingSent();
 });
+
+test('verification email uses the configured application URL', function () {
+    config(['app.url' => 'https://sportbooking.example']);
+    $user = User::factory()->unverified()->create();
+
+    $mail = (new VerifyEmailNotification)->toMail($user);
+
+    expect($mail->actionUrl)->toStartWith('https://sportbooking.example/');
+});

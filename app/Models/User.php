@@ -115,15 +115,6 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * @return BelongsToMany<InternalConversation, $this>
-     */
-    public function internalConversations(): BelongsToMany
-    {
-        return $this->belongsToMany(InternalConversation::class, 'internal_conversation_participants', 'user_id', 'conversation_id')
-            ->withPivot('last_read_at');
-    }
-
-    /**
      * Send queued email verification notification.
      */
     public function sendEmailVerificationNotification(): void

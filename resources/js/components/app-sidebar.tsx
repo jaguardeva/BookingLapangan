@@ -11,7 +11,7 @@ import {
     Trophy,
     Home,
     Bell,
-    MessageSquare,
+    MessageCircle,
 } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -56,11 +56,6 @@ export function AppSidebar() {
             href: '/notifications',
             icon: Bell,
         },
-        {
-            title: 'Live Chat Support',
-            href: '/chat',
-            icon: MessageSquare,
-        },
     ];
 
     // Staff / Admin Workspace Items
@@ -74,16 +69,6 @@ export function AppSidebar() {
             title: 'Validasi & Booking',
             href: '/admin/bookings',
             icon: CalendarCheck,
-        },
-        {
-            title: 'Live Chat Support',
-            href: '/admin/chat',
-            icon: MessageSquare,
-        },
-        {
-            title: 'Chat Internal',
-            href: '/admin/internal-chat',
-            icon: Users,
         },
         {
             title: 'Laporan & Export',
@@ -113,6 +98,11 @@ export function AppSidebar() {
             title: 'Log Aktivitas',
             href: '/admin/logs',
             icon: History,
+        },
+        {
+            title: 'Kontak WhatsApp',
+            href: '/admin/whatsapp-contacts',
+            icon: MessageCircle,
         },
     ];
 

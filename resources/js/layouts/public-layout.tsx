@@ -2,7 +2,7 @@ import { PropsWithChildren, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/navbar';
-import { ChatWidget } from '@/components/chat-widget';
+import { WhatsappWidget } from '@/components/whatsapp-widget';
 import { Trophy, Phone, Mail, MapPin, Heart } from 'lucide-react';
 
 export function PublicLayout({ children }: PropsWithChildren) {
@@ -28,7 +28,7 @@ export function PublicLayout({ children }: PropsWithChildren) {
 
             <main className="flex-1">{children}</main>
 
-            <ChatWidget />
+            <WhatsappWidget />
 
             {/* Modern Sports Footer */}
             <footer className="border-t border-border/60 bg-muted/30 pt-12 pb-8">
@@ -43,7 +43,7 @@ export function PublicLayout({ children }: PropsWithChildren) {
                                 <span className="text-base font-bold tracking-tight">SportBooking</span>
                             </div>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                Platform sewa lapangan olahraga online tercepat, transparan, dan terpercaya dengan sistem validasi otomatis dan notifikasi real-time.
+                                Platform sewa lapangan olahraga online tercepat, transparan, dan terpercaya dengan sistem validasi otomatis dan bantuan WhatsApp.
                             </p>
                         </div>
 

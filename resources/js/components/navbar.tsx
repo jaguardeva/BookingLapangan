@@ -24,25 +24,25 @@ export function Navbar() {
     return (
         <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-md transition-all">
             {user && user.is_verified === false && !isStaff && (
-                <div className="bg-amber-500/10 dark:bg-amber-500/15 border-b border-amber-500/20 px-4 py-1.5 text-center text-xs text-amber-700 dark:text-amber-300 flex items-center justify-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 border-b border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-center text-xs text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 sm:px-4">
                     <span>Email Anda ({user.email}) belum diverifikasi.</span>
                     <Link href="/email/verify" className="font-bold underline hover:text-amber-900 dark:hover:text-amber-200 inline-flex items-center gap-1">
                         Verifikasi Sekarang &rarr;
                     </Link>
                 </div>
             )}
-            <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
+            <div className="container mx-auto flex h-14 items-center justify-between gap-2 px-3 sm:h-16 sm:px-6">
                 {/* Brand Logo */}
-                <div className="flex items-center gap-8">
-                    <Link href="/" className="flex items-center gap-2.5 group">
-                        <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-500/20 group-hover:bg-emerald-500 transition-colors">
-                            <Trophy className="size-5" />
+                <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-8">
+                    <Link href="/" className="group flex min-w-0 items-center gap-2 sm:gap-2.5">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-500/20 transition-colors group-hover:bg-emerald-500 sm:size-9">
+                            <Trophy className="size-4 sm:size-5" />
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-base font-bold tracking-tight text-foreground flex items-center gap-1.5">
+                        <div className="min-w-0 flex flex-col">
+                            <span className="flex items-center gap-1 text-sm font-bold tracking-tight text-foreground sm:gap-1.5 sm:text-base">
                                 Sport<span className="text-emerald-600 dark:text-emerald-400">Booking</span>
                             </span>
-                            <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase -mt-1">
+                            <span className="-mt-1 hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:block sm:text-xs">
                                 Arena Sports Hub
                             </span>
                         </div>
@@ -84,7 +84,7 @@ export function Navbar() {
                 </div>
 
                 {/* Right Actions */}
-                <div className="flex items-center gap-3">
+                <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
                     {user ? (
                         <>
                             <NotificationCenter />
@@ -149,12 +149,12 @@ export function Navbar() {
                             </DropdownMenu>
                         </>
                     ) : (
-                        <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" asChild>
+                        <div className="flex items-center gap-1 sm:gap-2">
+                            <Button variant="ghost" size="sm" className="px-2 sm:px-3" asChild>
                                 <Link href="/login">Masuk</Link>
                             </Button>
-                            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm" asChild>
-                                <Link href="/register">Daftar Sekarang</Link>
+                            <Button size="sm" className="bg-emerald-600 px-2.5 text-white shadow-sm hover:bg-emerald-500 sm:px-3" asChild>
+                                <Link href="/register"><span className="sm:hidden">Daftar</span><span className="hidden sm:inline">Daftar Sekarang</span></Link>
                             </Button>
                         </div>
                     )}

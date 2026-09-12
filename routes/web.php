@@ -5,15 +5,14 @@ use App\Http\Controllers\Admin\AdminManagementController;
 use App\Http\Controllers\Admin\BankAccountController;
 use App\Http\Controllers\Admin\BookingManagementController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\InternalChatController;
 use App\Http\Controllers\Admin\LapanganManagementController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\WhatsappContactController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LapanganController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\User\ChatController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -60,11 +59,6 @@ Route::middleware(['auth'])->group(function () {
         // Review action
         Route::post('/reviews', [ReviewController::class, 'store'])->name('review.store');
 
-        // Chat action
-        Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
-        Route::post('/chat/messages', [ChatController::class, 'storeMessage'])->name('chat.store-message');
-        Route::post('/chat/{conversation}/read', [ChatController::class, 'markRead'])->name('chat.read');
-
         // Notification actions
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notification.index');
         Route::get('/notifications/recent', [NotificationController::class, 'fetchRecent'])->name('notification.recent');
@@ -81,22 +75,6 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'role:superadmin,admin
     Route::post('/bookings/{booking}/reject', [BookingManagementController::class, 'reject'])->name('bookings.reject');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'exportCsv'])->name('reports.export');
-
-    // Admin Chat
-    Route::get('/chat', [App\Http\Controllers\Admin\ChatController::class, 'index'])->name('chat.index');
-    Route::post('/chat/{conversation}/claim', [App\Http\Controllers\Admin\ChatController::class, 'claim'])->name('chat.claim');
-    Route::post('/chat/{conversation}/resolve', [App\Http\Controllers\Admin\ChatController::class, 'resolve'])->name('chat.resolve');
-    Route::post('/chat/{conversation}/messages', [App\Http\Controllers\Admin\ChatController::class, 'storeMessage'])->name('chat.store-message');
-
-    // Internal Chat (Koordinasi antar Admin/Superadmin)
-    Route::get('/internal-chat', [InternalChatController::class, 'index'])->name('internal-chat.index');
-    Route::get('/internal-chat/staff', [InternalChatController::class, 'staffList'])->name('internal-chat.staff');
-    Route::post('/internal-chat/start-direct', [InternalChatController::class, 'startDirect'])->name('internal-chat.start-direct');
-    Route::post('/internal-chat/create-group', [InternalChatController::class, 'createGroup'])->name('internal-chat.create-group');
-    Route::post('/internal-chat/{conversation}/messages', [InternalChatController::class, 'storeMessage'])->name('internal-chat.store-message');
-    Route::delete('/internal-chat/messages/{message}', [InternalChatController::class, 'destroyMessage'])->name('internal-chat.destroy-message');
-    Route::delete('/internal-chat/{conversation}', [InternalChatController::class, 'destroyConversation'])->name('internal-chat.destroy-conversation');
-    Route::post('/internal-chat/{conversation}/read', [InternalChatController::class, 'markRead'])->name('internal-chat.mark-read');
 
     // Superadmin-only controls
     Route::middleware(['role:superadmin'])->group(function () {
@@ -122,6 +100,13 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'role:superadmin,admin
 
         // Activity Logs
         Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
+
+        // WhatsApp Contact Management
+        Route::get('/whatsapp-contacts', [WhatsappContactController::class, 'index'])->name('whatsapp-contacts.index');
+        Route::post('/whatsapp-contacts', [WhatsappContactController::class, 'store'])->name('whatsapp-contacts.store');
+        Route::put('/whatsapp-contacts/{whatsappContact}', [WhatsappContactController::class, 'update'])->name('whatsapp-contacts.update');
+        Route::post('/whatsapp-contacts/{whatsappContact}/toggle', [WhatsappContactController::class, 'toggle'])->name('whatsapp-contacts.toggle');
+        Route::delete('/whatsapp-contacts/{whatsappContact}', [WhatsappContactController::class, 'destroy'])->name('whatsapp-contacts.destroy');
     });
 });
 
