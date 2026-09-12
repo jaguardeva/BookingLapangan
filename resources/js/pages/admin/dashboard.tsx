@@ -88,10 +88,15 @@ export default function AdminDashboard({
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs h-9 shadow-sm">
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                        <Button asChild size="sm" className="h-9 w-full rounded-xl bg-emerald-600 text-xs text-white shadow-sm hover:bg-emerald-500 sm:w-auto">
                             <Link href="/admin/bookings">
                                 Validasi Pembayaran ({stats.pending_validation})
+                            </Link>
+                        </Button>
+                        <Button asChild size="sm" variant="outline" className="h-9 w-full rounded-xl text-xs sm:w-auto">
+                            <Link href="/admin/bookings?manual=1">
+                                Booking Manual
                             </Link>
                         </Button>
                     </div>
@@ -321,7 +326,7 @@ export default function AdminDashboard({
                 {/* Section 3: Popular Fields Ranking + Recent Bookings */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Top Lapangan Performance (1 Col) */}
-                    <div className="p-6 rounded-2xl border border-border/80 bg-card shadow-sm space-y-4">
+                    <div className="min-w-0 rounded-2xl border border-border/80 bg-card p-4 shadow-sm space-y-4 sm:p-6">
                         <div>
                             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
                                 <Trophy className="size-5 text-amber-500" />
@@ -336,16 +341,16 @@ export default function AdminDashboard({
                             ) : (
                                 popularLapangans.map((lap, idx) => (
                                     <div key={lap.id} className="space-y-1.5">
-                                        <div className="flex items-center justify-between text-xs font-semibold">
-                                            <span className="flex items-center gap-2 text-foreground truncate max-w-[170px]">
+                                        <div className="flex min-w-0 items-start justify-between gap-2 text-xs font-semibold">
+                                            <span className="flex min-w-0 items-center gap-2 text-foreground">
                                                 <span className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 ${
                                                     idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-slate-400' : 'bg-amber-700'
                                                 }`}>
                                                     {idx + 1}
                                                 </span>
-                                                {lap.name}
+                                                <span className="truncate">{lap.name}</span>
                                             </span>
-                                            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
+                                            <span className="shrink-0 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
                                                 Rp {Number(lap.revenue).toLocaleString('id-ID')}
                                             </span>
                                         </div>
@@ -369,13 +374,13 @@ export default function AdminDashboard({
                     {/* Recent Bookings Table (2 Cols) */}
                     <div className="lg:col-span-2 rounded-2xl border border-border/80 bg-card shadow-sm overflow-hidden flex flex-col justify-between">
                         <div>
-                            <div className="p-5 border-b border-border/60 flex items-center justify-between">
+                            <div className="flex flex-col gap-2 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                                 <div>
                                     <h2 className="text-base font-bold text-foreground">Booking & Transaksi Terbaru</h2>
                                     <p className="text-xs text-muted-foreground">Daftar transaksi yang baru saja masuk atau diperbarui</p>
                                 </div>
 
-                                <Button variant="ghost" size="sm" asChild className="text-xs">
+                                <Button variant="ghost" size="sm" asChild className="self-start px-0 text-xs sm:self-auto sm:px-3">
                                     <Link href="/admin/bookings">
                                         Buka Semua <ArrowRight className="size-3.5 ml-1" />
                                     </Link>
@@ -453,4 +458,3 @@ export default function AdminDashboard({
         </AppLayout>
     );
 }
-

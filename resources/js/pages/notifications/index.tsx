@@ -69,7 +69,7 @@ export default function NotificationsIndex({ notifications }: Props) {
                         variant="outline"
                         size="sm"
                         onClick={handleMarkAllRead}
-                        className="text-xs rounded-xl h-9"
+                        className="h-9 w-full rounded-xl text-xs sm:w-auto"
                     >
                         <CheckCheck className="size-3.5 mr-1.5" /> Tandai Semua Sudah Dibaca
                     </Button>
@@ -91,7 +91,7 @@ export default function NotificationsIndex({ notifications }: Props) {
                                 <div
                                     key={item.id}
                                     onClick={() => handleMarkAsRead(item.id, item.data.url)}
-                                    className={`p-4 rounded-xl border transition-all cursor-pointer flex gap-3.5 items-start ${
+                                    className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 transition-all sm:gap-3.5 sm:p-4 ${
                                         isUnread
                                             ? 'bg-emerald-500/5 border-emerald-500/30 hover:border-emerald-500/50'
                                             : 'bg-card border-border/70 hover:border-border text-muted-foreground'
@@ -99,11 +99,11 @@ export default function NotificationsIndex({ notifications }: Props) {
                                 >
                                     {getIcon(item.data.type)}
                                     <div className="flex-1 min-w-0 space-y-1">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <p className={`text-sm font-bold ${isUnread ? 'text-foreground' : 'text-foreground/80'}`}>
+                                        <div className="flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                                            <p className={`break-words text-sm font-bold ${isUnread ? 'text-foreground' : 'text-foreground/80'}`}>
                                                 {item.data.title}
                                             </p>
-                                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                            <span className="whitespace-nowrap text-[11px] text-muted-foreground sm:text-xs">
                                                 {new Date(item.created_at).toLocaleDateString('id-ID', {
                                                     day: 'numeric',
                                                     month: 'short',
@@ -112,7 +112,7 @@ export default function NotificationsIndex({ notifications }: Props) {
                                                 })}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-foreground/80 leading-relaxed">
+                                        <p className="break-words text-xs leading-relaxed text-foreground/80">
                                             {item.data.message}
                                         </p>
                                     </div>
@@ -123,7 +123,7 @@ export default function NotificationsIndex({ notifications }: Props) {
                 </div>
 
                 {notifications.links && notifications.links.length > 3 && (
-                    <div className="flex justify-center items-center gap-1.5 mt-8">
+                    <div className="mt-8 flex flex-wrap items-center justify-center gap-1.5">
                         {notifications.links.map((link, idx) => (
                             <Link
                                 key={idx}

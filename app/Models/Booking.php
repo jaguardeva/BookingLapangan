@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'payment_status',
     'customer_name',
     'customer_phone',
+    'customer_email',
     'notes',
     'user_submitted_code',
     'rejection_reason',

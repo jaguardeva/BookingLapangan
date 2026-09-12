@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     Dialog,
     DialogContent,
@@ -291,16 +292,12 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
 
                             <div className="space-y-1 col-span-2 sm:col-span-1">
                                 <Label htmlFor="category_id">Kategori Olahraga</Label>
-                                <select
-                                    id="category_id"
-                                    value={data.category_id}
-                                    onChange={(e) => setData('category_id', Number(e.target.value))}
-                                    className="w-full h-9 rounded-lg border border-input bg-card px-3 text-xs"
-                                >
-                                    {categories.map((c) => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
+                                <Select value={String(data.category_id)} onValueChange={(value) => setData('category_id', Number(value))}>
+                                    <SelectTrigger id="category_id" className="h-9 w-full rounded-lg text-sm"><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
+                                    <SelectContent>
+                                        {categories.map((category) => <SelectItem key={category.id} value={String(category.id)}>{category.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 

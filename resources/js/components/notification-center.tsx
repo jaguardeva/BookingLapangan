@@ -143,11 +143,16 @@ export function NotificationCenter() {
                     <span className="sr-only">Notifikasi</span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 sm:w-96 p-0 rounded-xl shadow-xl border-border">
-                <div className="flex items-center justify-between p-3.5 border-b border-border/60 bg-muted/40">
-                    <div className="flex items-center gap-2">
+            <DropdownMenuContent
+                side="bottom"
+                align="center"
+                collisionPadding={16}
+                className="w-[calc(100vw-2rem)] max-w-96 rounded-xl border-border p-0 shadow-xl"
+            >
+                <div className="flex flex-col gap-2 border-b border-border/60 bg-muted/40 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-3.5">
+                    <div className="flex min-w-0 items-center gap-2">
                         <Bell className="size-4 text-emerald-600 dark:text-emerald-400" />
-                        <span className="font-semibold text-sm">Pusat Notifikasi</span>
+                        <span className="truncate text-sm font-semibold">Pusat Notifikasi</span>
                         {unreadCount > 0 && (
                             <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                                 {unreadCount} baru
@@ -159,7 +164,7 @@ export function NotificationCenter() {
                             variant="ghost"
                             size="sm"
                             onClick={handleMarkAllRead}
-                            className="h-7 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                            className="h-7 self-end text-xs text-muted-foreground hover:text-foreground sm:self-auto"
                         >
                             <CheckCheck className="size-3.5" />
                             Tandai semua
@@ -167,7 +172,7 @@ export function NotificationCenter() {
                     )}
                 </div>
 
-                <div className="max-h-[350px] overflow-y-auto divide-y divide-border/40">
+                <div className="max-h-[min(60vh,350px)] divide-y divide-border/40 overflow-y-auto">
                     {isLoading ? (
                         <div className="p-6 text-center text-xs text-muted-foreground">
                             Memuat notifikasi...
@@ -184,7 +189,7 @@ export function NotificationCenter() {
                                 <div
                                     key={item.id}
                                     onClick={() => handleMarkAsRead(item.id, item.data.url)}
-                                    className={`p-3.5 text-xs transition-colors cursor-pointer hover:bg-muted/50 flex gap-3 ${
+                                    className={`flex cursor-pointer gap-2.5 p-3 text-xs transition-colors hover:bg-muted/50 sm:gap-3 sm:p-3.5 ${
                                         isUnread ? 'bg-emerald-500/5 font-medium' : 'text-muted-foreground'
                                     }`}
                                 >
@@ -198,7 +203,7 @@ export function NotificationCenter() {
                                                 <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
                                             )}
                                         </div>
-                                        <p className="text-xs leading-relaxed line-clamp-2 text-foreground/80">
+                                            <p className="line-clamp-2 break-words text-xs leading-relaxed text-foreground/80">
                                             {item.data.message}
                                         </p>
                                     </div>

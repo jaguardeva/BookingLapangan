@@ -49,7 +49,7 @@ export type BookingStatus = 'pending' | 'pending_validation' | 'approved' | 'rej
 export type Booking = {
     id: number;
     booking_code: string;
-    user_id: number;
+    user_id: string | null;
     lapangan_id: number;
     booking_date: string;
     start_time: string;
@@ -62,6 +62,7 @@ export type Booking = {
     payment_status: BookingStatus;
     customer_name: string;
     customer_phone: string;
+    customer_email?: string | null;
     notes?: string | null;
     user_submitted_code?: number | null;
     rejection_reason?: string | null;

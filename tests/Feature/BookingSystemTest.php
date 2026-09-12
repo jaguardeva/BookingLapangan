@@ -337,3 +337,53 @@ test('public user can view lapangan catalog page and receives structured filters
         ->where('filters.sort', 'latest')
     );
 });
+
+test('regular admin is redirected away from the public catalog while superadmin can access it', function () {
+    $this->actingAs($this->admin)
+        ->get(route('lapangan.index'))
+        ->assertRedirect(route('admin.dashboard'));
+
+    $this->actingAs($this->admin)
+        ->get(route('home'))
+        ->assertRedirect(route('admin.dashboard'));
+
+    $this->actingAs($this->admin)
+        ->get(route('booking.history'))
+        ->assertRedirect(route('admin.dashboard'));
+
+    $this->actingAs($this->superadmin)
+        ->get(route('lapangan.index'))
+        ->assertOk();
+});
+
+test('admin can access account settings', function () {
+    $this->actingAs($this->admin)
+        ->get(route('profile.edit'))
+        ->assertOk();
+});
+
+test('admin can create an approved manual walk-in booking for an assigned lapangan', function () {
+    $this->actingAs($this->admin);
+
+    $response = $this->post(route('admin.bookings.manual'), [
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '18:00',
+        'duration_hours' => 2,
+        'customer_name' => 'Pelanggan Walk-in',
+        'customer_phone' => '081234567890',
+        'customer_email' => 'pelanggan@example.com',
+        'notes' => 'Booking langsung di kasir.',
+    ]);
+
+    $booking = Booking::where('customer_phone', '081234567890')->latest()->first();
+
+    $response->assertRedirect()
+        ->assertSessionHas('success');
+    expect($booking)->not->toBeNull()
+        ->and($booking->user_id)->toBeNull()
+        ->and($booking->payment_method)->toBe('cash')
+        ->and($booking->payment_status)->toBe('approved')
+        ->and($booking->customer_email)->toBe('pelanggan@example.com')
+        ->and($booking->validated_by)->toBe($this->admin->id);
+});

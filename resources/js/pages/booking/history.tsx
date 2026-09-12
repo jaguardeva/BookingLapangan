@@ -136,12 +136,12 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
                 </div>
 
                 {/* Status Filter Tabs */}
-                <div className="flex overflow-x-auto gap-2 py-4 no-scrollbar border-b border-border/40">
+                <div className="-mx-4 flex overflow-x-auto gap-2 border-b border-border/40 px-4 py-4 no-scrollbar sm:mx-0 sm:px-0">
                     {tabs.map((tab) => (
                         <button
                             key={tab.key}
                             onClick={() => filterStatus(tab.key)}
-                            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                            className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
                                 currentStatus === tab.key
                                     ? 'bg-emerald-600 text-white shadow-sm'
                                     : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -169,32 +169,32 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
                         bookings.data.map((item) => (
                             <div
                                 key={item.id}
-                                className="p-5 rounded-2xl border border-border/70 bg-card hover:border-border transition-all flex flex-col sm:flex-row justify-between gap-4 shadow-sm"
+                                className="flex min-w-0 flex-col gap-4 rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition-all hover:border-border sm:flex-row sm:justify-between sm:p-5"
                             >
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
+                                <div className="min-w-0 space-y-2">
+                                    <div className="flex min-w-0 flex-wrap items-center gap-2">
                                         <span className="font-mono text-xs font-bold text-foreground">
                                             #{item.booking_code}
                                         </span>
                                         {getStatusBadge(item.payment_status)}
                                     </div>
 
-                                    <h3 className="text-base font-bold text-foreground">
+                                    <h3 className="break-words text-base font-bold text-foreground">
                                         {item.lapangan?.name}
                                     </h3>
 
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex min-w-0 items-start gap-1.5">
                                             <Calendar className="size-3.5 text-emerald-500" />
-                                            <span>Tanggal: <strong>{item.booking_date}</strong></span>
+                                            <span className="break-words">Tanggal: <strong>{item.booking_date}</strong></span>
                                         </div>
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex min-w-0 items-start gap-1.5">
                                             <Clock className="size-3.5 text-emerald-500" />
-                                            <span>Jam: <strong>{item.start_time} - {item.end_time} WIB</strong> ({item.duration_hours} Jam)</span>
+                                            <span className="break-words">Jam: <strong>{item.start_time} - {item.end_time} WIB</strong> ({item.duration_hours} Jam)</span>
                                         </div>
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex min-w-0 items-start gap-1.5">
                                             <CreditCard className="size-3.5 text-emerald-500" />
-                                            <span>Metode: <strong className="uppercase">{item.payment_method}</strong></span>
+                                            <span className="break-words">Metode: <strong className="uppercase">{item.payment_method}</strong></span>
                                         </div>
                                     </div>
 
@@ -205,27 +205,27 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
                                     )}
                                 </div>
 
-                                <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-3 sm:pt-0 border-border/60 gap-3">
-                                    <div className="sm:text-right">
+                                <div className="flex flex-col items-stretch gap-3 border-t border-border/60 pt-3 sm:items-end sm:justify-center sm:border-t-0 sm:pt-0">
+                                    <div className="text-right">
                                         <span className="text-xs text-muted-foreground">Total Tagihan</span>
                                         <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
                                             Rp {Number(item.total_price).toLocaleString('id-ID')}
                                         </p>
                                     </div>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                                         {item.payment_status === 'approved' && !item.review && (
                                             <Button
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() => handleOpenReview(item)}
-                                                className="text-xs rounded-xl h-9"
+                                                className="h-9 w-full rounded-xl text-xs sm:w-auto"
                                             >
                                                 <Star className="size-3.5 mr-1 text-amber-400" /> Beri Ulasan
                                             </Button>
                                         )}
 
-                                        <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs h-9">
+                                        <Button asChild size="sm" className="h-9 w-full rounded-xl bg-emerald-600 text-xs text-white hover:bg-emerald-500 sm:w-auto">
                                             <Link href={`/booking/${item.booking_code}`}>
                                                 Lihat Invoice <ArrowRight className="size-3.5 ml-1" />
                                             </Link>

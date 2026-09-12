@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Booking, Lapangan } from '@/types/booking';
 
 interface Props {
@@ -109,58 +110,44 @@ export default function AdminReportsIndex({
                 </div>
 
                 {/* Filter Toolbar */}
-                <div className="p-4 rounded-2xl border border-border/80 bg-card">
-                    <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-end gap-3 text-xs">
-                        <div className="space-y-1">
-                            <Label>Dari Tanggal</Label>
-                            <Input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="h-9 rounded-xl text-xs"
-                            />
+                <div className="rounded-2xl border border-border/80 bg-card p-3 shadow-sm sm:p-4">
+                    <form onSubmit={handleFilterSubmit} className="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap">
+                        <div className="flex min-w-0 flex-col gap-2">
+                            <Label className="text-sm font-medium leading-none">Dari tanggal</Label>
+                            <Input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="h-10 w-full min-w-0 rounded-xl text-sm" />
                         </div>
 
-                        <div className="space-y-1">
-                            <Label>Sampai Tanggal</Label>
-                            <Input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="h-9 rounded-xl text-xs"
-                            />
+                        <div className="flex min-w-0 flex-col gap-2">
+                            <Label className="text-sm font-medium leading-none">Sampai tanggal</Label>
+                            <Input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="h-10 w-full min-w-0 rounded-xl text-sm" />
                         </div>
 
-                        <div className="space-y-1">
-                            <Label>Lapangan</Label>
-                            <select
-                                value={selectedLapangan}
-                                onChange={(e) => setSelectedLapangan(e.target.value)}
-                                className="h-9 rounded-xl border border-input bg-card px-3 text-xs"
-                            >
-                                <option value="all">Semua Lapangan</option>
-                                {lapangans.map((l) => (
-                                    <option key={l.id} value={String(l.id)}>{l.name}</option>
-                                ))}
-                            </select>
+                        <div className="flex min-w-0 flex-col gap-2 sm:max-w-xs">
+                            <Label className="text-sm font-medium leading-none">Lapangan</Label>
+                            <Select value={selectedLapangan} onValueChange={setSelectedLapangan}>
+                                <SelectTrigger className="h-10 w-full rounded-xl text-sm"><SelectValue placeholder="Semua lapangan" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua lapangan</SelectItem>
+                                    {lapangans.map((lapangan) => <SelectItem key={lapangan.id} value={String(lapangan.id)}>{lapangan.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                         </div>
 
-                        <div className="space-y-1">
-                            <Label>Status Pembayaran</Label>
-                            <select
-                                value={selectedStatus}
-                                onChange={(e) => setSelectedStatus(e.target.value)}
-                                className="h-9 rounded-xl border border-input bg-card px-3 text-xs"
-                            >
-                                <option value="all">Semua Status</option>
-                                <option value="approved">Lunas (Terkonfirmasi)</option>
-                                <option value="pending">Menunggu Pembayaran</option>
-                                <option value="pending_validation">Menunggu Validasi</option>
-                                <option value="cancelled">Dibatalkan</option>
-                            </select>
+                        <div className="flex min-w-0 flex-col gap-2 sm:max-w-xs">
+                            <Label className="text-sm font-medium leading-none">Status pembayaran</Label>
+                            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                                <SelectTrigger className="h-10 w-full rounded-xl text-sm"><SelectValue placeholder="Semua status" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua status</SelectItem>
+                                    <SelectItem value="approved">Lunas (terkonfirmasi)</SelectItem>
+                                    <SelectItem value="pending">Menunggu pembayaran</SelectItem>
+                                    <SelectItem value="pending_validation">Menunggu validasi</SelectItem>
+                                    <SelectItem value="cancelled">Dibatalkan</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
 
-                        <Button type="submit" size="sm" className="h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white">
+                        <Button type="submit" size="sm" className="col-span-2 h-10 w-full rounded-xl bg-emerald-600 text-sm text-white hover:bg-emerald-500 sm:col-span-1 sm:w-auto">
                             Terapkan Filter
                         </Button>
                     </form>

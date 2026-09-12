@@ -105,11 +105,6 @@ export function Navbar() {
                                         <div className="flex flex-col space-y-1">
                                             <p className="text-sm font-semibold leading-none">{user.name}</p>
                                             <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-                                            <div className="pt-1.5">
-                                                <span className="inline-block rounded-md bg-muted px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                                    Role: {user.role}
-                                                </span>
-                                            </div>
                                         </div>
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />

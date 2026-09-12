@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Star, Clock, ArrowRight } from 'lucide-react';
+import { Star, Clock, ArrowRight, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Lapangan } from '@/types/booking';
@@ -25,9 +25,10 @@ export function LapanganCard({ item }: LapanganCardProps) {
                     alt={item.name}
                     className="size-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute top-2.5 left-2.5">
-                    <Badge className="bg-background/90 text-foreground backdrop-blur-md border-border/40 text-xs font-semibold px-2 py-0.5">
-                        {item.category?.name}
+                <div className="absolute left-3 top-3 max-w-[68%]">
+                    <Badge variant="secondary" className="max-w-full truncate border-white/50 bg-slate-950/75 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white shadow-sm backdrop-blur-md dark:bg-slate-950/80">
+                        <Layers className="size-3 shrink-0 text-emerald-300" />
+                        <span className="truncate">{item.category?.name ?? 'Lapangan olahraga'}</span>
                     </Badge>
                 </div>
                 <div className="absolute top-2.5 right-2.5">
@@ -40,8 +41,8 @@ export function LapanganCard({ item }: LapanganCardProps) {
             </div>
 
             {/* Compact Card Content */}
-            <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
-                <div className="space-y-1">
+            <div className="flex min-w-0 flex-1 flex-col justify-between space-y-3 p-3.5">
+                <div className="min-w-0 space-y-1">
                     <h3 className="font-bold text-sm text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
                         {item.name}
                     </h3>
@@ -50,9 +51,9 @@ export function LapanganCard({ item }: LapanganCardProps) {
                     </p>
 
                     {/* Operational Time & Facilities compact line */}
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
+                    <div className="flex min-w-0 items-start gap-1.5 pt-1 text-xs text-muted-foreground">
                         <Clock className="size-3 text-emerald-500 shrink-0" />
-                        <span>{item.operational_start} - {item.operational_end} WIB</span>
+                        <span className="break-words">{item.operational_start} - {item.operational_end} WIB</span>
                     </div>
 
                     {item.facilities && item.facilities.length > 0 && (
@@ -75,7 +76,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
                 </div>
 
                 {/* Compact Price & Action */}
-                <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                <div className="flex flex-col items-stretch gap-3 border-t border-border/50 pt-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <span className="text-xs text-muted-foreground block leading-none">Harga</span>
                         <p className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
@@ -87,7 +88,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
                     <Button
                         asChild
                         size="sm"
-                        className="h-8 px-3 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-none"
+                        className="h-8 w-full rounded-lg bg-emerald-600 px-3 text-xs text-white shadow-none hover:bg-emerald-500 sm:w-auto"
                     >
                         <Link href={`/lapangan/${item.slug}`}>
                             Cek Jadwal <ArrowRight className="size-3 ml-1" />

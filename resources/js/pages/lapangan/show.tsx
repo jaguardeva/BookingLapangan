@@ -86,7 +86,7 @@ export default function LapanganShow({
     // Current time helper to disable past hours today
     const now = new Date();
     const isToday = selectedDate === allowedDates[0]?.date;
-    const currentHour = now.getHours();
+    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
     // Check if slot is booked in database
     const isSlotBooked = (start: string, end: string) => {
@@ -105,15 +105,19 @@ export default function LapanganShow({
     // Check if slot is in past today
     const isSlotPast = (start: string) => {
         if (!isToday) return false;
-        const slotHour = parseInt(start.split(':')[0], 10);
-        return slotHour <= currentHour;
+        return start <= currentTime;
     };
 
     // Slot click handler with continuous selection logic
     const handleSlotClick = (startTime: string) => {
-        // If already selected, clicking it again resets or trims
+        const allHours = hourlySlots.map((s) => s.start);
+
+        // Clicking a selected slot trims the range at that slot instead of creating a gap.
         if (selectedSlots.includes(startTime)) {
-            setSelectedSlots((prev) => prev.filter((s) => s !== startTime));
+            const selectedIndexes = selectedSlots.map((slot) => allHours.indexOf(slot)).filter((index) => index >= 0);
+            const clickedIndex = allHours.indexOf(startTime);
+            const firstIndex = Math.min(...selectedIndexes);
+            setSelectedSlots(allHours.slice(firstIndex, clickedIndex + 1));
             return;
         }
 
@@ -124,7 +128,6 @@ export default function LapanganShow({
         }
 
         // Multiple selection: ensure continuity
-        const allHours = hourlySlots.map((s) => s.start);
         const existingIndexes = selectedSlots.map((s) => allHours.indexOf(s));
         const newIndex = allHours.indexOf(startTime);
 
@@ -363,6 +366,7 @@ export default function LapanganShow({
                                     {hourlySlots.map((slot) => {
                                         const booked = isSlotBooked(slot.start, slot.end);
                                         const past = isSlotPast(slot.start);
+                                        if (past) return null;
                                         const selected = selectedSlots.includes(slot.start);
                                         const disabled = booked || past;
 

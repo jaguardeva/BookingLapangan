@@ -1,10 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { PublicLayout } from '@/layouts/public-layout';
-import { Search, Filter, Star, Clock, ArrowRight, X } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LapanganCard } from '@/components/lapangan-card';
 import type { Category, Facility, Lapangan } from '@/types/booking';
 
@@ -78,99 +79,109 @@ export default function LapanganIndex({
                         Ditemukan {lapangans.total} lapangan olahraga dengan ketersediaan real-time.
                     </p>
 
-                    {/* Filter & Search Toolbar */}
-                    <div className="mt-6 flex flex-col md:flex-row gap-3">
-                        <form onSubmit={handleSearchSubmit} className="flex-1 relative">
-                            <Search className="size-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
-                            <Input
-                                type="text"
-                                placeholder="Cari nama lapangan..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="pl-10 h-10 rounded-xl bg-card text-xs sm:text-sm"
-                            />
-                        </form>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                            {/* Category Filter */}
-                            <select
-                                value={selectedCategory}
-                                onChange={(e) => {
-                                    setSelectedCategory(e.target.value);
-                                    applyFilters({ category: e.target.value !== 'all' ? e.target.value : '' });
-                                }}
-                                className="h-10 rounded-xl border border-input bg-card px-3 text-xs text-foreground focus:ring-2 focus:ring-emerald-500/40"
-                            >
-                                <option value="all">Semua Kategori</option>
-                                {categories.map((c) => (
-                                    <option key={c.id} value={c.slug}>{c.name}</option>
-                                ))}
-                            </select>
-
-                            {/* Facility Filter */}
-                            <select
-                                value={selectedFacility}
-                                onChange={(e) => {
-                                    setSelectedFacility(e.target.value);
-                                    applyFilters({ facility: e.target.value !== 'all' ? e.target.value : '' });
-                                }}
-                                className="h-10 rounded-xl border border-input bg-card px-3 text-xs text-foreground focus:ring-2 focus:ring-emerald-500/40"
-                            >
-                                <option value="all">Semua Fasilitas</option>
-                                {facilities.map((f) => (
-                                    <option key={f.id} value={String(f.id)}>{f.name}</option>
-                                ))}
-                            </select>
-
-                            {/* Sort Filter */}
-                            <select
-                                value={sort}
-                                onChange={(e) => {
-                                    setSort(e.target.value);
-                                    applyFilters({ sort: e.target.value });
-                                }}
-                                className="h-10 rounded-xl border border-input bg-card px-3 text-xs text-foreground focus:ring-2 focus:ring-emerald-500/40"
-                            >
-                                <option value="latest">Terbaru</option>
-                                <option value="rating">Rating Tertinggi</option>
-                                <option value="price_asc">Harga Terendah</option>
-                                <option value="price_desc">Harga Tertinggi</option>
-                            </select>
-
-                            {(search || selectedCategory !== 'all' || selectedFacility !== 'all' || sort !== 'latest') && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={resetFilters}
-                                    className="h-10 text-xs text-muted-foreground hover:text-foreground"
-                                >
-                                    <X className="size-3.5 mr-1" /> Reset
-                                </Button>
-                            )}
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 sm:px-6 py-10">
-                {lapangans.data.length === 0 ? (
-                    <div className="p-16 text-center rounded-2xl border border-dashed border-border bg-card">
-                        <Filter className="size-10 text-muted-foreground/40 mx-auto mb-3" />
-                        <h3 className="font-bold text-base text-foreground">Tidak Ada Lapangan Ditemukan</h3>
-                        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-                            Coba ubah kata kunci pencarian atau reset filter untuk menemukan lapangan yang Anda cari.
-                        </p>
-                        <Button onClick={resetFilters} variant="outline" size="sm" className="mt-4 rounded-xl">
-                            Reset Filter
-                        </Button>
+            <div className="container mx-auto grid gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
+                <aside className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm lg:sticky lg:top-24">
+                    <div className="mb-5 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-semibold text-foreground">Filter katalog</p>
+                            <p className="mt-1 text-xs text-muted-foreground">Temukan lapangan yang sesuai.</p>
+                        </div>
+                        {(search || selectedCategory !== 'all' || selectedFacility !== 'all' || sort !== 'latest') && (
+                            <Button type="button" variant="ghost" size="sm" onClick={resetFilters} className="h-8 rounded-lg px-2 text-xs text-muted-foreground">
+                                Reset
+                            </Button>
+                        )}
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-                        {lapangans.data.map((item) => (
-                            <LapanganCard key={item.id} item={item} />
-                        ))}
+
+                    <div className="flex flex-col gap-4">
+                        <form onSubmit={handleSearchSubmit} className="relative">
+                            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                type="text"
+                                placeholder="Cari lapangan..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="h-10 rounded-xl bg-background pl-9 text-sm"
+                            />
+                        </form>
+
+                        <div className="flex flex-col gap-2">
+                            <label htmlFor="catalog-category" className="text-xs font-medium text-foreground">Kategori</label>
+                            <SearchableSelect
+                                id="catalog-category"
+                                value={selectedCategory}
+                                onValueChange={(value) => {
+                                    setSelectedCategory(value);
+                                    applyFilters({ category: value !== 'all' ? value : '' });
+                                }}
+                                placeholder="Semua kategori"
+                                searchPlaceholder="Cari kategori..."
+                                options={[
+                                    { value: 'all', label: 'Semua kategori' },
+                                    ...categories.map((category) => ({ value: category.slug, label: category.name })),
+                                ]}
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label htmlFor="catalog-facility" className="text-xs font-medium text-foreground">Fasilitas</label>
+                            <SearchableSelect
+                                id="catalog-facility"
+                                value={selectedFacility}
+                                onValueChange={(value) => {
+                                    setSelectedFacility(value);
+                                    applyFilters({ facility: value !== 'all' ? value : '' });
+                                }}
+                                placeholder="Semua fasilitas"
+                                searchPlaceholder="Cari fasilitas..."
+                                options={[
+                                    { value: 'all', label: 'Semua fasilitas' },
+                                    ...facilities.map((facility) => ({ value: String(facility.id), label: facility.name })),
+                                ]}
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label htmlFor="catalog-sort" className="text-xs font-medium text-foreground">Urutkan</label>
+                            <Select value={sort} onValueChange={(value) => {
+                                setSort(value);
+                                applyFilters({ sort: value });
+                            }}>
+                                <SelectTrigger id="catalog-sort" className="h-10 w-full rounded-xl text-sm">
+                                    <SelectValue placeholder="Urutkan" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="latest">Terbaru</SelectItem>
+                                    <SelectItem value="rating">Rating tertinggi</SelectItem>
+                                    <SelectItem value="price_asc">Harga terendah</SelectItem>
+                                    <SelectItem value="price_desc">Harga tertinggi</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
-                )}
+                </aside>
+
+                <main className="min-w-0">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                        <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">{lapangans.total}</span> lapangan ditemukan</p>
+                        <div className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex"><Filter className="size-3.5" /> Filter aktif diterapkan otomatis</div>
+                    </div>
+
+                    {lapangans.data.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center sm:p-16">
+                            <Filter className="mx-auto mb-3 size-10 text-muted-foreground/40" />
+                            <h3 className="text-base font-bold text-foreground">Tidak Ada Lapangan Ditemukan</h3>
+                            <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">Coba ubah kata kunci atau reset filter untuk menemukan lapangan yang Anda cari.</p>
+                            <Button onClick={resetFilters} variant="outline" size="sm" className="mt-4 rounded-xl">Reset Filter</Button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {lapangans.data.map((item) => <LapanganCard key={item.id} item={item} />)}
+                        </div>
+                    )}
 
                 {/* Pagination */}
                 {lapangans.links && lapangans.links.length > 3 && (
@@ -192,6 +203,7 @@ export default function LapanganIndex({
                         ))}
                     </div>
                 )}
+                </main>
             </div>
         </PublicLayout>
     );

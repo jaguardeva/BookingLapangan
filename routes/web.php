@@ -17,13 +17,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // --- Public Routes ---
-Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/lapangan', [LapanganController::class, 'index'])->name('lapangan.index');
-Route::get('/lapangan/{slug}', [LapanganController::class, 'show'])->name('lapangan.show');
-Route::get('/lapangan/{lapangan}/slots', [LapanganController::class, 'getSlots'])->name('lapangan.slots');
+Route::middleware(['admin.workspace'])->group(function () {
+    Route::get('/', [HomeController::class, 'index'])->name('home');
+});
+Route::middleware(['public.catalog'])->group(function () {
+    Route::get('/lapangan', [LapanganController::class, 'index'])->name('lapangan.index');
+    Route::get('/lapangan/{slug}', [LapanganController::class, 'show'])->name('lapangan.show');
+    Route::get('/lapangan/{lapangan}/slots', [LapanganController::class, 'getSlots'])->name('lapangan.slots');
+});
 
 // --- Customer / Authenticated Routes ---
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'admin.workspace'])->group(function () {
     // Smart dashboard redirection based on role & email verification status
     Route::get('/dashboard', function (Request $request) {
         $user = auth()->user();
@@ -71,6 +75,7 @@ Route::middleware(['auth'])->group(function () {
 Route::prefix('admin')->as('admin.')->middleware(['auth', 'role:superadmin,admin'])->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/bookings', [BookingManagementController::class, 'index'])->name('bookings.index');
+    Route::post('/bookings/manual', [BookingManagementController::class, 'storeManual'])->name('bookings.manual');
     Route::post('/bookings/{booking}/approve', [BookingManagementController::class, 'approve'])->name('bookings.approve');
     Route::post('/bookings/{booking}/reject', [BookingManagementController::class, 'reject'])->name('bookings.reject');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

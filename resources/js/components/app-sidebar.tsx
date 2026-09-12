@@ -149,7 +149,7 @@ export function AppSidebar() {
                             <NavMain items={superAdminNavItems} label="Superadmin Controls" />
                         )}
 
-                        <NavMain items={quickNavItems} label="Navigasi Cepat" />
+                        {isSuperAdmin && <NavMain items={quickNavItems} label="Navigasi Cepat" />}
                     </>
                 ) : (
                     <NavMain items={userNavItems} label="Menu Akun" />
