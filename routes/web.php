@@ -14,6 +14,7 @@ use App\Http\Controllers\LapanganController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // --- Public Routes ---
@@ -115,4 +116,4 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'role:superadmin,admin
     });
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';
