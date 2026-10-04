@@ -24,7 +24,7 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                 resetOnSuccess={['password', 'password_confirmation']}
             >
                 {({ processing, errors }) => (
-                    <div className="grid gap-6">
+                    <div className="grid gap-5">
                         <div className="grid gap-2">
                             <Label htmlFor="email">Email</Label>
                             <Input
@@ -33,12 +33,11 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 name="email"
                                 autoComplete="email"
                                 value={email}
-                                className="mt-1 block w-full"
+                                className="h-11 rounded-lg bg-background"
                                 readOnly
                             />
                             <InputError
                                 message={errors.email}
-                                className="mt-2"
                             />
                         </div>
 
@@ -48,7 +47,7 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 id="password"
                                 name="password"
                                 autoComplete="new-password"
-                                className="mt-1 block w-full"
+                                className="h-11 rounded-lg bg-background"
                                 autoFocus
                                 placeholder="Kata sandi"
                                 passwordrules={passwordRules}
@@ -64,19 +63,18 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 id="password_confirmation"
                                 name="password_confirmation"
                                 autoComplete="new-password"
-                                className="mt-1 block w-full"
+                                className="h-11 rounded-lg bg-background"
                                 placeholder="Konfirmasi kata sandi"
                                 passwordrules={passwordRules}
                             />
                             <InputError
                                 message={errors.password_confirmation}
-                                className="mt-2"
                             />
                         </div>
 
                         <Button
                             type="submit"
-                            className="mt-4 w-full"
+                            className="h-11 w-full rounded-lg font-medium"
                             disabled={processing}
                             data-test="reset-password-button"
                         >

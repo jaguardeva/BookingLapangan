@@ -28,7 +28,7 @@ export default function ConfirmPassword() {
 
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                         <div className="grid gap-2">
                             <Label htmlFor="password">Kata sandi</Label>
                             <PasswordInput
@@ -36,22 +36,21 @@ export default function ConfirmPassword() {
                                 name="password"
                                 placeholder="Kata sandi"
                                 autoComplete="current-password"
+                                className="h-11 rounded-lg bg-background"
                                 autoFocus
                             />
 
                             <InputError message={errors.password} />
                         </div>
 
-                        <div className="flex items-center">
-                            <Button
-                                className="w-full"
-                                disabled={processing}
-                                data-test="confirm-password-button"
-                            >
-                                {processing && <Spinner />}
-                                Konfirmasi kata sandi
-                            </Button>
-                        </div>
+                        <Button
+                            className="h-11 w-full rounded-lg font-medium"
+                            disabled={processing}
+                            data-test="confirm-password-button"
+                        >
+                            {processing && <Spinner />}
+                            Konfirmasi kata sandi
+                        </Button>
                     </div>
                 )}
             </Form>

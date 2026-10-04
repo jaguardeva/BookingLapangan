@@ -53,10 +53,10 @@ export default function TwoFactorChallenge() {
         <>
             <Head title="Autentikasi Dua Faktor" />
 
-            <div className="space-y-6">
+            <div className="space-y-5">
                 <Form
                     {...store.form()}
-                    className="space-y-4"
+                    className="space-y-5"
                     resetOnError
                     resetOnSuccess={!showRecoveryInput}
                 >
@@ -68,6 +68,7 @@ export default function TwoFactorChallenge() {
                                         name="recovery_code"
                                         type="text"
                                         placeholder="Masukkan kode pemulihan"
+                                        className="h-11 rounded-lg bg-background"
                                         autoFocus={showRecoveryInput}
                                         required
                                     />
@@ -106,7 +107,7 @@ export default function TwoFactorChallenge() {
 
                             <Button
                                 type="submit"
-                                className="w-full"
+                                className="h-11 w-full rounded-lg font-medium"
                                 disabled={processing}
                             >
                                 Lanjutkan

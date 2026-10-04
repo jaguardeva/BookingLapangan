@@ -1,6 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { Mail, CheckCircle2, RefreshCw, LogOut, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -54,82 +54,57 @@ export default function VerifyEmail({ status }: Props) {
         <>
             <Head title="Verifikasi Email - SportBooking" />
 
-            <div className="flex flex-col gap-6">
-                {/* Header Icon */}
-                <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary border border-primary/20 shadow-sm">
-                    <Mail className="size-8" />
-                </div>
-
-                {/* Status banner */}
+            <div className="space-y-5">
                 {status === 'verification-link-sent' && (
-                    <div className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary-foreground/40 p-4 text-xs text-primary dark:text-primary">
-                        <CheckCircle2 className="size-4 shrink-0 text-primary mt-0.5" />
-                        <div>
-                            <p className="font-semibold">Tautan Verifikasi Baru Terkirim!</p>
-                            <p className="mt-0.5 text-primary dark:text-primary">
-                                Kami telah mengirimkan tautan verifikasi baru ke kotak masuk Anda.
-                            </p>
-                        </div>
+                    <div
+                        role="status"
+                        className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm"
+                    >
+                        Tautan verifikasi baru telah dikirim.
                     </div>
                 )}
 
-                {/* Info Card */}
-                <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm space-y-4 text-xs">
-                    <div className="space-y-1 text-center">
-                        <p className="text-muted-foreground leading-relaxed">
-                            Terima kasih telah bergabung! Untuk keamanan akun Anda dan mengakses fitur sewa lapangan, silakan verifikasi email Anda terlebih dahulu.
-                        </p>
-                        {userEmail && (
-                            <div className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1 text-xs font-semibold text-foreground">
-                                <Mail className="size-3.5 text-primary" />
-                                <span>{userEmail}</span>
-                            </div>
-                        )}
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                    Periksa kotak masuk atau folder spam untuk tautan verifikasi.
+                </p>
+
+                {userEmail && (
+                    <div className="grid gap-1 rounded-md bg-muted px-3 py-2 text-sm">
+                        <span className="text-xs text-muted-foreground">Email</span>
+                        <span className="break-all font-medium text-foreground">
+                            {userEmail}
+                        </span>
                     </div>
+                )}
 
-                    <div className="rounded-xl bg-muted/40 p-3 border border-border/50 text-xs text-muted-foreground space-y-1.5">
-                        <p className="font-medium text-foreground flex items-center gap-1.5">
-                            <ShieldAlert className="size-3.5 text-amber-500" /> Panduan:
-                        </p>
-                        <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-                            <li>Buka aplikasi email Anda dan cari pesan dari SportBooking.</li>
-                            <li>Klik tombol <strong>Verify Email Address</strong> pada email tersebut.</li>
-                            <li>Jika tidak menemukan email di Inbox, mohon periksa folder <strong>Spam</strong> atau <strong>Junk</strong>.</li>
-                        </ul>
-                    </div>
+                <form onSubmit={handleResend}>
+                    <Button
+                        type="submit"
+                        disabled={isResending || cooldown > 0}
+                        className="h-11 w-full rounded-lg font-medium"
+                    >
+                        {isResending
+                            ? 'Mengirim...'
+                            : cooldown > 0
+                              ? `Kirim ulang (${cooldown}s)`
+                              : 'Kirim ulang email verifikasi'}
+                    </Button>
+                </form>
 
-                    {/* Resend Action */}
-                    <form onSubmit={handleResend} className="pt-2">
-                        <Button
-                            type="submit"
-                            disabled={isResending || cooldown > 0}
-                            className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-sm transition-all"
-                        >
-                            <RefreshCw className={`size-3.5 mr-2 ${isResending ? 'animate-spin' : ''}`} />
-                            {isResending
-                                ? 'Mengirim...'
-                                : cooldown > 0
-                                ? `Kirim Ulang (${cooldown}s)`
-                                : 'Kirim Ulang Email Verifikasi'}
-                        </Button>
-                    </form>
-                </div>
-
-                {/* Footer Controls */}
-                <div className="flex items-center justify-between text-xs px-1">
+                <div className="flex items-center justify-between border-t border-border pt-4 text-sm">
                     <Link
                         href="/"
-                        className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
                     >
-                        <ArrowLeft className="size-3.5" /> Ke Beranda
+                        <ArrowLeft className="size-4" /> Ke beranda
                     </Link>
 
                     <button
                         type="button"
                         onClick={handleLogout}
-                        className="inline-flex items-center gap-1.5 text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 font-medium transition-colors"
+                        className="inline-flex items-center gap-1.5 font-medium text-rose-500 transition-colors hover:text-rose-600 dark:hover:text-rose-400"
                     >
-                        <LogOut className="size-3.5" /> Keluar (Log out)
+                        <LogOut className="size-4" /> Keluar
                     </button>
                 </div>
             </div>

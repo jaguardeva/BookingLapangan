@@ -22,18 +22,27 @@ export default function Login({ status, canResetPassword }: Props) {
         <>
             <Head title="Masuk" />
 
+            {status && (
+                <div
+                    role="status"
+                    className="mb-5 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300"
+                >
+                    {status}
+                </div>
+            )}
+
             <PasskeyVerify />
 
             <Form
                 {...store.form()}
                 resetOnSuccess={['password']}
-                className="flex flex-col gap-6"
+                className="flex flex-col gap-5"
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-5">
+                        <div className="grid gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="email" className="text-sm font-semibold">
+                                <Label htmlFor="email">
                                     Alamat email
                                 </Label>
                                 <Input
@@ -44,22 +53,22 @@ export default function Login({ status, canResetPassword }: Props) {
                                     autoFocus
                                     tabIndex={1}
                                     autoComplete="email"
-                                    className="h-11 rounded-xl bg-muted/20 px-4"
-                                    placeholder="you@example.com"
+                                    className="h-11 rounded-lg bg-background"
+                                    placeholder="nama@email.com"
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
                             <div className="grid gap-2">
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="password" className="text-sm font-semibold">
+                                    <Label htmlFor="password">
                                         Kata sandi
                                     </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
-                                            className="text-xs font-semibold text-primary hover:text-primary dark:text-primary dark:hover:text-primary"
-                                            tabIndex={5}
+                                            className="text-sm font-medium text-primary hover:underline"
+                                            tabIndex={3}
                                         >
                                             Lupa kata sandi?
                                         </TextLink>
@@ -71,24 +80,24 @@ export default function Login({ status, canResetPassword }: Props) {
                                     required
                                     tabIndex={2}
                                     autoComplete="current-password"
-                                    className="h-11 rounded-xl bg-muted/20 px-4"
-                                    placeholder="Enter your password"
+                                    className="h-11 rounded-lg bg-background"
+                                    placeholder="Masukkan kata sandi"
                                 />
                                 <InputError message={errors.password} />
                             </div>
 
-                            <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/20 px-3.5 py-3">
+                            <div className="flex items-center gap-2.5">
                                 <Checkbox
                                     id="remember"
                                     name="remember"
                                     tabIndex={3}
                                 />
-                                <Label htmlFor="remember" className="text-sm font-medium">Ingat saya</Label>
+                                <Label htmlFor="remember">Ingat saya</Label>
                             </div>
 
                             <Button
                                 type="submit"
-                                className="mt-2 h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/70"
+                                className="h-11 w-full rounded-lg font-medium"
                                 tabIndex={4}
                                 disabled={processing}
                                 data-test="login-button"
@@ -98,21 +107,15 @@ export default function Login({ status, canResetPassword }: Props) {
                             </Button>
                         </div>
 
-                        <div className="text-muted-foreground border-t border-border/60 pt-5 text-center text-sm">
+                        <div className="text-center text-sm text-muted-foreground">
                             Belum punya akun?{' '}
                             <TextLink href={register()} tabIndex={5}>
-                                <span className="font-semibold text-primary dark:text-primary">Daftar</span>
+                                <span className="font-medium text-primary hover:underline">Daftar</span>
                             </TextLink>
                         </div>
                     </>
                 )}
             </Form>
-
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
         </>
     );
 }

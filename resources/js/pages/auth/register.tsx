@@ -21,13 +21,13 @@ export default function Register({ passwordRules }: Props) {
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
-                className="flex flex-col gap-6"
+                className="flex flex-col gap-5"
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-5">
+                        <div className="grid gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="name" className="text-sm font-semibold">Nama</Label>
+                                <Label htmlFor="name">Nama</Label>
                                 <Input
                                     id="name"
                                     type="text"
@@ -36,17 +36,16 @@ export default function Register({ passwordRules }: Props) {
                                     tabIndex={1}
                                     autoComplete="name"
                                     name="name"
-                                    className="h-11 rounded-xl bg-muted/20 px-4"
+                                    className="h-11 rounded-lg bg-background"
                                     placeholder="Nama lengkap Anda"
                                 />
                                 <InputError
                                     message={errors.name}
-                                    className="mt-2"
                                 />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email" className="text-sm font-semibold">Alamat email</Label>
+                                <Label htmlFor="email">Alamat email</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -54,21 +53,21 @@ export default function Register({ passwordRules }: Props) {
                                     tabIndex={2}
                                     autoComplete="email"
                                     name="email"
-                                    className="h-11 rounded-xl bg-muted/20 px-4"
+                                    className="h-11 rounded-lg bg-background"
                                     placeholder="anda@contoh.com"
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password" className="text-sm font-semibold">Kata sandi</Label>
+                                <Label htmlFor="password">Kata sandi</Label>
                                 <PasswordInput
                                     id="password"
                                     required
                                     tabIndex={3}
                                     autoComplete="new-password"
                                     name="password"
-                                    className="h-11 rounded-xl bg-muted/20 px-4"
+                                    className="h-11 rounded-lg bg-background"
                                     placeholder="Buat kata sandi"
                                     passwordrules={passwordRules}
                                 />
@@ -76,7 +75,7 @@ export default function Register({ passwordRules }: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation" className="text-sm font-semibold">
+                                <Label htmlFor="password_confirmation">
                                     Konfirmasi kata sandi
                                 </Label>
                                 <PasswordInput
@@ -85,7 +84,7 @@ export default function Register({ passwordRules }: Props) {
                                     tabIndex={4}
                                     autoComplete="new-password"
                                     name="password_confirmation"
-                                    className="h-11 rounded-xl bg-muted/20 px-4"
+                                    className="h-11 rounded-lg bg-background"
                                     placeholder="Ulangi kata sandi"
                                     passwordrules={passwordRules}
                                 />
@@ -96,7 +95,7 @@ export default function Register({ passwordRules }: Props) {
 
                             <Button
                                 type="submit"
-                                className="mt-2 h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/70"
+                                className="h-11 w-full rounded-lg font-medium"
                                 tabIndex={5}
                                 data-test="register-user-button"
                             >
@@ -105,10 +104,10 @@ export default function Register({ passwordRules }: Props) {
                             </Button>
                         </div>
 
-                        <div className="text-muted-foreground border-t border-border/60 pt-5 text-center text-sm">
+                        <div className="text-center text-sm text-muted-foreground">
                             Sudah punya akun?{' '}
                             <TextLink href={login()} tabIndex={6}>
-                                <span className="font-semibold text-primary dark:text-primary">Masuk</span>
+                                <span className="font-medium text-primary hover:underline">Masuk</span>
                             </TextLink>
                         </div>
                     </>

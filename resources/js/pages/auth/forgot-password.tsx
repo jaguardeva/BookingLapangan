@@ -15,13 +15,16 @@ export default function ForgotPassword({ status }: { status?: string }) {
             <Head title="Lupa Kata Sandi" />
 
             {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
+                <div
+                    role="status"
+                    className="mb-5 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300"
+                >
                     {status}
                 </div>
             )}
 
-            <div className="space-y-6">
-                <Form {...email.form()}>
+            <div className="space-y-5">
+                <Form {...email.form()} className="space-y-5">
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
@@ -30,26 +33,25 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     id="email"
                                     type="email"
                                     name="email"
-                                    autoComplete="off"
+                                    autoComplete="email"
                                     autoFocus
-                                    placeholder="email@example.com"
+                                    placeholder="nama@email.com"
+                                    className="h-11 rounded-lg bg-background"
                                 />
 
                                 <InputError message={errors.email} />
                             </div>
 
-                            <div className="my-6 flex items-center justify-start">
-                                <Button
-                                    className="w-full"
-                                    disabled={processing}
-                                    data-test="email-password-reset-link-button"
-                                >
-                                    {processing && (
-                                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                                    )}
-                                    Kirim tautan reset kata sandi
-                                </Button>
-                            </div>
+                            <Button
+                                className="h-11 w-full rounded-lg font-medium"
+                                disabled={processing}
+                                data-test="email-password-reset-link-button"
+                            >
+                                {processing && (
+                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                )}
+                                Kirim tautan reset kata sandi
+                            </Button>
                         </>
                     )}
                 </Form>
