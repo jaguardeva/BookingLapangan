@@ -153,7 +153,7 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                         </p>
                     </div>
 
-                    <Button onClick={openCreateModal} className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs h-9">
+                    <Button onClick={openCreateModal} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs h-9">
                         <Plus className="size-4 mr-1.5" /> Tambah Lapangan Baru
                     </Button>
                 </div>
@@ -194,7 +194,7 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                                             </Badge>
                                         </td>
 
-                                        <td className="py-3.5 px-4 font-bold text-emerald-600 dark:text-emerald-400">
+                                        <td className="py-3.5 px-4 font-bold text-primary dark:text-primary">
                                             Rp {Number(item.price_per_hour).toLocaleString('id-ID')}
                                         </td>
 
@@ -224,7 +224,7 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                                                 className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
                                             >
                                                 {item.is_active ? (
-                                                    <Badge className="bg-emerald-600 text-white text-xs cursor-pointer">
+                                                    <Badge className="bg-primary text-primary-foreground text-xs cursor-pointer">
                                                         Aktif
                                                     </Badge>
                                                 ) : (
@@ -415,12 +415,12 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                                             onClick={() => toggleFacility(f.id)}
                                             className={`p-2 rounded-lg border text-left flex items-center gap-2 transition-all ${
                                                 checked
-                                                    ? 'border-emerald-600 bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300'
+                                                    ? 'border-primary bg-primary/10 font-bold text-primary dark:text-primary'
                                                     : 'border-border bg-card text-muted-foreground'
                                             }`}
                                         >
                                             <div className={`size-4 rounded flex items-center justify-center border ${
-                                                checked ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-muted-foreground'
+                                                checked ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground'
                                             }`}>
                                                 {checked && <Check className="size-3" />}
                                             </div>
@@ -443,7 +443,7 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                             <Button
                                 type="submit"
                                 disabled={processing}
-                                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold"
+                                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold"
                             >
                                 {processing ? 'Menyimpan...' : editingLapangan ? 'Simpan Perubahan' : 'Tambah Lapangan'}
                             </Button>

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Booking;
 use App\Models\Lapangan;
+use App\Models\PointTransaction;
+use App\Models\User;
 use App\Notifications\ManualBookingCreatedNotification;
 use App\Notifications\PaymentApprovedNotification;
 use App\Notifications\PaymentRejectedNotification;
@@ -187,25 +189,87 @@ class BookingManagementController extends Controller
             abort(403, 'Anda tidak memiliki hak akses untuk memvalidasi lapangan ini.');
         }
 
-        $booking->update([
-            'payment_status' => 'approved',
-            'validated_by' => $user->id,
-            'validated_at' => now(),
-            'rejection_reason' => null,
-        ]);
+        $approvedBooking = DB::transaction(function () use ($booking, $user): ?Booking {
+            $lockedBooking = Booking::query()
+                ->lockForUpdate()
+                ->findOrFail($booking->id);
 
-        // Send Notification to customer
-        if ($booking->user) {
-            $booking->user->notify(new PaymentApprovedNotification($booking));
+            if ($lockedBooking->isApproved()) {
+                return null;
+            }
+
+            if ($lockedBooking->isCancelled() || $lockedBooking->isRejected()) {
+                throw ValidationException::withMessages([
+                    'booking' => 'Booking yang dibatalkan atau ditolak tidak dapat disetujui.',
+                ]);
+            }
+
+            if ($lockedBooking->payment_method === 'transfer' && ! $lockedBooking->isPendingValidation()) {
+                throw ValidationException::withMessages([
+                    'booking' => 'Booking transfer harus menunggu validasi pembayaran sebelum disetujui.',
+                ]);
+            }
+
+            if ($lockedBooking->payment_method === 'transfer' && $lockedBooking->user_id) {
+                $bookingUser = User::query()->lockForUpdate()->findOrFail($lockedBooking->user_id);
+
+                if ($lockedBooking->points_redeemed > $bookingUser->points_balance) {
+                    throw ValidationException::withMessages([
+                        'booking' => 'Saldo poin pengguna tidak mencukupi untuk menyelesaikan booking ini.',
+                    ]);
+                }
+
+                if ($lockedBooking->points_redeemed > 0) {
+                    $bookingUser->decrement('points_balance', $lockedBooking->points_redeemed);
+                    $bookingUser->refresh();
+
+                    PointTransaction::create([
+                        'user_id' => $bookingUser->id,
+                        'booking_id' => $lockedBooking->id,
+                        'type' => 'redeemed',
+                        'points' => $lockedBooking->points_redeemed,
+                        'balance_after' => $bookingUser->points_balance,
+                    ]);
+                }
+
+                $bookingUser->increment('points_balance', $lockedBooking->validation_code);
+                $bookingUser->refresh();
+
+                PointTransaction::create([
+                    'user_id' => $bookingUser->id,
+                    'booking_id' => $lockedBooking->id,
+                    'type' => 'earned',
+                    'points' => $lockedBooking->validation_code,
+                    'balance_after' => $bookingUser->points_balance,
+                ]);
+            }
+
+            $lockedBooking->update([
+                'payment_status' => 'approved',
+                'validated_by' => $user->id,
+                'validated_at' => now(),
+                'rejection_reason' => null,
+            ]);
+
+            return $lockedBooking;
+        });
+
+        if (! $approvedBooking) {
+            return back()->with('info', "Pembayaran untuk booking #{$booking->booking_code} sudah disetujui sebelumnya.");
         }
 
-        ActivityLog::log('payment_approved', "Admin {$user->name} menyetujui pembayaran booking #{$booking->booking_code} ({$booking->lapangan->name})", [
-            'booking_id' => $booking->id,
-            'amount' => $booking->total_price,
-            'method' => $booking->payment_method,
+        // Send Notification to customer
+        if ($approvedBooking->user) {
+            $approvedBooking->user->notify(new PaymentApprovedNotification($approvedBooking));
+        }
+
+        ActivityLog::log('payment_approved', "Admin {$user->name} menyetujui pembayaran booking #{$approvedBooking->booking_code} ({$approvedBooking->lapangan->name})", [
+            'booking_id' => $approvedBooking->id,
+            'amount' => $approvedBooking->total_price,
+            'method' => $approvedBooking->payment_method,
         ]);
 
-        return back()->with('success', "Pembayaran untuk booking #{$booking->booking_code} berhasil disetujui!");
+        return back()->with('success', "Pembayaran untuk booking #{$approvedBooking->booking_code} berhasil disetujui!");
     }
 
     public function reject(Request $request, Booking $booking): RedirectResponse

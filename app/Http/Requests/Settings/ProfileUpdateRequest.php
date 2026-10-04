@@ -17,6 +17,25 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->profileRules($this->user()->id);
+        if ($this->user()->isAdmin() || $this->user()->isSuperAdmin()) {
+            return $this->profileRules($this->user()->id);
+        }
+
+        return [
+            'name' => $this->nameRules(),
+            'email' => ['prohibited'],
+        ];
+    }
+
+    /**
+     * Get localized validation messages for locked profile fields.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'email.prohibited' => 'Alamat email tidak dapat diubah sendiri. Silakan hubungi admin atau dukungan.',
+        ];
     }
 }

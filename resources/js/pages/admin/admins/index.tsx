@@ -116,7 +116,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                         </p>
                     </div>
 
-                    <Button onClick={openCreateModal} className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs h-9">
+                    <Button onClick={openCreateModal} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs h-9">
                         <Plus className="size-4 mr-1.5" /> Tambah Staf Admin Baru
                     </Button>
                 </div>
@@ -146,7 +146,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                                         </td>
 
                                         <td className="py-3.5 px-4">
-                                            <Badge variant="outline" className="text-xs font-semibold text-emerald-600 border-emerald-500/30">
+                                            <Badge variant="outline" className="text-xs font-semibold text-primary border-primary/30">
                                                 Kasir / Admin
                                             </Badge>
                                         </td>
@@ -275,13 +275,13 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                                             onClick={() => toggleLapangan(lapangan.id)}
                                             className={`w-full p-2 rounded-lg border text-left flex items-center justify-between transition-all ${
                                                 checked
-                                                    ? 'border-emerald-600 bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300'
+                                                    ? 'border-primary bg-primary/10 font-bold text-primary dark:text-primary'
                                                     : 'border-border bg-card text-muted-foreground'
                                             }`}
                                         >
                                             <span>{lapangan.name}</span>
                                             <div className={`size-4 rounded flex items-center justify-center border ${
-                                                checked ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-muted-foreground'
+                                                checked ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground'
                                             }`}>
                                                 {checked && <Check className="size-3" />}
                                             </div>
@@ -303,7 +303,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                             <Button
                                 type="submit"
                                 disabled={processing}
-                                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold"
+                                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold"
                             >
                                 {processing ? 'Menyimpan...' : editingAdmin ? 'Simpan Perubahan' : 'Tambah Admin'}
                             </Button>

@@ -14,6 +14,10 @@ void createInertiaApp({
         switch (true) {
             case name === 'welcome':
                 return null;
+            case name === 'profile':
+                return null;
+            case name === 'security':
+                return null;
             // Public pages self-render PublicLayout — return null to avoid double-wrapping with AppLayout
             case name === 'home':
             case name === 'Home':

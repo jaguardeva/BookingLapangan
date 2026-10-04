@@ -14,7 +14,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
     const priceFormatted = Number(item.price_per_hour).toLocaleString('id-ID');
 
     return (
-        <div className="group relative flex flex-col rounded-xl border border-border/70 bg-card overflow-hidden shadow-sm hover:shadow-md hover:border-emerald-500/40 transition-all duration-200">
+        <div className="group relative flex flex-col rounded-xl border border-border/70 bg-card overflow-hidden shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200">
             {/* Compact Image Container */}
             <div className="relative aspect-[16/9] overflow-hidden bg-muted">
                 <img
@@ -27,7 +27,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
                 />
                 <div className="absolute left-3 top-3 max-w-[68%]">
                     <Badge variant="secondary" className="max-w-full truncate border-white/50 bg-slate-950/75 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white shadow-sm backdrop-blur-md dark:bg-slate-950/80">
-                        <Layers className="size-3 shrink-0 text-emerald-300" />
+                        <Layers className="size-3 shrink-0 text-primary" />
                         <span className="truncate">{item.category?.name ?? 'Lapangan olahraga'}</span>
                     </Badge>
                 </div>
@@ -43,7 +43,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
             {/* Compact Card Content */}
             <div className="flex min-w-0 flex-1 flex-col justify-between space-y-3 p-3.5">
                 <div className="min-w-0 space-y-1">
-                    <h3 className="font-bold text-sm text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-1">
+                    <h3 className="font-bold text-sm text-foreground group-hover:text-primary dark:group-hover:text-primary transition-colors line-clamp-1">
                         {item.name}
                     </h3>
                     <p className="text-xs text-muted-foreground line-clamp-1 leading-normal">
@@ -52,7 +52,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
 
                     {/* Operational Time & Facilities compact line */}
                     <div className="flex min-w-0 items-start gap-1.5 pt-1 text-xs text-muted-foreground">
-                        <Clock className="size-3 text-emerald-500 shrink-0" />
+                        <Clock className="size-3 text-primary shrink-0" />
                         <span className="break-words">{item.operational_start} - {item.operational_end} WIB</span>
                     </div>
 
@@ -79,7 +79,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
                 <div className="flex flex-col items-stretch gap-3 border-t border-border/50 pt-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <span className="text-xs text-muted-foreground block leading-none">Harga</span>
-                        <p className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        <p className="text-sm font-extrabold text-primary dark:text-primary mt-0.5">
                             Rp {priceFormatted}
                             <span className="text-xs font-normal text-muted-foreground">/jam</span>
                         </p>
@@ -88,7 +88,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
                     <Button
                         asChild
                         size="sm"
-                        className="h-8 w-full rounded-lg bg-emerald-600 px-3 text-xs text-white shadow-none hover:bg-emerald-500 sm:w-auto"
+                        className="h-8 w-full rounded-lg bg-primary px-3 text-xs text-primary-foreground shadow-none hover:bg-primary/90 sm:w-auto"
                     >
                         <Link href={`/lapangan/${item.slug}`}>
                             Cek Jadwal <ArrowRight className="size-3 ml-1" />

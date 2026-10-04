@@ -94,7 +94,7 @@ export default function LapanganIndex({
             <Head title="Cari & Sewa Lapangan Olahraga - SportBooking" />
 
             <div className="bg-muted/30 border-b border-border/50 py-8">
-                <div className="container mx-auto px-4 sm:px-6">
+                <div className="public-container max-w-[1240px]">
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                         Katalog Lapangan Olahraga
                     </h1>
@@ -105,7 +105,7 @@ export default function LapanganIndex({
                 </div>
             </div>
 
-            <div className="container mx-auto grid gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
+            <div className="public-container max-w-[1240px] grid gap-6 py-8 sm:py-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
                 <aside className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm lg:sticky lg:top-24">
                     <div className="mb-5 flex items-center justify-between">
                         <div>
@@ -235,7 +235,7 @@ export default function LapanganIndex({
                                 variant="ghost"
                                 size="sm"
                                 onClick={resetFilters}
-                                className="h-8 w-full rounded-lg bg-emerald-600 px-3 text-xs text-white shadow-none hover:bg-emerald-500  hover:text-white cursor-pointer"
+                                className="h-8 w-full rounded-lg bg-primary px-3 text-xs text-primary-foreground shadow-none hover:bg-primary/90  hover:text-primary-foreground cursor-pointer"
                             >
                                 Reset
                             </Button>
@@ -294,7 +294,7 @@ export default function LapanganIndex({
                                     preserveScroll
                                     className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                                         link.active
-                                            ? "bg-emerald-600 text-white border-emerald-600"
+                                            ? "bg-primary text-primary-foreground border-primary"
                                             : link.url
                                               ? "bg-card text-foreground hover:bg-muted border-border"
                                               : "text-muted-foreground/50 border-transparent cursor-not-allowed pointer-events-none"

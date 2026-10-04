@@ -27,6 +27,15 @@ class BookingController extends Controller
             'start_time' => ['required', 'date_format:H:i'],
             'duration_hours' => ['required', 'integer', 'min:1', 'max:6'],
             'payment_method' => ['required', 'in:cash,transfer'],
+            'use_points' => [
+                'required',
+                'boolean',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request): void {
+                    if ($request->input('payment_method') === 'cash' && filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+                        $fail('Poin hanya dapat digunakan untuk booking dengan transfer bank.');
+                    }
+                },
+            ],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:20'],
             'notes' => ['nullable', 'string', 'max:500'],
@@ -90,10 +99,15 @@ class BookingController extends Controller
             $basePrice = $lapangan->price_per_hour * $durationHours;
             $validationCode = 0;
             $totalPrice = $basePrice;
+            $pointsRedeemed = 0;
 
             if ($validated['payment_method'] === 'transfer') {
                 $validationCode = Booking::generateValidationCode();
-                $totalPrice = $basePrice + $validationCode;
+                $user = User::query()->lockForUpdate()->findOrFail(auth()->id());
+                $pointsRedeemed = $validated['use_points']
+                    ? min($user->availablePoints(), $basePrice)
+                    : 0;
+                $totalPrice = $basePrice - $pointsRedeemed + $validationCode;
             }
 
             // Payment deadline: 2 hours from now or at start of match if match is within 2 hours
@@ -113,6 +127,7 @@ class BookingController extends Controller
                 'base_price' => $basePrice,
                 'validation_code' => $validationCode,
                 'total_price' => $totalPrice,
+                'points_redeemed' => $pointsRedeemed,
                 'payment_method' => $validated['payment_method'],
                 'payment_status' => 'pending',
                 'customer_name' => $validated['customer_name'],
@@ -130,6 +145,7 @@ class BookingController extends Controller
             'booking_id' => $booking->id,
             'lapangan' => $lapangan->name,
             'total_price' => $booking->total_price,
+            'points_redeemed' => $booking->points_redeemed,
         ]);
 
         return redirect()->route('booking.show', $booking->booking_code)

@@ -55,7 +55,7 @@ export default function Home({
             case 'futsal':
                 return <Flame className="size-5 text-orange-500" />;
             case 'badminton':
-                return <Target className="size-5 text-emerald-500" />;
+                return <Target className="size-5 text-primary" />;
             case 'basket':
                 return <Dribbble className="size-5 text-amber-500" />;
             case 'mini-soccer':
@@ -70,19 +70,19 @@ export default function Home({
             <Head title="Sewa Lapangan Olahraga Online - SportBooking" />
 
             {/* Hero Section */}
-            <section className="relative overflow-hidden bg-gradient-to-b from-emerald-500/10 via-background to-background py-16 sm:py-24 border-b border-border/40">
-                <div className="absolute inset-0 -z-10 opacity-30 dark:opacity-20 [background-image:radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-400 via-transparent to-transparent pointer-events-none" />
+            <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-background to-background py-16 sm:py-24 border-b border-border/40">
+                <div className="absolute inset-0 -z-10 opacity-30 dark:opacity-20 [background-image:radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/70 via-transparent to-transparent pointer-events-none" />
 
-                <div className="container mx-auto px-4 sm:px-6">
+                <div className="public-container max-w-[1240px]">
                     <div className="max-w-3xl mx-auto text-center space-y-6">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary dark:text-primary">
                             <Sparkles className="size-3.5" />
                             Booking Lapangan Lebih Cepat & Otomatis
                         </div>
 
                         <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15]">
                             Booking Lapangan Olahraga Favoritmu{' '}
-                            <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
+                            <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
                                 Tanpa Ribet.
                             </span>
                         </h1>
@@ -93,7 +93,7 @@ export default function Home({
 
                         {/* Search Bar */}
                         <form onSubmit={handleSearchSubmit} className="max-w-xl mx-auto pt-2">
-                            <div className="relative flex items-center shadow-lg rounded-2xl bg-card border border-border/80 p-1.5 focus-within:ring-2 focus-within:ring-emerald-500/40 transition-all">
+                            <div className="relative flex items-center shadow-lg rounded-2xl bg-card border border-border/80 p-1.5 focus-within:ring-2 focus-within:ring-primary/40 transition-all">
                                 <Search className="size-5 text-muted-foreground ml-3 shrink-0" />
                                 <Input
                                     type="text"
@@ -102,7 +102,7 @@ export default function Home({
                                     placeholder="Cari nama lapangan atau fasilitas (misal: Futsal Vinyl, AC, Rumput Sintetis)..."
                                     className="border-0 shadow-none focus-visible:ring-0 text-sm bg-transparent"
                                 />
-                                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 shrink-0">
+                                <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-5 shrink-0">
                                     Cari
                                 </Button>
                             </div>
@@ -115,7 +115,7 @@ export default function Home({
                                 <Link
                                     key={cat.id}
                                     href={`/lapangan?category=${cat.slug}`}
-                                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-medium text-foreground hover:border-emerald-500/50 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 transition-all"
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-medium text-foreground hover:border-primary/50 hover:bg-primary/2 dark:hover:bg-primary-foreground/30 transition-all"
                                 >
                                     {cat.name}
                                 </Link>
@@ -134,7 +134,7 @@ export default function Home({
                             <p className="text-xs text-muted-foreground">Cabang Olahraga</p>
                         </div>
                         <div className="text-center col-span-2 sm:col-span-1">
-                            <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                            <p className="text-2xl sm:text-3xl font-extrabold text-primary dark:text-primary">
                                 {stats?.satisfaction_rate ?? 99}%
                             </p>
                             <p className="text-xs text-muted-foreground">Rating Kepuasan Pemain</p>
@@ -144,10 +144,10 @@ export default function Home({
             </section>
 
             {/* Featured Lapangan Section */}
-            <section className="py-16 sm:py-20 container mx-auto px-4 sm:px-6">
+            <section className="public-container max-w-[1240px] py-16 sm:py-20">
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
                     <div>
-                        <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">
+                        <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary dark:text-primary uppercase tracking-wider mb-1">
                             <Trophy className="size-4" /> Lapangan Pilihan
                         </div>
                         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
@@ -174,9 +174,9 @@ export default function Home({
 
             {/* How It Works Section */}
             <section className="py-16 sm:py-20 bg-muted/40 border-y border-border/60">
-                <div className="container mx-auto px-4 sm:px-6">
+                <div className="public-container max-w-[1240px]">
                     <div className="text-center max-w-xl mx-auto mb-12">
-                        <Badge variant="outline" className="mb-2 text-emerald-600 border-emerald-500/30">
+                        <Badge variant="outline" className="mb-2 text-primary border-primary/30">
                             Mudah & Praktis
                         </Badge>
                         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Cara Booking di SportBooking</h2>
@@ -187,7 +187,7 @@ export default function Home({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="flex flex-col items-center text-center p-6 rounded-2xl bg-card border border-border/60 shadow-sm relative">
-                            <div className="size-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-extrabold text-lg mb-4">
+                            <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-extrabold text-lg mb-4">
                                 1
                             </div>
                             <h3 className="font-bold text-base mb-2">Pilih Lapangan & Jam</h3>
@@ -197,7 +197,7 @@ export default function Home({
                         </div>
 
                         <div className="flex flex-col items-center text-center p-6 rounded-2xl bg-card border border-border/60 shadow-sm relative">
-                            <div className="size-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-extrabold text-lg mb-4">
+                            <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-extrabold text-lg mb-4">
                                 2
                             </div>
                             <h3 className="font-bold text-base mb-2">Bayar Transfer / Cash</h3>
@@ -207,7 +207,7 @@ export default function Home({
                         </div>
 
                         <div className="flex flex-col items-center text-center p-6 rounded-2xl bg-card border border-border/60 shadow-sm relative">
-                            <div className="size-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-extrabold text-lg mb-4">
+                            <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-extrabold text-lg mb-4">
                                 3
                             </div>
                             <h3 className="font-bold text-base mb-2">Terima Notifikasi & Main</h3>

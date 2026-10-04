@@ -76,7 +76,7 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
         switch (status) {
             case 'approved':
                 return (
-                    <Badge className="bg-emerald-600 text-white text-xs font-semibold">
+                    <Badge className="bg-primary text-primary-foreground text-xs font-semibold">
                         <CheckCircle2 className="size-3 mr-1" /> Terkonfirmasi
                     </Badge>
                 );
@@ -119,7 +119,7 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
         <PublicLayout>
             <Head title="Riwayat Booking Saya - SportBooking" />
 
-            <div className="container mx-auto px-4 sm:px-6 py-8 max-w-5xl">
+            <div className="public-container max-w-5xl py-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-border/60 gap-4">
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
@@ -130,7 +130,7 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
                         </p>
                     </div>
 
-                    <Button asChild className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs h-10">
+                    <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs h-10">
                         <Link href="/lapangan">+ Booking Lapangan Baru</Link>
                     </Button>
                 </div>
@@ -143,7 +143,7 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
                             onClick={() => filterStatus(tab.key)}
                             className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
                                 currentStatus === tab.key
-                                    ? 'bg-emerald-600 text-white shadow-sm'
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
                             }`}
                         >
@@ -161,7 +161,7 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
                             <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
                                 Anda belum memiliki riwayat booking untuk status ini. Ayo sewa lapangan favoritmu sekarang!
                             </p>
-                            <Button asChild size="sm" className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl">
+                            <Button asChild size="sm" className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
                                 <Link href="/lapangan">Cari Lapangan</Link>
                             </Button>
                         </div>
@@ -185,15 +185,15 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
 
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                                         <div className="flex min-w-0 items-start gap-1.5">
-                                            <Calendar className="size-3.5 text-emerald-500" />
+                                            <Calendar className="size-3.5 text-primary" />
                                             <span className="break-words">Tanggal: <strong>{item.booking_date}</strong></span>
                                         </div>
                                         <div className="flex min-w-0 items-start gap-1.5">
-                                            <Clock className="size-3.5 text-emerald-500" />
+                                            <Clock className="size-3.5 text-primary" />
                                             <span className="break-words">Jam: <strong>{item.start_time} - {item.end_time} WIB</strong> ({item.duration_hours} Jam)</span>
                                         </div>
                                         <div className="flex min-w-0 items-start gap-1.5">
-                                            <CreditCard className="size-3.5 text-emerald-500" />
+                                            <CreditCard className="size-3.5 text-primary" />
                                             <span className="break-words">Metode: <strong className="uppercase">{item.payment_method}</strong></span>
                                         </div>
                                     </div>
@@ -208,7 +208,7 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
                                 <div className="flex flex-col items-stretch gap-3 border-t border-border/60 pt-3 sm:items-end sm:justify-center sm:border-t-0 sm:pt-0">
                                     <div className="text-right">
                                         <span className="text-xs text-muted-foreground">Total Tagihan</span>
-                                        <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
+                                        <p className="text-base font-extrabold text-primary dark:text-primary">
                                             Rp {Number(item.total_price).toLocaleString('id-ID')}
                                         </p>
                                     </div>
@@ -225,7 +225,7 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
                                             </Button>
                                         )}
 
-                                        <Button asChild size="sm" className="h-9 w-full rounded-xl bg-emerald-600 text-xs text-white hover:bg-emerald-500 sm:w-auto">
+                                        <Button asChild size="sm" className="h-9 w-full rounded-xl bg-primary text-xs text-primary-foreground hover:bg-primary/90 sm:w-auto">
                                             <Link href={`/booking/${item.booking_code}`}>
                                                 Lihat Invoice <ArrowRight className="size-3.5 ml-1" />
                                             </Link>
@@ -247,7 +247,7 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
                                 preserveScroll
                                 className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                                     link.active
-                                        ? 'bg-emerald-600 text-white border-emerald-600'
+                                        ? 'bg-primary text-primary-foreground border-primary'
                                         : link.url
                                         ? 'bg-card text-foreground hover:bg-muted border-border'
                                         : 'text-muted-foreground/50 border-transparent cursor-not-allowed pointer-events-none'
@@ -312,7 +312,7 @@ export default function BookingHistory({ bookings, currentStatus = 'all' }: Prop
                             </Button>
                             <Button
                                 type="submit"
-                                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl"
+                                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl"
                             >
                                 Kirim Penilaian
                             </Button>

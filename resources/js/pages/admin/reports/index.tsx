@@ -73,7 +73,7 @@ export default function AdminReportsIndex({
                         </p>
                     </div>
 
-                    <Button asChild className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs h-9">
+                    <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs h-9">
                         <a href={exportUrl} target="_blank" rel="noreferrer">
                             <Download className="size-4 mr-1.5" /> Ekspor Laporan CSV
                         </a>
@@ -84,7 +84,7 @@ export default function AdminReportsIndex({
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="p-5 rounded-2xl border border-border/80 bg-card shadow-sm space-y-1.5">
                         <span className="text-xs font-semibold text-muted-foreground uppercase">Total Pendapatan Terkonfirmasi</span>
-                        <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                        <p className="text-2xl font-black text-primary dark:text-primary">
                             Rp {Number(summary.total_revenue).toLocaleString('id-ID')}
                         </p>
                         <p className="text-xs text-muted-foreground">Pada rentang tanggal yang dipilih</p>
@@ -147,7 +147,7 @@ export default function AdminReportsIndex({
                             </Select>
                         </div>
 
-                        <Button type="submit" size="sm" className="col-span-2 h-10 w-full rounded-xl bg-emerald-600 text-sm text-white hover:bg-emerald-500 sm:col-span-1 sm:w-auto">
+                        <Button type="submit" size="sm" className="col-span-2 h-10 w-full rounded-xl bg-primary text-sm text-primary-foreground hover:bg-primary/90 sm:col-span-1 sm:w-auto">
                             Terapkan Filter
                         </Button>
                     </form>
@@ -187,12 +187,12 @@ export default function AdminReportsIndex({
                                             <td className="py-3 px-4">{b.customer_name}</td>
                                             <td className="py-3 px-4">{b.start_time} - {b.end_time}</td>
                                             <td className="py-3 px-4 uppercase font-semibold">{b.payment_method}</td>
-                                            <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400">
+                                            <td className="py-3 px-4 font-bold text-primary dark:text-primary">
                                                 Rp {Number(b.total_price).toLocaleString('id-ID')}
                                             </td>
                                             <td className="py-3 px-4">
                                                 {b.payment_status === 'approved' ? (
-                                                    <Badge className="bg-emerald-600 text-white text-xs">Lunas</Badge>
+                                                    <Badge className="bg-primary text-primary-foreground text-xs">Lunas</Badge>
                                                 ) : b.payment_status === 'pending_validation' ? (
                                                     <Badge className="bg-amber-500 text-white text-xs">Validasi</Badge>
                                                 ) : b.payment_status === 'rejected' ? (
@@ -219,7 +219,7 @@ export default function AdminReportsIndex({
                                 preserveScroll
                                 className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                                     link.active
-                                        ? 'bg-emerald-600 text-white border-emerald-600'
+                                        ? 'bg-primary text-primary-foreground border-primary'
                                         : link.url
                                         ? 'bg-card text-foreground hover:bg-muted border-border'
                                         : 'text-muted-foreground/50 border-transparent cursor-not-allowed pointer-events-none'

@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { Booking, BankAccount } from '@/types/booking';
 import ConfirmDialog from '@/components/confirm-dialog';
+import { formatDateTimeIndonesia } from '@/lib/locale';
 
 interface Props {
     booking: Booking;
@@ -30,11 +31,15 @@ interface Props {
     canCancel: boolean;
 }
 
-export default function BookingInvoice({ booking, bankAccounts = [], canCancel }: Props) {
+export default function BookingInvoice({
+    booking,
+    bankAccounts = [],
+    canCancel,
+}: Props) {
     const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
     const [copiedAmount, setCopiedAmount] = useState(false);
     const [timeLeft, setTimeLeft] = useState<string>('');
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
     // Payment confirmation form
     const { post, processing } = useForm();
@@ -54,12 +59,14 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
                 return;
             }
 
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const hours = Math.floor(
+                (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+            );
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
             setTimeLeft(
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
             );
         };
 
@@ -96,32 +103,37 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
         switch (booking.payment_status) {
             case 'approved':
                 return (
-                    <Badge className="bg-emerald-600 text-white text-xs px-3 py-1 font-bold">
-                        <CheckCircle2 className="size-3.5 mr-1" /> Terkonfirmasi (Lunas)
+                    <Badge className="bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
+                        <CheckCircle2 className="mr-1 size-3.5" /> Terkonfirmasi
+                        (Lunas)
                     </Badge>
                 );
             case 'pending_validation':
                 return (
-                    <Badge className="bg-amber-500 text-white text-xs px-3 py-1 font-bold animate-pulse">
-                        <Clock className="size-3.5 mr-1" /> Menunggu Validasi Kasir
+                    <Badge className="animate-pulse bg-amber-500 px-3 py-1 text-xs font-bold text-white">
+                        <Clock className="mr-1 size-3.5" /> Menunggu Validasi
+                        Kasir
                     </Badge>
                 );
             case 'rejected':
                 return (
-                    <Badge className="bg-rose-600 text-white text-xs px-3 py-1 font-bold">
-                        <XCircle className="size-3.5 mr-1" /> Pembayaran Ditolak
+                    <Badge className="bg-rose-600 px-3 py-1 text-xs font-bold text-white">
+                        <XCircle className="mr-1 size-3.5" /> Pembayaran Ditolak
                     </Badge>
                 );
             case 'cancelled':
                 return (
-                    <Badge variant="destructive" className="text-xs px-3 py-1 font-bold">
+                    <Badge
+                        variant="destructive"
+                        className="px-3 py-1 text-xs font-bold"
+                    >
                         Dibatalkan
                     </Badge>
                 );
             default:
                 return (
-                    <Badge className="bg-sky-600 text-white text-xs px-3 py-1 font-bold">
-                        <Clock className="size-3.5 mr-1" /> Menunggu Pembayaran
+                    <Badge className="bg-sky-600 px-3 py-1 text-xs font-bold text-white">
+                        <Clock className="mr-1 size-3.5" /> Menunggu Pembayaran
                     </Badge>
                 );
         }
@@ -131,12 +143,18 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
         <PublicLayout>
             <Head title={`Invoice #${booking.booking_code} - SportBooking`} />
 
-            <div className="container mx-auto px-4 sm:px-6 py-8 max-w-4xl">
+            <div className="public-container max-w-4xl py-8">
                 {/* Header Back & Print buttons */}
-                <div className="flex items-center justify-between mb-6 no-print">
-                    <Button variant="ghost" size="sm" asChild className="text-xs">
+                <div className="no-print mb-6 flex items-center justify-between">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="text-xs"
+                    >
                         <Link href="/my-bookings">
-                            <ArrowLeft className="size-3.5 mr-1" /> Riwayat Booking
+                            <ArrowLeft className="mr-1 size-3.5" /> Riwayat
+                            Booking
                         </Link>
                     </Button>
 
@@ -145,114 +163,204 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
                             variant="outline"
                             size="sm"
                             onClick={() => window.print()}
-                            className="text-xs rounded-xl"
+                            className="rounded-xl text-xs"
                         >
-                            <Printer className="size-3.5 mr-1.5" /> Cetak / Simpan PDF
+                            <Printer className="mr-1.5 size-3.5" /> Cetak /
+                            Simpan PDF
                         </Button>
                     </div>
                 </div>
 
                 {/* Main Invoice Card */}
-                <div className="rounded-2xl border border-border/80 bg-card p-6 sm:p-8 shadow-lg space-y-8 print:border-none print:shadow-none">
+                <div className="border-border/80 bg-card space-y-8 rounded-2xl border p-6 shadow-lg sm:p-8 print:border-none print:shadow-none">
                     {/* Invoice Top Strip */}
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center pb-6 border-b border-border/60 gap-4">
+                    <div className="border-border/60 flex flex-col justify-between gap-4 border-b pb-6 sm:flex-row sm:items-center">
                         <div>
-                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                            <span className="text-xs font-semibold tracking-wider text-primary uppercase dark:text-primary">
                                 Invoice Pembayaran
                             </span>
-                            <h1 className="text-2xl sm:text-3xl font-black text-foreground mt-0.5">
+                            <h1 className="text-foreground mt-0.5 text-2xl font-black sm:text-3xl">
                                 #{booking.booking_code}
                             </h1>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Dibuat pada: {new Date(booking.created_at).toLocaleDateString('id-ID', {
-                                    day: 'numeric',
-                                    month: 'long',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                })} WIB
+                            <p className="text-muted-foreground mt-1 text-xs">
+                                Dibuat pada:{' '}
+                                {formatDateTimeIndonesia(booking.created_at)} WIB
                             </p>
                         </div>
 
-                        <div className="flex flex-col sm:items-end gap-1.5">
+                        <div className="flex flex-col gap-1.5 sm:items-end">
                             {getStatusBadge()}
-                            {booking.payment_status === 'pending' && timeLeft && (
-                                <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
-                                    <Clock className="size-3.5" /> Sisa waktu: {timeLeft}
-                                </p>
-                            )}
+                            {booking.payment_status === 'pending' &&
+                                timeLeft && (
+                                    <p className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                        <Clock className="size-3.5" /> Sisa
+                                        waktu: {timeLeft}
+                                    </p>
+                                )}
                         </div>
                     </div>
 
                     {/* Booking & Customer Details Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
-                        <div className="p-4 rounded-xl bg-muted/30 border border-border/60 space-y-2">
-                            <p className="font-bold text-foreground text-sm uppercase tracking-wider">Detail Lapangan</p>
-                            <div className="space-y-1 text-muted-foreground">
-                                <p className="text-foreground font-semibold text-sm">{booking.lapangan?.name}</p>
-                                <p>Kategori: <span className="text-foreground">{booking.lapangan?.category?.name}</span></p>
-                                <p>Tanggal Main: <span className="text-foreground font-semibold">{booking.booking_date}</span></p>
-                                <p>Waktu: <span className="text-foreground font-semibold">{booking.start_time} - {booking.end_time} WIB</span> ({booking.duration_hours} Jam)</p>
+                    <div className="grid grid-cols-1 gap-6 text-xs sm:grid-cols-2">
+                        <div className="bg-muted/30 border-border/60 space-y-2 rounded-xl border p-4">
+                            <p className="text-foreground text-sm font-bold tracking-wider uppercase">
+                                Detail Lapangan
+                            </p>
+                            <div className="text-muted-foreground space-y-1">
+                                <p className="text-foreground text-sm font-semibold">
+                                    {booking.lapangan?.name}
+                                </p>
+                                <p>
+                                    Kategori:{' '}
+                                    <span className="text-foreground">
+                                        {booking.lapangan?.category?.name}
+                                    </span>
+                                </p>
+                                <p>
+                                    Tanggal Main:{' '}
+                                    <span className="text-foreground font-semibold">
+                                        {booking.booking_date}
+                                    </span>
+                                </p>
+                                <p>
+                                    Waktu:{' '}
+                                    <span className="text-foreground font-semibold">
+                                        {booking.start_time} -{' '}
+                                        {booking.end_time} WIB
+                                    </span>{' '}
+                                    ({booking.duration_hours} Jam)
+                                </p>
                             </div>
                         </div>
 
-                        <div className="p-4 rounded-xl bg-muted/30 border border-border/60 space-y-2">
-                            <p className="font-bold text-foreground text-sm uppercase tracking-wider">Detail Pemesan</p>
-                            <div className="space-y-1 text-muted-foreground">
-                                <p>Nama: <span className="text-foreground font-semibold">{booking.customer_name}</span></p>
-                                <p>Telepon: <span className="text-foreground font-semibold">{booking.customer_phone}</span></p>
-                                <p>Metode: <span className="text-foreground uppercase font-bold">{booking.payment_method}</span></p>
-                                {booking.notes && <p>Catatan: <span className="text-foreground italic">"{booking.notes}"</span></p>}
+                        <div className="bg-muted/30 border-border/60 space-y-2 rounded-xl border p-4">
+                            <p className="text-foreground text-sm font-bold tracking-wider uppercase">
+                                Detail Pemesan
+                            </p>
+                            <div className="text-muted-foreground space-y-1">
+                                <p>
+                                    Nama:{' '}
+                                    <span className="text-foreground font-semibold">
+                                        {booking.customer_name}
+                                    </span>
+                                </p>
+                                <p>
+                                    Telepon:{' '}
+                                    <span className="text-foreground font-semibold">
+                                        {booking.customer_phone}
+                                    </span>
+                                </p>
+                                <p>
+                                    Metode:{' '}
+                                    <span className="text-foreground font-bold uppercase">
+                                        {booking.payment_method}
+                                    </span>
+                                </p>
+                                {booking.notes && (
+                                    <p>
+                                        Catatan:{' '}
+                                        <span className="text-foreground italic">
+                                            "{booking.notes}"
+                                        </span>
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
 
                     {/* Rejection Alert if any */}
-                    {booking.payment_status === 'rejected' && booking.rejection_reason && (
-                        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 text-xs space-y-1">
-                            <p className="font-bold flex items-center gap-1.5 text-sm">
-                                <AlertCircle className="size-4" /> Alasan Penolakan dari Kasir:
-                            </p>
-                            <p className="leading-relaxed">{booking.rejection_reason}</p>
-                        </div>
-                    )}
+                    {booking.payment_status === 'rejected' &&
+                        booking.rejection_reason && (
+                            <div className="space-y-1 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-600">
+                                <p className="flex items-center gap-1.5 text-sm font-bold">
+                                    <AlertCircle className="size-4" /> Alasan
+                                    Penolakan dari Kasir:
+                                </p>
+                                <p className="leading-relaxed">
+                                    {booking.rejection_reason}
+                                </p>
+                            </div>
+                        )}
 
                     {/* Price Breakdown Box */}
-                    <div className="rounded-xl border border-border/70 overflow-hidden">
-                        <div className="bg-muted/50 px-4 py-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider flex justify-between">
+                    <div className="border-border/70 overflow-hidden rounded-xl border">
+                        <div className="bg-muted/50 text-muted-foreground flex justify-between px-4 py-2.5 text-xs font-bold tracking-wider uppercase">
                             <span>Rincian Pembayaran</span>
                             <span>Jumlah</span>
                         </div>
-                        <div className="p-4 space-y-2.5 text-xs">
-                            <div className="flex justify-between text-muted-foreground">
-                                <span>Sewa Lapangan ({booking.duration_hours} Jam x Rp {Number(booking.base_price / booking.duration_hours).toLocaleString('id-ID')})</span>
-                                <span className="font-semibold text-foreground">Rp {Number(booking.base_price).toLocaleString('id-ID')}</span>
+                        <div className="space-y-2.5 p-4 text-xs">
+                            <div className="text-muted-foreground flex justify-between">
+                                <span>
+                                    Sewa Lapangan ({booking.duration_hours} Jam
+                                    x Rp{' '}
+                                    {Number(
+                                        booking.base_price /
+                                            booking.duration_hours,
+                                    ).toLocaleString('id-ID')}
+                                    )
+                                </span>
+                                <span className="text-foreground font-semibold">
+                                    Rp{' '}
+                                    {Number(booking.base_price).toLocaleString(
+                                        'id-ID',
+                                    )}
+                                </span>
                             </div>
 
                             {booking.payment_method === 'transfer' && (
-                                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+                                <div className="flex justify-between font-medium text-primary dark:text-primary">
                                     <span className="flex items-center gap-1">
                                         Kode Unik Validasi
-                                        <span className="text-xs bg-emerald-500/10 px-1.5 py-0.5 rounded">Otomatis</span>
+                                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs">
+                                            Otomatis
+                                        </span>
                                     </span>
                                     <span>+ Rp {booking.validation_code}</span>
                                 </div>
                             )}
 
-                            <div className="pt-3 border-t border-border flex justify-between items-center text-sm font-black">
-                                <span className="text-foreground">Total yang Harus Dibayar:</span>
+                            {booking.points_redeemed > 0 && (
+                                <div className="flex justify-between font-medium text-primary dark:text-primary">
+                                    <span>Poin Digunakan</span>
+                                    <span>
+                                        - Rp{' '}
+                                        {Number(
+                                            booking.points_redeemed,
+                                        ).toLocaleString('id-ID')}
+                                    </span>
+                                </div>
+                            )}
+
+                            <div className="border-border flex items-center justify-between border-t pt-3 text-sm font-black">
+                                <span className="text-foreground">
+                                    Total yang Harus Dibayar:
+                                </span>
                                 <div className="text-right">
-                                    <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                                        Rp {Number(booking.total_price).toLocaleString('id-ID')}
+                                    <span className="text-xl font-extrabold text-primary dark:text-primary">
+                                        Rp{' '}
+                                        {Number(
+                                            booking.total_price,
+                                        ).toLocaleString('id-ID')}
                                     </span>
                                     {booking.payment_method === 'transfer' && (
                                         <button
                                             type="button"
-                                            onClick={() => copyToClipboard(String(booking.total_price), 'amount')}
-                                            className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground no-print"
+                                            onClick={() =>
+                                                copyToClipboard(
+                                                    String(booking.total_price),
+                                                    'amount',
+                                                )
+                                            }
+                                            className="text-muted-foreground hover:text-foreground no-print ml-2 inline-flex items-center gap-1 text-xs"
                                         >
-                                            {copiedAmount ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
-                                            {copiedAmount ? 'Tersalin' : 'Salin Nominal'}
+                                            {copiedAmount ? (
+                                                <Check className="size-3 text-primary" />
+                                            ) : (
+                                                <Copy className="size-3" />
+                                            )}
+                                            {copiedAmount
+                                                ? 'Tersalin'
+                                                : 'Salin Nominal'}
                                         </button>
                                     )}
                                 </div>
@@ -261,94 +369,148 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
                     </div>
 
                     {/* Bank Transfer Instructions & Active Accounts (if Transfer) */}
-                    {booking.payment_method === 'transfer' && booking.payment_status === 'pending' && (
-                        <div className="space-y-4 pt-2 no-print">
-                            <div className="p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 space-y-3">
-                                <div className="flex items-center gap-2">
-                                    <CreditCard className="size-5 text-emerald-600" />
-                                    <h3 className="text-sm font-bold text-foreground">Instruksi Transfer Bank</h3>
-                                </div>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Silakan transfer ke salah satu rekening resmi kami di bawah ini. <strong>PENTING:</strong> Pastikan nominal transfer persis hingga digit terakhir <strong>(Rp {Number(booking.total_price).toLocaleString('id-ID')})</strong> agar pembayaran Anda dapat diverifikasi dengan cepat.
-                                </p>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                                    {bankAccounts.map((b) => (
-                                        <div key={b.id} className="p-3.5 rounded-xl border border-border bg-card space-y-1.5 text-xs">
-                                            <div className="flex items-center justify-between">
-                                                <Badge variant="outline" className="font-bold text-xs">
-                                                    {b.bank_name}
-                                                </Badge>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => copyToClipboard(b.account_number, 'account')}
-                                                    className="text-muted-foreground hover:text-foreground p-1"
-                                                    title="Salin Nomor Rekening"
-                                                >
-                                                    {copiedAccount === b.account_number ? (
-                                                        <Check className="size-3.5 text-emerald-500" />
-                                                    ) : (
-                                                        <Copy className="size-3.5" />
-                                                    )}
-                                                </button>
-                                            </div>
-                                            <p className="font-mono text-sm font-bold text-foreground tracking-wider">
-                                                {b.account_number}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground uppercase">{b.account_name}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* User payment confirmation */}
-                            <form onSubmit={handleConfirmTransfer} className="p-5 rounded-2xl bg-card border border-border/80 space-y-4">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                    <div className="space-y-1">
-                                        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                                            <Send className="size-4 text-emerald-600" /> Konfirmasi Pembayaran Anda
-                                        </h4>
-                                        <p className="text-xs text-muted-foreground leading-relaxed">
-                                            Sudah melakukan transfer sesuai nominal tepat <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Rp {Number(booking.total_price).toLocaleString('id-ID')}</strong>? Klik tombol di samping untuk memberi tahu kasir/admin.
-                                        </p>
+                    {booking.payment_method === 'transfer' &&
+                        booking.payment_status === 'pending' && (
+                            <div className="no-print space-y-4 pt-2">
+                                <div className="space-y-3 rounded-2xl border border-primary/20 bg-primary/5 p-5">
+                                    <div className="flex items-center gap-2">
+                                        <CreditCard className="size-5 text-primary" />
+                                        <h3 className="text-foreground text-sm font-bold">
+                                            Instruksi Transfer Bank
+                                        </h3>
                                     </div>
+                                    <p className="text-muted-foreground text-xs leading-relaxed">
+                                        Silakan transfer ke salah satu rekening
+                                        resmi kami di bawah ini.{' '}
+                                        <strong>PENTING:</strong> Pastikan
+                                        nominal transfer persis hingga digit
+                                        terakhir{' '}
+                                        <strong>
+                                            (Rp{' '}
+                                            {Number(
+                                                booking.total_price,
+                                            ).toLocaleString('id-ID')}
+                                            )
+                                        </strong>{' '}
+                                        agar pembayaran Anda dapat diverifikasi
+                                        dengan cepat.
+                                    </p>
 
-                                    <Button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="w-full sm:w-auto h-10 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl px-6 shrink-0 shadow-md shadow-emerald-600/20"
-                                    >
-                                        {processing ? 'Mengirim...' : 'Saya Sudah Transfer'}
-                                    </Button>
+                                    <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-3">
+                                        {bankAccounts.map((b) => (
+                                            <div
+                                                key={b.id}
+                                                className="border-border bg-card space-y-1.5 rounded-xl border p-3.5 text-xs"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="text-xs font-bold"
+                                                    >
+                                                        {b.bank_name}
+                                                    </Badge>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            copyToClipboard(
+                                                                b.account_number,
+                                                                'account',
+                                                            )
+                                                        }
+                                                        className="text-muted-foreground hover:text-foreground p-1"
+                                                        title="Salin Nomor Rekening"
+                                                    >
+                                                        {copiedAccount ===
+                                                        b.account_number ? (
+                                                            <Check className="size-3.5 text-primary" />
+                                                        ) : (
+                                                            <Copy className="size-3.5" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                <p className="text-foreground font-mono text-sm font-bold tracking-wider">
+                                                    {b.account_number}
+                                                </p>
+                                                <p className="text-muted-foreground text-xs uppercase">
+                                                    {b.account_name}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </form>
-                        </div>
-                    )}
+
+                                {/* User payment confirmation */}
+                                <form
+                                    onSubmit={handleConfirmTransfer}
+                                    className="bg-card border-border/80 space-y-4 rounded-2xl border p-5"
+                                >
+                                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                                        <div className="space-y-1">
+                                            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
+                                                <Send className="size-4 text-primary" />{' '}
+                                                Konfirmasi Pembayaran Anda
+                                            </h4>
+                                            <p className="text-muted-foreground text-xs leading-relaxed">
+                                                Sudah melakukan transfer sesuai
+                                                nominal tepat{' '}
+                                                <strong className="font-bold text-primary dark:text-primary">
+                                                    Rp{' '}
+                                                    {Number(
+                                                        booking.total_price,
+                                                    ).toLocaleString('id-ID')}
+                                                </strong>
+                                                ? Klik tombol di samping untuk
+                                                memberi tahu kasir/admin.
+                                            </p>
+                                        </div>
+
+                                        <Button
+                                            type="submit"
+                                            disabled={processing}
+                                            className="h-10 w-full shrink-0 rounded-xl bg-primary px-6 font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 sm:w-auto"
+                                        >
+                                            {processing
+                                                ? 'Mengirim...'
+                                                : 'Saya Sudah Transfer'}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
 
                     {/* Cash Instructions (if Cash) */}
-                    {booking.payment_method === 'cash' && booking.payment_status === 'pending' && (
-                        <div className="p-5 rounded-2xl bg-muted/40 border border-border/70 space-y-2 text-xs no-print">
-                            <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
-                                <Banknote className="size-5 text-emerald-600" /> Pembayaran Tunai (Cash di Lokasi)
-                            </h3>
-                            <p className="text-muted-foreground leading-relaxed">
-                                Anda telah memilih pembayaran tunai langsung di tempat. Silakan datang ke kasir lapangan sebelum jadwal bermain dimulai dan sebutkan kode booking <strong>#{booking.booking_code}</strong> untuk pelunasan.
-                            </p>
-                        </div>
-                    )}
+                    {booking.payment_method === 'cash' &&
+                        booking.payment_status === 'pending' && (
+                            <div className="bg-muted/40 border-border/70 no-print space-y-2 rounded-2xl border p-5 text-xs">
+                                <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
+                                    <Banknote className="size-5 text-primary" />{' '}
+                                    Pembayaran Tunai (Cash di Lokasi)
+                                </h3>
+                                <p className="text-muted-foreground leading-relaxed">
+                                    Anda telah memilih pembayaran tunai langsung
+                                    di tempat. Silakan datang ke kasir lapangan
+                                    sebelum jadwal bermain dimulai dan sebutkan
+                                    kode booking{' '}
+                                    <strong>#{booking.booking_code}</strong>{' '}
+                                    untuk pelunasan.
+                                </p>
+                            </div>
+                        )}
 
                     {/* Footer Actions: Cancel if allowed */}
                     {canCancel && (
-                        <div className="pt-4 border-t border-border/60 flex justify-end no-print">
+                        <div className="border-border/60 no-print flex justify-end border-t pt-4">
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
                                 disabled={cancelProcessing}
                                 onClick={handleCancelBooking}
-                                className="text-rose-600 border-rose-200 dark:border-rose-950/60 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-xs rounded-xl"
+                                className="rounded-xl border-rose-200 text-xs text-rose-600 hover:bg-rose-50 dark:border-rose-950/60 dark:hover:bg-rose-950/30"
                             >
-                                {cancelProcessing ? 'Membatalkan...' : 'Batalkan Booking Ini'}
+                                {cancelProcessing
+                                    ? 'Membatalkan...'
+                                    : 'Batalkan Booking Ini'}
                             </Button>
 
                             <ConfirmDialog
@@ -358,7 +520,10 @@ export default function BookingInvoice({ booking, bankAccounts = [], canCancel }
                                 description="Apakah Anda yakin ingin membatalkan booking ini? Tindakan ini tidak dapat dibatalkan."
                                 variant="destructive"
                                 onConfirm={() => {
-                                    cancelPost(`/booking/${booking.booking_code}/cancel`, { preserveScroll: true });
+                                    cancelPost(
+                                        `/booking/${booking.booking_code}/cancel`,
+                                        { preserveScroll: true },
+                                    );
                                     setShowCancelConfirm(false);
                                 }}
                             />

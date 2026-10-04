@@ -121,7 +121,7 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href={isStaff ? '/admin' : '/'} className="flex items-center gap-2.5">
-                                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
+                                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                                     <Trophy className="size-4" />
                                 </div>
                                 <div className="flex flex-col group-data-[collapsible=icon]:hidden">

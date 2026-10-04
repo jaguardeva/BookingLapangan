@@ -20,7 +20,7 @@ type Props = {
 export default function Login({ status, canResetPassword }: Props) {
     return (
         <>
-            <Head title="Log in" />
+            <Head title="Masuk" />
 
             <PasskeyVerify />
 
@@ -34,7 +34,7 @@ export default function Login({ status, canResetPassword }: Props) {
                         <div className="grid gap-5">
                             <div className="grid gap-2">
                                 <Label htmlFor="email" className="text-sm font-semibold">
-                                    Email address
+                                    Alamat email
                                 </Label>
                                 <Input
                                     id="email"
@@ -53,15 +53,15 @@ export default function Login({ status, canResetPassword }: Props) {
                             <div className="grid gap-2">
                                 <div className="flex items-center justify-between">
                                     <Label htmlFor="password" className="text-sm font-semibold">
-                                        Password
+                                        Kata sandi
                                     </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
-                                            className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                                            className="text-xs font-semibold text-primary hover:text-primary dark:text-primary dark:hover:text-primary"
                                             tabIndex={5}
                                         >
-                                            Forgot your password?
+                                            Lupa kata sandi?
                                         </TextLink>
                                     )}
                                 </div>
@@ -83,25 +83,25 @@ export default function Login({ status, canResetPassword }: Props) {
                                     name="remember"
                                     tabIndex={3}
                                 />
-                                <Label htmlFor="remember" className="text-sm font-medium">Remember me</Label>
+                                <Label htmlFor="remember" className="text-sm font-medium">Ingat saya</Label>
                             </div>
 
                             <Button
                                 type="submit"
-                                className="mt-2 h-11 w-full rounded-xl bg-emerald-600 font-semibold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400"
+                                className="mt-2 h-11 w-full rounded-xl bg-primary font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/70"
                                 tabIndex={4}
                                 disabled={processing}
                                 data-test="login-button"
                             >
                                 {processing && <Spinner />}
-                                Log in
+                                Masuk
                             </Button>
                         </div>
 
                         <div className="text-muted-foreground border-t border-border/60 pt-5 text-center text-sm">
-                            Don't have an account?{' '}
+                            Belum punya akun?{' '}
                             <TextLink href={register()} tabIndex={5}>
-                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">Sign up</span>
+                                <span className="font-semibold text-primary dark:text-primary">Daftar</span>
                             </TextLink>
                         </div>
                     </>
@@ -118,6 +118,6 @@ export default function Login({ status, canResetPassword }: Props) {
 }
 
 Login.layout = {
-    title: 'Log in to your account',
-    description: 'Enter your email and password below to log in',
+    title: 'Masuk ke akun Anda',
+    description: 'Masukkan email dan kata sandi untuk masuk',
 };

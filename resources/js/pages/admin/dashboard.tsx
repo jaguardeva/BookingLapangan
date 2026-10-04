@@ -80,7 +80,7 @@ export default function AdminDashboard({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                            <Activity className="size-6 text-emerald-600 dark:text-emerald-400" />
+                            <Activity className="size-6 text-primary dark:text-primary" />
                             {isSuperAdmin ? 'Superadmin Analytics Dashboard' : 'Kasir & Lapangan Analytics'}
                         </h1>
                         <p className="text-xs text-muted-foreground mt-0.5">
@@ -89,7 +89,7 @@ export default function AdminDashboard({
                     </div>
 
                     <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                        <Button asChild size="sm" className="h-9 w-full rounded-xl bg-emerald-600 text-xs text-white shadow-sm hover:bg-emerald-500 sm:w-auto">
+                        <Button asChild size="sm" className="h-9 w-full rounded-xl bg-primary text-xs text-primary-foreground shadow-sm hover:bg-primary/90 sm:w-auto">
                             <Link href="/admin/bookings">
                                 Validasi Pembayaran ({stats.pending_validation})
                             </Link>
@@ -105,29 +105,29 @@ export default function AdminDashboard({
                 {/* KPI Metrics Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Metric 1 */}
-                    <div className="p-5 rounded-2xl border border-border/80 bg-card shadow-sm space-y-2 hover:border-emerald-500/30 transition-all">
+                    <div className="p-5 rounded-2xl border border-border/80 bg-card shadow-sm space-y-2 hover:border-primary/30 transition-all">
                         <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Booking Hari Ini</span>
-                            <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                            <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                                 <CalendarCheck className="size-5" />
                             </div>
                         </div>
                         <div className="flex items-baseline gap-2">
                             <p className="text-3xl font-black text-foreground">{stats.today_bookings}</p>
-                            <span className="text-xs text-emerald-600 font-semibold">jadwal</span>
+                            <span className="text-xs text-primary font-semibold">jadwal</span>
                         </div>
                         <p className="text-xs text-muted-foreground">Main pada hari ini</p>
                     </div>
 
                     {/* Metric 2 */}
-                    <div className="p-5 rounded-2xl border border-border/80 bg-card shadow-sm space-y-2 hover:border-emerald-500/30 transition-all">
+                    <div className="p-5 rounded-2xl border border-border/80 bg-card shadow-sm space-y-2 hover:border-primary/30 transition-all">
                         <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Omset Hari Ini</span>
                             <div className="size-9 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center">
                                 <TrendingUp className="size-5" />
                             </div>
                         </div>
-                        <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                        <p className="text-2xl font-black text-primary dark:text-primary">
                             Rp {Number(stats.today_revenue).toLocaleString('id-ID')}
                         </p>
                         <p className="text-xs text-muted-foreground">Pembayaran terkonfirmasi</p>
@@ -173,12 +173,12 @@ export default function AdminDashboard({
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                                    <BarChart3 className="size-5 text-emerald-600" />
+                                    <BarChart3 className="size-5 text-primary" />
                                     Grafik Tren Omset 7 Hari Terakhir
                                 </h2>
                                 <p className="text-xs text-muted-foreground">Total rupiah & jumlah transaksi yang terkonfirmasi lunas harian</p>
                             </div>
-                            <span className="text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                            <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
                                 Real-Time
                             </span>
                         </div>
@@ -196,7 +196,7 @@ export default function AdminDashboard({
 
                                         <div
                                             style={{ height: `${heightPercent}%` }}
-                                            className="w-full max-w-[44px] rounded-t-xl bg-gradient-to-t from-emerald-700 to-emerald-500 group-hover:from-emerald-600 group-hover:to-emerald-400 transition-all shadow-md flex items-start justify-center pt-1"
+                                            className="w-full max-w-[44px] rounded-t-xl bg-gradient-to-t from-primary to-primary/50 group-hover:from-primary group-hover:to-primary/70 transition-all shadow-md flex items-start justify-center pt-1"
                                         >
                                             {d.count > 0 && (
                                                 <span className="text-[10px] font-bold text-white opacity-80">
@@ -212,7 +212,7 @@ export default function AdminDashboard({
 
                         <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
                             <span className="flex items-center gap-1.5">
-                                <span className="size-3 rounded-full bg-emerald-500 inline-block" /> Omset Lunas
+                                <span className="size-3 rounded-full bg-primary inline-block" /> Omset Lunas
                             </span>
                             <span className="font-semibold text-foreground">
                                 Rata-rata 7 hari: Rp {Number(Math.round(revenueChart.reduce((a, b) => a + b.revenue, 0) / (revenueChart.length || 1))).toLocaleString('id-ID')} / hari
@@ -234,14 +234,14 @@ export default function AdminDashboard({
                             {/* Approved */}
                             <div className="space-y-1">
                                 <div className="flex justify-between text-xs font-semibold">
-                                    <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                                    <span className="text-primary dark:text-primary flex items-center gap-1.5">
                                         <CheckCircle2 className="size-3.5" /> Terkonfirmasi (Lunas)
                                     </span>
                                     <span>{statusDistribution.approved} ({Math.round((statusDistribution.approved / totalStatusCount) * 100)}%)</span>
                                 </div>
                                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                                     <div
-                                        className="h-full bg-emerald-600 rounded-full"
+                                        className="h-full bg-primary rounded-full"
                                         style={{ width: `${(statusDistribution.approved / totalStatusCount) * 100}%` }}
                                     />
                                 </div>
@@ -305,9 +305,9 @@ export default function AdminDashboard({
                             </span>
                             <div className="flex items-center justify-between text-xs font-bold">
                                 <span className="flex items-center gap-1.5 text-foreground">
-                                    <CreditCard className="size-4 text-emerald-600" /> Transfer Bank
+                                    <CreditCard className="size-4 text-primary" /> Transfer Bank
                                 </span>
-                                <span className="text-emerald-600 font-mono">
+                                <span className="text-primary font-mono">
                                     {Math.round((paymentDistribution.transfer / totalPaymentsCount) * 100)}% ({paymentDistribution.transfer})
                                 </span>
                             </div>
@@ -350,14 +350,14 @@ export default function AdminDashboard({
                                                 </span>
                                                 <span className="truncate">{lap.name}</span>
                                             </span>
-                                            <span className="shrink-0 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                            <span className="shrink-0 text-right font-mono font-bold text-primary dark:text-primary">
                                                 Rp {Number(lap.revenue).toLocaleString('id-ID')}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
                                                 <div
-                                                    className="h-full bg-emerald-600 rounded-full"
+                                                    className="h-full bg-primary rounded-full"
                                                     style={{ width: `${Math.max((lap.bookings_count / maxBookingsCount) * 100, 5)}%` }}
                                                 />
                                             </div>
@@ -424,12 +424,12 @@ export default function AdminDashboard({
                                                         <p className="font-medium text-foreground">{b.booking_date}</p>
                                                         <p className="text-xs text-muted-foreground">{b.start_time} - {b.end_time} WIB</p>
                                                     </td>
-                                                    <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400">
+                                                    <td className="py-3 px-4 font-bold text-primary dark:text-primary">
                                                         Rp {Number(b.total_price).toLocaleString('id-ID')}
                                                     </td>
                                                     <td className="py-3 px-4">
                                                         {b.payment_status === 'approved' ? (
-                                                            <Badge className="bg-emerald-600 text-white text-xs">Terkonfirmasi</Badge>
+                                                            <Badge className="bg-primary text-primary-foreground text-xs">Terkonfirmasi</Badge>
                                                         ) : b.payment_status === 'pending_validation' ? (
                                                             <Badge className="bg-amber-500 text-white text-xs animate-pulse">Perlu Validasi</Badge>
                                                         ) : b.payment_status === 'rejected' ? (

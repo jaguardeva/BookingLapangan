@@ -235,7 +235,7 @@ export default function AdminBookingsIndex({
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'approved':
-                return <Badge className="bg-emerald-600 text-white text-xs">Terkonfirmasi</Badge>;
+                return <Badge className="bg-primary text-primary-foreground text-xs">Terkonfirmasi</Badge>;
             case 'pending_validation':
                 return <Badge className="bg-amber-500 text-white text-xs animate-pulse">Perlu Validasi</Badge>;
             case 'rejected':
@@ -264,7 +264,7 @@ export default function AdminBookingsIndex({
                     <Button
                         type="button"
                         onClick={() => setIsManualBookingOpen(true)}
-                        className="h-9 w-full rounded-xl bg-emerald-600 text-xs text-white hover:bg-emerald-500 sm:w-auto"
+                        className="h-9 w-full rounded-xl bg-primary text-xs text-primary-foreground hover:bg-primary/90 sm:w-auto"
                     >
                         <Plus className="mr-1.5 size-4" /> Booking Manual
                     </Button>
@@ -323,7 +323,7 @@ export default function AdminBookingsIndex({
                                 className="h-10 w-full min-w-0 rounded-xl text-sm sm:w-36"
                             />
 
-                            <Button type="submit" size="sm" className="col-span-2 h-10 w-full rounded-xl bg-emerald-600 text-sm text-white hover:bg-emerald-500 sm:col-span-1 sm:w-auto">
+                            <Button type="submit" size="sm" className="col-span-2 h-10 w-full rounded-xl bg-primary text-sm text-primary-foreground hover:bg-primary/90 sm:col-span-1 sm:w-auto">
                                 Filter
                             </Button>
                         </div>
@@ -384,7 +384,7 @@ export default function AdminBookingsIndex({
                                             <td className="py-3.5 px-4">
                                                 {b.payment_method === 'transfer' ? (
                                                     <div className="space-y-0.5">
-                                                        <p className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                                        <p className="font-mono text-xs font-bold text-primary dark:text-primary">
                                                             +{b.validation_code} <span className="text-xs text-muted-foreground font-normal">(kode unik)</span>
                                                         </p>
                                                         <p className="text-xs text-muted-foreground">
@@ -396,7 +396,7 @@ export default function AdminBookingsIndex({
                                                 )}
                                             </td>
 
-                                            <td className="py-3.5 px-4 font-bold text-emerald-600 dark:text-emerald-400">
+                                            <td className="py-3.5 px-4 font-bold text-primary dark:text-primary">
                                                 Rp {Number(b.total_price).toLocaleString('id-ID')}
                                             </td>
 
@@ -412,7 +412,7 @@ export default function AdminBookingsIndex({
                                                             <Button
                                                                 size="sm"
                                                                 onClick={() => handleApproveClick(b)}
-                                                                className="h-7 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold"
+                                                                className="h-7 px-2.5 text-xs bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-semibold"
                                                                 title="Setujui Pembayaran"
                                                             >
                                                                 <CheckCircle2 className="size-3.5 mr-1" /> Setujui
@@ -455,7 +455,7 @@ export default function AdminBookingsIndex({
                                 preserveScroll
                                 className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                                     link.active
-                                        ? 'bg-emerald-600 text-white border-emerald-600'
+                                        ? 'bg-primary text-primary-foreground border-primary'
                                         : link.url
                                         ? 'bg-card text-foreground hover:bg-muted border-border'
                                         : 'text-muted-foreground/50 border-transparent cursor-not-allowed pointer-events-none'
@@ -527,7 +527,7 @@ export default function AdminBookingsIndex({
                                                             setIsLapanganPickerOpen(false);
                                                             setLapanganSearch('');
                                                         }}
-                                                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs transition hover:bg-accent ${String(lapangan.id) === manualForm.data.lapangan_id ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : ''}`}
+                                                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs transition hover:bg-accent ${String(lapangan.id) === manualForm.data.lapangan_id ? 'bg-primary/10 text-primary dark:text-primary' : ''}`}
                                                     >
                                                         <span className="font-medium">{lapangan.name}</span>
                                                         <span className="text-[11px] text-muted-foreground">Rp {Number(lapangan.price_per_hour).toLocaleString('id-ID')}/jam</span>
@@ -546,7 +546,7 @@ export default function AdminBookingsIndex({
                                     {manualDates.map((date) => {
                                         const checked = manualForm.data.booking_date === date.value;
                                         return (
-                                            <label key={date.value} className={`relative flex cursor-pointer flex-col gap-1 rounded-xl border p-3 transition ${checked ? 'border-emerald-600 bg-emerald-500/10 ring-2 ring-emerald-500/20' : 'border-border bg-card hover:border-emerald-500/50'}`}>
+                                            <label key={date.value} className={`relative flex cursor-pointer flex-col gap-1 rounded-xl border p-3 transition ${checked ? 'border-primary bg-primary/10 ring-2 ring-primary/20' : 'border-border bg-card hover:border-primary/50'}`}>
                                                 <input
                                                     type="radio"
                                                     name="manual_booking_date"
@@ -558,9 +558,9 @@ export default function AdminBookingsIndex({
                                                     }}
                                                     className="sr-only"
                                                 />
-                                                <span className={`text-sm font-semibold ${checked ? 'text-emerald-700 dark:text-emerald-300' : 'text-foreground'}`}>{date.label}</span>
+                                                <span className={`text-sm font-semibold ${checked ? 'text-primary dark:text-primary' : 'text-foreground'}`}>{date.label}</span>
                                                 <span className="text-xs text-muted-foreground">{date.detail}</span>
-                                                <span className={`absolute right-3 top-3 size-3 rounded-full border ${checked ? 'border-emerald-600 bg-emerald-600 ring-2 ring-emerald-600/20' : 'border-muted-foreground/40'}`} />
+                                                <span className={`absolute right-3 top-3 size-3 rounded-full border ${checked ? 'border-primary bg-primary ring-2 ring-primary/20' : 'border-muted-foreground/40'}`} />
                                             </label>
                                         );
                                     })}
@@ -588,7 +588,7 @@ export default function AdminBookingsIndex({
                                                     type="button"
                                                     disabled={disabled}
                                                     onClick={() => handleManualSlotClick(slot.start)}
-                                                    className={`rounded-xl border px-2 py-2 text-left text-xs transition ${selected ? 'border-emerald-600 bg-emerald-600 text-white' : disabled ? 'cursor-not-allowed border-border/40 bg-muted/40 text-muted-foreground/50' : 'border-border bg-card hover:border-emerald-500'}`}
+                                                    className={`rounded-xl border px-2 py-2 text-left text-xs transition ${selected ? 'border-primary bg-primary text-primary-foreground' : disabled ? 'cursor-not-allowed border-border/40 bg-muted/40 text-muted-foreground/50' : 'border-border bg-card hover:border-primary/50'}`}
                                                 >
                                                     <span className="font-semibold">{slot.start} - {slot.end}</span>
                                                     <span className="mt-0.5 block text-[11px]">{selected ? 'Terpilih' : booked ? 'Terisi' : past ? 'Lewat' : 'Tersedia'}</span>
@@ -656,7 +656,7 @@ export default function AdminBookingsIndex({
                             <Button type="button" variant="outline" onClick={() => setIsManualBookingOpen(false)} className="w-full rounded-xl sm:w-auto">
                                 Batal
                             </Button>
-                            <Button type="submit" disabled={manualForm.processing} className="w-full rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 sm:w-auto">
+                            <Button type="submit" disabled={manualForm.processing} className="w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto">
                                 {manualForm.processing ? 'Menyimpan...' : 'Simpan Booking Manual'}
                             </Button>
                         </div>

@@ -51,6 +51,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'points_balance' => 'integer',
         ];
     }
 
@@ -88,6 +89,24 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * @return HasMany<PointTransaction, $this>
+     */
+    public function pointTransactions(): HasMany
+    {
+        return $this->hasMany(PointTransaction::class);
+    }
+
+    public function availablePoints(): int
+    {
+        $reservedPoints = $this->bookings()
+            ->where('payment_method', 'transfer')
+            ->whereIn('payment_status', ['pending', 'pending_validation'])
+            ->sum('points_redeemed');
+
+        return max(0, $this->points_balance - $reservedPoints);
     }
 
     /**

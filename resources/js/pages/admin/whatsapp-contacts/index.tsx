@@ -76,7 +76,7 @@ export default function WhatsappContactsIndex({ contacts }: Props) {
                         <h1 className="text-2xl font-bold tracking-tight">Kontak WhatsApp</h1>
                         <p className="mt-1 text-xs text-muted-foreground">Kelola nomor yang bisa dihubungi user melalui widget bantuan.</p>
                     </div>
-                    <Button onClick={openCreate} className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">
+                    <Button onClick={openCreate} className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">
                         <Plus className="mr-1.5 size-4" /> Tambah Kontak
                     </Button>
                 </div>
@@ -109,7 +109,7 @@ export default function WhatsappContactsIndex({ contacts }: Props) {
                             <Input id="contact-order" type="number" min={0} value={data.sort_order} onChange={(event) => setData('sort_order', Number(event.target.value))} />
                         </div>
                         <div className="sm:col-span-2 flex justify-end gap-2">
-                            <Button type="submit" disabled={processing} className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">{processing ? 'Menyimpan...' : 'Simpan Kontak'}</Button>
+                            <Button type="submit" disabled={processing} className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">{processing ? 'Menyimpan...' : 'Simpan Kontak'}</Button>
                         </div>
                     </form>
                 )}
@@ -119,13 +119,13 @@ export default function WhatsappContactsIndex({ contacts }: Props) {
                         <div key={contact.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600"><MessageCircle className="size-5" /></div>
+                                    <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><MessageCircle className="size-5" /></div>
                                     <div>
                                         <h3 className="font-semibold">{contact.name}</h3>
                                         <p className="text-xs text-muted-foreground">+{contact.phone.replace(/^\+/, '')}</p>
                                     </div>
                                 </div>
-                                <Badge variant="outline" className={contact.is_active ? 'border-emerald-500/30 text-emerald-600' : 'text-muted-foreground'}>{contact.is_active ? 'Aktif' : 'Nonaktif'}</Badge>
+                                <Badge variant="outline" className={contact.is_active ? 'border-primary/30 text-primary' : 'text-muted-foreground'}>{contact.is_active ? 'Aktif' : 'Nonaktif'}</Badge>
                             </div>
                             <p className="mt-4 min-h-10 text-xs text-muted-foreground">{contact.description || 'Tanpa keterangan'}</p>
                             <div className="mt-4 flex justify-end gap-1 border-t border-border/60 pt-3">

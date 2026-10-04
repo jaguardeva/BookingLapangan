@@ -119,7 +119,7 @@ export function NotificationCenter() {
     const getIcon = (type?: string) => {
         switch (type) {
             case 'success':
-                return <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />;
+                return <CheckCircle2 className="size-4 text-primary shrink-0 mt-0.5" />;
             case 'alert':
             case 'warning':
                 return <AlertTriangle className="size-4 text-amber-500 shrink-0 mt-0.5" />;
@@ -136,7 +136,7 @@ export function NotificationCenter() {
                 <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full">
                     <Bell className="size-4 text-foreground/80" />
                     {unreadCount > 0 && (
-                        <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-1 text-xs font-bold text-white ring-2 ring-background animate-pulse">
+                        <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-xs font-bold text-primary-foreground ring-2 ring-background animate-pulse">
                             {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                     )}
@@ -151,10 +151,10 @@ export function NotificationCenter() {
             >
                 <div className="flex flex-col gap-2 border-b border-border/60 bg-muted/40 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-3.5">
                     <div className="flex min-w-0 items-center gap-2">
-                        <Bell className="size-4 text-emerald-600 dark:text-emerald-400" />
+                        <Bell className="size-4 text-primary dark:text-primary" />
                         <span className="truncate text-sm font-semibold">Pusat Notifikasi</span>
                         {unreadCount > 0 && (
-                            <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                            <span className="rounded-full bg-primary/10 dark:bg-primary-foreground/60 px-2 py-0.5 text-xs font-semibold text-primary dark:text-primary">
                                 {unreadCount} baru
                             </span>
                         )}
@@ -190,7 +190,7 @@ export function NotificationCenter() {
                                     key={item.id}
                                     onClick={() => handleMarkAsRead(item.id, item.data.url)}
                                     className={`flex cursor-pointer gap-2.5 p-3 text-xs transition-colors hover:bg-muted/50 sm:gap-3 sm:p-3.5 ${
-                                        isUnread ? 'bg-emerald-500/5 font-medium' : 'text-muted-foreground'
+                                        isUnread ? 'bg-primary/5 font-medium' : 'text-muted-foreground'
                                     }`}
                                 >
                                     {getIcon(item.data.type)}
@@ -200,7 +200,7 @@ export function NotificationCenter() {
                                                 {item.data.title}
                                             </p>
                                             {isUnread && (
-                                                <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+                                                <span className="size-2 rounded-full bg-primary shrink-0" />
                                             )}
                                         </div>
                                             <p className="line-clamp-2 break-words text-xs leading-relaxed text-foreground/80">
@@ -216,7 +216,7 @@ export function NotificationCenter() {
                 <div className="p-2 border-t border-border/60 bg-muted/20 text-center">
                     <Link
                         href="/notifications"
-                        className="text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
+                        className="text-xs font-medium text-primary hover:text-primary dark:text-primary dark:hover:text-primary transition-colors"
                     >
                         Lihat Semua Notifikasi →
                     </Link>

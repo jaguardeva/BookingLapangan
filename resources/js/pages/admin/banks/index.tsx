@@ -94,7 +94,7 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
                         </p>
                     </div>
 
-                    <Button onClick={openCreateModal} className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs h-9">
+                    <Button onClick={openCreateModal} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs h-9">
                         <Plus className="size-4 mr-1.5" /> Tambah Rekening Baru
                     </Button>
                 </div>
@@ -115,7 +115,7 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
                                 {banks.map((bank) => (
                                     <tr key={bank.id} className="hover:bg-muted/30 transition-colors">
                                         <td className="py-3.5 px-4 font-bold text-foreground flex items-center gap-2">
-                                            <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                                            <div className="size-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                                                 <CreditCard className="size-4" />
                                             </div>
                                             <span>{bank.bank_name}</span>
@@ -136,7 +136,7 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
                                                 className="hover:opacity-80"
                                             >
                                                 {bank.is_active ? (
-                                                    <Badge className="bg-emerald-600 text-white text-xs cursor-pointer">
+                                                    <Badge className="bg-primary text-primary-foreground text-xs cursor-pointer">
                                                         Aktif (Ditampilkan)
                                                     </Badge>
                                                 ) : (
@@ -239,7 +239,7 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
                             <Button
                                 type="submit"
                                 disabled={processing}
-                                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold"
+                                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold"
                             >
                                 {processing ? 'Menyimpan...' : editingBank ? 'Simpan Perubahan' : 'Tambah Rekening'}
                             </Button>

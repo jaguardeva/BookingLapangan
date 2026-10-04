@@ -56,17 +56,17 @@ export default function VerifyEmail({ status }: Props) {
 
             <div className="flex flex-col gap-6">
                 {/* Header Icon */}
-                <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
+                <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary border border-primary/20 shadow-sm">
                     <Mail className="size-8" />
                 </div>
 
                 {/* Status banner */}
                 {status === 'verification-link-sent' && (
-                    <div className="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/40 p-4 text-xs text-emerald-800 dark:text-emerald-300">
-                        <CheckCircle2 className="size-4 shrink-0 text-emerald-600 mt-0.5" />
+                    <div className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary-foreground/40 p-4 text-xs text-primary dark:text-primary">
+                        <CheckCircle2 className="size-4 shrink-0 text-primary mt-0.5" />
                         <div>
                             <p className="font-semibold">Tautan Verifikasi Baru Terkirim!</p>
-                            <p className="mt-0.5 text-emerald-700 dark:text-emerald-400">
+                            <p className="mt-0.5 text-primary dark:text-primary">
                                 Kami telah mengirimkan tautan verifikasi baru ke kotak masuk Anda.
                             </p>
                         </div>
@@ -81,7 +81,7 @@ export default function VerifyEmail({ status }: Props) {
                         </p>
                         {userEmail && (
                             <div className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1 text-xs font-semibold text-foreground">
-                                <Mail className="size-3.5 text-emerald-500" />
+                                <Mail className="size-3.5 text-primary" />
                                 <span>{userEmail}</span>
                             </div>
                         )}
@@ -103,7 +103,7 @@ export default function VerifyEmail({ status }: Props) {
                         <Button
                             type="submit"
                             disabled={isResending || cooldown > 0}
-                            className="w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-sm transition-all"
+                            className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs shadow-sm transition-all"
                         >
                             <RefreshCw className={`size-3.5 mr-2 ${isResending ? 'animate-spin' : ''}`} />
                             {isResending

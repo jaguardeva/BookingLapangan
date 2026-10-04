@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
@@ -33,6 +34,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'validated_at',
     'payment_deadline',
     'cancelled_at',
+    'points_redeemed',
 ])]
 class Booking extends Model
 {
@@ -46,6 +48,7 @@ class Booking extends Model
             'base_price' => 'integer',
             'validation_code' => 'integer',
             'total_price' => 'integer',
+            'points_redeemed' => 'integer',
             'user_submitted_code' => 'integer',
             'validated_at' => 'datetime',
             'payment_deadline' => 'datetime',
@@ -85,6 +88,14 @@ class Booking extends Model
     public function review(): HasOne
     {
         return $this->hasOne(Review::class);
+    }
+
+    /**
+     * @return HasMany<PointTransaction, $this>
+     */
+    public function pointTransactions(): HasMany
+    {
+        return $this->hasMany(PointTransaction::class);
     }
 
     /**

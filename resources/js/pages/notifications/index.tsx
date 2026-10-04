@@ -4,6 +4,7 @@ import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, XCircle, ArrowLeft
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { InAppNotification } from '@/types/booking';
+import { formatDateTimeIndonesia } from '@/lib/locale';
 
 interface Props {
     notifications: {
@@ -34,7 +35,7 @@ export default function NotificationsIndex({ notifications }: Props) {
     const getIcon = (type?: string) => {
         switch (type) {
             case 'success':
-                return <CheckCircle2 className="size-5 text-emerald-500 shrink-0 mt-0.5" />;
+                return <CheckCircle2 className="size-5 text-primary shrink-0 mt-0.5" />;
             case 'alert':
             case 'warning':
                 return <AlertTriangle className="size-5 text-amber-500 shrink-0 mt-0.5" />;
@@ -49,7 +50,7 @@ export default function NotificationsIndex({ notifications }: Props) {
         <PublicLayout>
             <Head title="Pusat Notifikasi - SportBooking" />
 
-            <div className="container mx-auto px-4 sm:px-6 py-8 max-w-3xl">
+            <div className="public-container max-w-3xl py-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-border/60 gap-4">
                     <div>
                         <Button variant="ghost" size="sm" asChild className="text-xs mb-2 -ml-2">
@@ -58,7 +59,7 @@ export default function NotificationsIndex({ notifications }: Props) {
                             </Link>
                         </Button>
                         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-                            <Bell className="size-6 text-emerald-600" /> Pusat Notifikasi
+                            <Bell className="size-6 text-primary" /> Pusat Notifikasi
                         </h1>
                         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                             Semua pembaruan status booking, validasi pembayaran, dan reminder jadwal main Anda.
@@ -93,7 +94,7 @@ export default function NotificationsIndex({ notifications }: Props) {
                                     onClick={() => handleMarkAsRead(item.id, item.data.url)}
                                     className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 transition-all sm:gap-3.5 sm:p-4 ${
                                         isUnread
-                                            ? 'bg-emerald-500/5 border-emerald-500/30 hover:border-emerald-500/50'
+                                            ? 'bg-primary/5 border-primary/30 hover:border-primary/50'
                                             : 'bg-card border-border/70 hover:border-border text-muted-foreground'
                                     }`}
                                 >
@@ -104,11 +105,8 @@ export default function NotificationsIndex({ notifications }: Props) {
                                                 {item.data.title}
                                             </p>
                                             <span className="whitespace-nowrap text-[11px] text-muted-foreground sm:text-xs">
-                                                {new Date(item.created_at).toLocaleDateString('id-ID', {
-                                                    day: 'numeric',
+                                                {formatDateTimeIndonesia(item.created_at, {
                                                     month: 'short',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
                                                 })}
                                             </span>
                                         </div>
@@ -131,7 +129,7 @@ export default function NotificationsIndex({ notifications }: Props) {
                                 preserveScroll
                                 className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                                     link.active
-                                        ? 'bg-emerald-600 text-white border-emerald-600'
+                                        ? 'bg-primary text-primary-foreground border-primary'
                                         : link.url
                                         ? 'bg-card text-foreground hover:bg-muted border-border'
                                         : 'text-muted-foreground/50 border-transparent cursor-not-allowed pointer-events-none'

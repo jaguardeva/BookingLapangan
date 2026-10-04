@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { store as storeBooking } from '@/routes/booking';
 import {
     Dialog,
     DialogContent,
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import type { Lapangan, Booking } from '@/types/booking';
 import type { User as AuthUser } from '@/types/auth';
+import { formatTimeIndonesia } from '@/lib/locale';
 
 interface AllowedDate {
     date: string;
@@ -52,8 +54,11 @@ export default function LapanganShow({
 }: Props) {
     const { auth } = usePage<{ auth: { user: AuthUser | null } }>().props;
     const currentUser = auth.user;
+    const availablePoints = currentUser?.available_points ?? 0;
 
-    const [selectedDate, setSelectedDate] = useState<string>(allowedDates[0]?.date || '');
+    const [selectedDate, setSelectedDate] = useState<string>(
+        allowedDates[0]?.date || '',
+    );
     const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
@@ -64,6 +69,7 @@ export default function LapanganShow({
         start_time: '',
         duration_hours: 1,
         payment_method: 'transfer' as 'cash' | 'transfer',
+        use_points: false,
         customer_name: currentUser?.name || '',
         customer_phone: currentUser?.phone || '',
         notes: '',
@@ -72,7 +78,10 @@ export default function LapanganShow({
     // Generate 1-hour hourly slots from operational_start to operational_end
     const hourlySlots = useMemo(() => {
         const slots: { start: string; end: string }[] = [];
-        const startHour = parseInt(lapangan.operational_start.split(':')[0], 10);
+        const startHour = parseInt(
+            lapangan.operational_start.split(':')[0],
+            10,
+        );
         const endHour = parseInt(lapangan.operational_end.split(':')[0], 10);
 
         for (let h = startHour; h < endHour; h++) {
@@ -86,12 +95,15 @@ export default function LapanganShow({
     // Current time helper to disable past hours today
     const now = new Date();
     const isToday = selectedDate === allowedDates[0]?.date;
-    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const currentTime = formatTimeIndonesia(now);
 
     // Check if slot is booked in database
     const isSlotBooked = (start: string, end: string) => {
         return existingBookings.some((b) => {
-            const bDate = typeof b.booking_date === 'string' ? b.booking_date.split('T')[0].split(' ')[0] : '';
+            const bDate =
+                typeof b.booking_date === 'string'
+                    ? b.booking_date.split('T')[0].split(' ')[0]
+                    : '';
             if (bDate !== selectedDate) return false;
 
             const bStart = b.start_time ? b.start_time.substring(0, 5) : '';
@@ -114,7 +126,9 @@ export default function LapanganShow({
 
         // Clicking a selected slot trims the range at that slot instead of creating a gap.
         if (selectedSlots.includes(startTime)) {
-            const selectedIndexes = selectedSlots.map((slot) => allHours.indexOf(slot)).filter((index) => index >= 0);
+            const selectedIndexes = selectedSlots
+                .map((slot) => allHours.indexOf(slot))
+                .filter((index) => index >= 0);
             const clickedIndex = allHours.indexOf(startTime);
             const firstIndex = Math.min(...selectedIndexes);
             setSelectedSlots(allHours.slice(firstIndex, clickedIndex + 1));
@@ -161,10 +175,18 @@ export default function LapanganShow({
     const durationHours = selectedSlots.length;
     const sortedSlots = [...selectedSlots].sort();
     const startTimeStr = sortedSlots[0] || '';
-    const endTimeStr = sortedSlots.length > 0
-        ? hourlySlots.find((s) => s.start === sortedSlots[sortedSlots.length - 1])?.end || ''
-        : '';
+    const endTimeStr =
+        sortedSlots.length > 0
+            ? hourlySlots.find(
+                  (s) => s.start === sortedSlots[sortedSlots.length - 1],
+              )?.end || ''
+            : '';
     const totalPrice = durationHours * lapangan.price_per_hour;
+    const pointsDiscount =
+        data.payment_method === 'transfer' && data.use_points
+            ? Math.min(availablePoints, totalPrice)
+            : 0;
+    const priceAfterPoints = totalPrice - pointsDiscount;
 
     // Handle Open Checkout
     const handleProceedToCheckout = () => {
@@ -180,7 +202,7 @@ export default function LapanganShow({
     // Handle form submit
     const handleBookingSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/booking', {
+        post(storeBooking.url(), {
             onSuccess: () => {
                 setIsCheckoutOpen(false);
                 reset();
@@ -193,32 +215,41 @@ export default function LapanganShow({
             <Head title={`${lapangan.name} - Sewa Lapangan`} />
 
             {/* Breadcrumbs strip */}
-            <div className="border-b border-border/60 bg-muted/20 py-3 text-xs text-muted-foreground">
-                <div className="container mx-auto px-4 sm:px-6 flex items-center gap-2">
-                    <Link href="/" className="hover:text-foreground">Beranda</Link>
+            <div className="border-border/60 bg-muted/20 text-muted-foreground border-b py-3 text-xs">
+                <div className="public-container max-w-[1240px] flex items-center gap-2">
+                    <Link href="/" className="hover:text-foreground">
+                        Beranda
+                    </Link>
                     <ChevronRight className="size-3.5" />
-                    <Link href="/lapangan" className="hover:text-foreground">Katalog Lapangan</Link>
+                    <Link href="/lapangan" className="hover:text-foreground">
+                        Katalog Lapangan
+                    </Link>
                     <ChevronRight className="size-3.5" />
-                    <span className="text-foreground font-medium truncate">{lapangan.name}</span>
+                    <span className="text-foreground truncate font-medium">
+                        {lapangan.name}
+                    </span>
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 sm:px-6 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="public-container max-w-[1240px] py-8">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                     {/* Left Column: Photos & Details (2 Cols) */}
-                    <div className="lg:col-span-2 space-y-8">
+                    <div className="space-y-8 lg:col-span-2">
                         {/* Main Photo Gallery */}
-                        <div className="rounded-2xl overflow-hidden border border-border/80 bg-card shadow-sm aspect-[16/9] relative">
+                        <div className="border-border/80 bg-card relative aspect-[16/9] overflow-hidden rounded-2xl border shadow-sm">
                             <img
-                                src={lapangan.images?.[0] || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80'}
+                                src={
+                                    lapangan.images?.[0] ||
+                                    'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80'
+                                }
                                 alt={lapangan.name}
                                 className="size-full object-cover"
                             />
                             <div className="absolute top-4 left-4 flex gap-2">
-                                <Badge className="bg-background/90 text-foreground backdrop-blur-md border border-border/40 font-semibold">
+                                <Badge className="bg-background/90 text-foreground border-border/40 border font-semibold backdrop-blur-md">
                                     {lapangan.category?.name}
                                 </Badge>
-                                <Badge className="bg-emerald-600 text-white font-semibold">
+                                <Badge className="bg-primary font-semibold text-primary-foreground">
                                     Aktif & Tersedia
                                 </Badge>
                             </div>
@@ -227,30 +258,40 @@ export default function LapanganShow({
                         {/* Title & Stats */}
                         <div>
                             <div className="flex flex-wrap items-center justify-between gap-3">
-                                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+                                <h1 className="text-foreground text-2xl font-extrabold tracking-tight sm:text-3xl">
                                     {lapangan.name}
                                 </h1>
-                                <div className="flex items-center gap-1.5 rounded-xl bg-card px-3 py-1.5 text-sm font-bold border border-border">
+                                <div className="bg-card border-border flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-sm font-bold">
                                     <Star className="size-4 fill-amber-400 text-amber-400" />
-                                    <span>{Number(lapangan.reviews_avg_rating ?? 5).toFixed(1)}</span>
-                                    <span className="text-xs font-normal text-muted-foreground">({lapangan.reviews_count ?? 0} ulasan)</span>
+                                    <span>
+                                        {Number(
+                                            lapangan.reviews_avg_rating ?? 5,
+                                        ).toFixed(1)}
+                                    </span>
+                                    <span className="text-muted-foreground text-xs font-normal">
+                                        ({lapangan.reviews_count ?? 0} ulasan)
+                                    </span>
                                 </div>
                             </div>
 
-                            <p className="text-sm text-muted-foreground mt-3 leading-relaxed whitespace-pre-line">
+                            <p className="text-muted-foreground mt-3 text-sm leading-relaxed whitespace-pre-line">
                                 {lapangan.description}
                             </p>
                         </div>
 
                         {/* Facilities Checklist */}
-                        <div className="p-6 rounded-2xl bg-card border border-border/70 space-y-4">
-                            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                                <ShieldCheck className="size-4 text-emerald-600" /> Fasilitas Lapangan
+                        <div className="bg-card border-border/70 space-y-4 rounded-2xl border p-6">
+                            <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
+                                <ShieldCheck className="size-4 text-primary" />{' '}
+                                Fasilitas Lapangan
                             </h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                            <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
                                 {lapangan.facilities?.map((f) => (
-                                    <div key={f.id} className="flex items-center gap-2 text-foreground/90">
-                                        <div className="size-5 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                                    <div
+                                        key={f.id}
+                                        className="text-foreground/90 flex items-center gap-2"
+                                    >
+                                        <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                                             <Check className="size-3" />
                                         </div>
                                         <span>{f.name}</span>
@@ -260,75 +301,119 @@ export default function LapanganShow({
                         </div>
 
                         {/* Rules & Policy Box */}
-                        <div className="p-5 rounded-2xl bg-muted/30 border border-border/60 text-xs space-y-2">
-                            <h4 className="font-semibold text-foreground flex items-center gap-1.5">
-                                <Info className="size-4 text-sky-500" /> Kebijakan Booking & Pembatalan:
+                        <div className="bg-muted/30 border-border/60 space-y-2 rounded-2xl border p-5 text-xs">
+                            <h4 className="text-foreground flex items-center gap-1.5 font-semibold">
+                                <Info className="size-4 text-sky-500" />{' '}
+                                Kebijakan Booking & Pembatalan:
                             </h4>
-                            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                <li>Booking hanya tersedia untuk maksimal 3 hari ke depan (hari ini, besok, lusa).</li>
-                                <li>Pembatalan gratis dapat dilakukan paling lambat 24 jam sebelum jam bermain.</li>
-                                <li>Untuk transfer bank, pastikan mentransfer nominal hingga 3-digit kode validasi unik agar terverifikasi otomatis.</li>
-                                <li>Harap hadir di lokasi 10 menit sebelum waktu bermain dimulai.</li>
+                            <ul className="text-muted-foreground list-inside list-disc space-y-1">
+                                <li>
+                                    Booking hanya tersedia untuk maksimal 3 hari
+                                    ke depan (hari ini, besok, lusa).
+                                </li>
+                                <li>
+                                    Pembatalan gratis dapat dilakukan paling
+                                    lambat 24 jam sebelum jam bermain.
+                                </li>
+                                <li>
+                                    Untuk transfer bank, pastikan mentransfer
+                                    nominal hingga 3-digit kode validasi unik
+                                    agar terverifikasi otomatis.
+                                </li>
+                                <li>
+                                    Harap hadir di lokasi 10 menit sebelum waktu
+                                    bermain dimulai.
+                                </li>
                             </ul>
                         </div>
 
                         {/* Customer Reviews */}
-                        <div className="space-y-4 pt-4 border-t border-border/60">
-                            <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                                <MessageSquare className="size-5 text-emerald-600" /> Ulasan Pemain ({lapangan.reviews?.length ?? 0})
+                        <div className="border-border/60 space-y-4 border-t pt-4">
+                            <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
+                                <MessageSquare className="size-5 text-primary" />{' '}
+                                Ulasan Pemain ({lapangan.reviews?.length ?? 0})
                             </h3>
 
                             {lapangan.reviews && lapangan.reviews.length > 0 ? (
                                 <div className="space-y-3">
                                     {lapangan.reviews.map((rev) => (
-                                        <div key={rev.id} className="p-4 rounded-xl border border-border/60 bg-card space-y-2 text-xs">
+                                        <div
+                                            key={rev.id}
+                                            className="border-border/60 bg-card space-y-2 rounded-xl border p-4 text-xs"
+                                        >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="size-7 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
-                                                        {rev.user?.name ? rev.user.name[0] : 'U'}
+                                                    <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
+                                                        {rev.user?.name
+                                                            ? rev.user.name[0]
+                                                            : 'U'}
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold text-foreground">{rev.user?.name}</p>
-                                                        <p className="text-xs text-muted-foreground">Penyewa Terverifikasi</p>
+                                                        <p className="text-foreground font-semibold">
+                                                            {rev.user?.name}
+                                                        </p>
+                                                        <p className="text-muted-foreground text-xs">
+                                                            Penyewa
+                                                            Terverifikasi
+                                                        </p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-1 text-amber-400">
-                                                    {Array.from({ length: rev.rating }).map((_, i) => (
-                                                        <Star key={i} className="size-3 fill-current" />
+                                                    {Array.from({
+                                                        length: rev.rating,
+                                                    }).map((_, i) => (
+                                                        <Star
+                                                            key={i}
+                                                            className="size-3 fill-current"
+                                                        />
                                                     ))}
                                                 </div>
                                             </div>
-                                            {rev.comment && <p className="text-muted-foreground leading-relaxed">{rev.comment}</p>}
+                                            {rev.comment && (
+                                                <p className="text-muted-foreground leading-relaxed">
+                                                    {rev.comment}
+                                                </p>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-xs text-muted-foreground">Belum ada ulasan untuk lapangan ini.</p>
+                                <p className="text-muted-foreground text-xs">
+                                    Belum ada ulasan untuk lapangan ini.
+                                </p>
                             )}
                         </div>
                     </div>
 
                     {/* Right Column: Interactive Slot Booking Picker (1 Col Sticky) */}
                     <div className="lg:col-span-1">
-                        <div className="sticky top-20 rounded-2xl border border-border/80 bg-card p-6 shadow-md space-y-6">
+                        <div className="border-border/80 bg-card sticky top-20 space-y-6 rounded-2xl border p-6 shadow-md">
                             <div>
-                                <span className="text-xs text-muted-foreground">Harga Sewa</span>
-                                <div className="flex items-baseline gap-1 mt-0.5">
-                                    <span className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                                        Rp {Number(lapangan.price_per_hour).toLocaleString('id-ID')}
+                                <span className="text-muted-foreground text-xs">
+                                    Harga Sewa
+                                </span>
+                                <div className="mt-0.5 flex items-baseline gap-1">
+                                    <span className="text-2xl font-extrabold text-primary sm:text-3xl dark:text-primary">
+                                        Rp{' '}
+                                        {Number(
+                                            lapangan.price_per_hour,
+                                        ).toLocaleString('id-ID')}
                                     </span>
-                                    <span className="text-xs text-muted-foreground">/ jam</span>
+                                    <span className="text-muted-foreground text-xs">
+                                        / jam
+                                    </span>
                                 </div>
                             </div>
 
                             {/* 1. Date Selector Tabs (Hari Ini, Besok, Lusa) */}
                             <div className="space-y-2">
-                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                                     Pilih Tanggal Main
                                 </Label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {allowedDates.map((d) => {
-                                        const isSelected = selectedDate === d.date;
+                                        const isSelected =
+                                            selectedDate === d.date;
                                         return (
                                             <button
                                                 key={d.date}
@@ -337,14 +422,19 @@ export default function LapanganShow({
                                                     setSelectedDate(d.date);
                                                     setSelectedSlots([]);
                                                 }}
-                                                className={`p-2.5 rounded-xl border text-center transition-all ${
+                                                className={`rounded-xl border p-2.5 text-center transition-all ${
                                                     isSelected
-                                                        ? 'border-emerald-600 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold ring-1 ring-emerald-600'
-                                                        : 'border-border bg-card/60 text-muted-foreground hover:border-emerald-500/40 hover:text-foreground'
+                                                        ? 'border-primary bg-primary/10 font-bold text-primary ring-1 ring-primary dark:text-primary'
+                                                        : 'border-border bg-card/60 text-muted-foreground hover:text-foreground hover:border-primary/40'
                                                 }`}
                                             >
-                                                <p className="text-xs uppercase tracking-wider">{d.day_name}</p>
-                                                <p className="text-xs font-bold mt-0.5">{d.formatted.split(' ')[0]} {d.formatted.split(' ')[1]}</p>
+                                                <p className="text-xs tracking-wider uppercase">
+                                                    {d.day_name}
+                                                </p>
+                                                <p className="mt-0.5 text-xs font-bold">
+                                                    {d.formatted.split(' ')[0]}{' '}
+                                                    {d.formatted.split(' ')[1]}
+                                                </p>
                                             </button>
                                         );
                                     })}
@@ -354,43 +444,63 @@ export default function LapanganShow({
                             {/* 2. Interactive Time Slot Grid */}
                             <div className="space-y-2.5">
                                 <div className="flex items-center justify-between text-xs">
-                                    <Label className="font-semibold uppercase tracking-wider text-muted-foreground">
+                                    <Label className="text-muted-foreground font-semibold tracking-wider uppercase">
                                         Pilih Jam Bermain
                                     </Label>
-                                    <span className="text-xs text-muted-foreground">
-                                        {lapangan.operational_start} - {lapangan.operational_end} WIB
+                                    <span className="text-muted-foreground text-xs">
+                                        {lapangan.operational_start} -{' '}
+                                        {lapangan.operational_end} WIB
                                     </span>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                                <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto pr-1">
                                     {hourlySlots.map((slot) => {
-                                        const booked = isSlotBooked(slot.start, slot.end);
+                                        const booked = isSlotBooked(
+                                            slot.start,
+                                            slot.end,
+                                        );
                                         const past = isSlotPast(slot.start);
                                         if (past) return null;
-                                        const selected = selectedSlots.includes(slot.start);
+                                        const selected = selectedSlots.includes(
+                                            slot.start,
+                                        );
                                         const disabled = booked || past;
 
                                         return (
                                             <button
                                                 key={slot.start}
                                                 type="button"
-                                                disabled={disabled} aria-disabled={disabled}
-                                                onClick={disabled ? undefined : () => handleSlotClick(slot.start)}
-                                                className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all ${
+                                                disabled={disabled}
+                                                aria-disabled={disabled}
+                                                onClick={
+                                                    disabled
+                                                        ? undefined
+                                                        : () =>
+                                                              handleSlotClick(
+                                                                  slot.start,
+                                                              )
+                                                }
+                                                className={`flex items-center justify-between rounded-xl border p-2.5 text-xs font-semibold transition-all ${
                                                     selected
-                                                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20'
+                                                        ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20'
                                                         : disabled
-                                                        ? 'bg-muted/40 text-muted-foreground/50 border-border/40 cursor-not-allowed'
-                                                        : 'bg-card text-foreground border-border hover:border-emerald-500/50 hover:bg-emerald-500/5'
+                                                          ? 'bg-muted/40 text-muted-foreground/50 border-border/40 cursor-not-allowed'
+                                                          : 'bg-card text-foreground border-border hover:border-primary/50 hover:bg-primary/5'
                                                 }`}
                                             >
-                                                <span>{slot.start} - {slot.end}</span>
+                                                <span>
+                                                    {slot.start} - {slot.end}
+                                                </span>
                                                 {selected ? (
                                                     <Check className="size-3.5 stroke-[3]" />
                                                 ) : booked ? (
-                                                    <span className="text-xs uppercase tracking-tight text-rose-500 font-bold">Terisi</span>
+                                                    <span className="text-xs font-bold tracking-tight text-rose-500 uppercase">
+                                                        Terisi
+                                                    </span>
                                                 ) : past ? (
-                                                    <span className="text-xs uppercase tracking-tight text-muted-foreground font-bold">Lewat</span>
+                                                    <span className="text-muted-foreground text-xs font-bold tracking-tight uppercase">
+                                                        Lewat
+                                                    </span>
                                                 ) : null}
                                             </button>
                                         );
@@ -398,17 +508,17 @@ export default function LapanganShow({
                                 </div>
 
                                 {/* Slot Legend */}
-                                <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/60">
+                                <div className="text-muted-foreground border-border/60 flex items-center justify-between border-t pt-2 text-xs">
                                     <div className="flex items-center gap-1.5">
-                                        <div className="size-2.5 rounded bg-emerald-600" />
+                                        <div className="size-2.5 rounded bg-primary" />
                                         <span>Terpilih</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
-                                        <div className="size-2.5 rounded border border-border bg-card" />
+                                        <div className="border-border bg-card size-2.5 rounded border" />
                                         <span>Tersedia</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
-                                        <div className="size-2.5 rounded bg-muted/80" />
+                                        <div className="bg-muted/80 size-2.5 rounded" />
                                         <span>Terisi / Lewat</span>
                                     </div>
                                 </div>
@@ -416,19 +526,24 @@ export default function LapanganShow({
 
                             {/* 3. Live Price & Duration Summary */}
                             {durationHours > 0 && (
-                                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1.5 text-xs">
-                                    <div className="flex justify-between text-muted-foreground">
+                                <div className="space-y-1.5 rounded-xl border border-primary/20 bg-primary/10 p-3.5 text-xs">
+                                    <div className="text-muted-foreground flex justify-between">
                                         <span>Waktu:</span>
-                                        <span className="font-semibold text-foreground">{startTimeStr} - {endTimeStr} WIB</span>
+                                        <span className="text-foreground font-semibold">
+                                            {startTimeStr} - {endTimeStr} WIB
+                                        </span>
                                     </div>
-                                    <div className="flex justify-between text-muted-foreground">
+                                    <div className="text-muted-foreground flex justify-between">
                                         <span>Durasi:</span>
-                                        <span className="font-semibold text-foreground">{durationHours} Jam</span>
+                                        <span className="text-foreground font-semibold">
+                                            {durationHours} Jam
+                                        </span>
                                     </div>
-                                    <div className="flex justify-between pt-1.5 border-t border-emerald-500/20 text-sm font-bold text-foreground">
+                                    <div className="text-foreground flex justify-between border-t border-primary/20 pt-1.5 text-sm font-bold">
                                         <span>Total Biaya:</span>
-                                        <span className="text-emerald-600 dark:text-emerald-400">
-                                            Rp {totalPrice.toLocaleString('id-ID')}
+                                        <span className="text-primary dark:text-primary">
+                                            Rp{' '}
+                                            {totalPrice.toLocaleString('id-ID')}
                                         </span>
                                     </div>
                                 </div>
@@ -440,13 +555,20 @@ export default function LapanganShow({
                                     type="button"
                                     disabled={durationHours === 0}
                                     onClick={handleProceedToCheckout}
-                                    className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold shadow-md shadow-emerald-600/20"
+                                    className="h-11 w-full rounded-xl bg-primary font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90"
                                 >
-                                    {durationHours === 0 ? 'Pilih Jam Terlebih Dahulu' : 'Lanjut ke Pembayaran →'}
+                                    {durationHours === 0
+                                        ? 'Pilih Jam Terlebih Dahulu'
+                                        : 'Lanjut ke Pembayaran →'}
                                 </Button>
                             ) : (
-                                <Button asChild className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold">
-                                    <Link href="/login">Masuk Untuk Booking</Link>
+                                <Button
+                                    asChild
+                                    className="h-11 w-full rounded-xl bg-primary font-bold text-primary-foreground hover:bg-primary/90"
+                                >
+                                    <Link href="/login">
+                                        Masuk Untuk Booking
+                                    </Link>
                                 </Button>
                             )}
                         </div>
@@ -456,55 +578,108 @@ export default function LapanganShow({
 
             {/* Checkout Confirmation Dialog */}
             <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-                <DialogContent className="sm:max-w-md rounded-2xl border-border">
+                <DialogContent className="border-border rounded-2xl sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-lg font-bold">Konfirmasi Booking Lapangan</DialogTitle>
+                        <DialogTitle className="text-lg font-bold">
+                            Konfirmasi Booking Lapangan
+                        </DialogTitle>
                         <DialogDescription className="text-xs">
-                            Periksa kembali jadwal dan masukkan informasi kontak Anda untuk konfirmasi pesanan.
+                            Periksa kembali jadwal dan masukkan informasi kontak
+                            Anda untuk konfirmasi pesanan.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={handleBookingSubmit} className="space-y-4 pt-2">
+                    <form
+                        onSubmit={handleBookingSubmit}
+                        className="space-y-4 pt-2"
+                    >
                         {/* Summary Pill */}
-                        <div className="p-3.5 rounded-xl bg-muted/40 border border-border/70 space-y-1 text-xs">
-                            <p className="font-bold text-foreground text-sm">{lapangan.name}</p>
-                            <p className="text-muted-foreground">
-                                Tanggal: <span className="font-medium text-foreground">{selectedDate}</span>
+                        <div className="bg-muted/40 border-border/70 space-y-1 rounded-xl border p-3.5 text-xs">
+                            <p className="text-foreground text-sm font-bold">
+                                {lapangan.name}
                             </p>
                             <p className="text-muted-foreground">
-                                Jam: <span className="font-medium text-foreground">{startTimeStr} - {endTimeStr} WIB ({durationHours} Jam)</span>
+                                Tanggal:{' '}
+                                <span className="text-foreground font-medium">
+                                    {selectedDate}
+                                </span>
                             </p>
                             <p className="text-muted-foreground">
-                                Total Harga Dasar: <span className="font-bold text-emerald-600 dark:text-emerald-400">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                                Jam:{' '}
+                                <span className="text-foreground font-medium">
+                                    {startTimeStr} - {endTimeStr} WIB (
+                                    {durationHours} Jam)
+                                </span>
+                            </p>
+                            <p className="text-muted-foreground">
+                                Total Harga Dasar:{' '}
+                                <span className="font-bold text-primary dark:text-primary">
+                                    Rp {totalPrice.toLocaleString('id-ID')}
+                                </span>
+                            </p>
+                            {pointsDiscount > 0 && (
+                                <p className="text-muted-foreground">
+                                    Diskon Poin:{' '}
+                                    <span className="font-bold text-primary dark:text-primary">
+                                        - Rp{' '}
+                                        {pointsDiscount.toLocaleString('id-ID')}
+                                    </span>
+                                </p>
+                            )}
+                            <p className="text-muted-foreground">
+                                Harga setelah poin:{' '}
+                                <span className="text-foreground font-bold">
+                                    Rp{' '}
+                                    {priceAfterPoints.toLocaleString('id-ID')}
+                                </span>
                             </p>
                         </div>
 
                         {/* Customer Information */}
                         <div className="space-y-3 text-xs">
                             <div className="space-y-1">
-                                <Label htmlFor="customer_name">Nama Lengkap Pemesan</Label>
+                                <Label htmlFor="customer_name">
+                                    Nama Lengkap Pemesan
+                                </Label>
                                 <Input
                                     id="customer_name"
                                     value={data.customer_name}
-                                    onChange={(e) => setData('customer_name', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('customer_name', e.target.value)
+                                    }
                                     placeholder="Nama pemesan"
                                     required
                                     className="h-9 rounded-lg"
                                 />
-                                {errors.customer_name && <p className="text-rose-500 text-xs">{errors.customer_name}</p>}
+                                {errors.customer_name && (
+                                    <p className="text-xs text-rose-500">
+                                        {errors.customer_name}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="space-y-1">
-                                <Label htmlFor="customer_phone">Nomor WhatsApp / HP</Label>
+                                <Label htmlFor="customer_phone">
+                                    Nomor WhatsApp / HP
+                                </Label>
                                 <Input
                                     id="customer_phone"
                                     value={data.customer_phone}
-                                    onChange={(e) => setData('customer_phone', e.target.value)}
+                                    onChange={(e) =>
+                                        setData(
+                                            'customer_phone',
+                                            e.target.value,
+                                        )
+                                    }
                                     placeholder="Contoh: 081234567890"
                                     required
                                     className="h-9 rounded-lg"
                                 />
-                                {errors.customer_phone && <p className="text-rose-500 text-xs">{errors.customer_phone}</p>}
+                                {errors.customer_phone && (
+                                    <p className="text-xs text-rose-500">
+                                        {errors.customer_phone}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Payment Method Option */}
@@ -513,44 +688,117 @@ export default function LapanganShow({
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => setData('payment_method', 'transfer')}
-                                        className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                                        onClick={() =>
+                                            setData(
+                                                'payment_method',
+                                                'transfer',
+                                            )
+                                        }
+                                        className={`flex flex-col justify-between rounded-xl border p-3 text-left transition-all ${
                                             data.payment_method === 'transfer'
-                                                ? 'border-emerald-600 bg-emerald-500/10 font-bold ring-1 ring-emerald-600'
+                                                ? 'border-primary bg-primary/10 font-bold ring-1 ring-primary'
                                                 : 'border-border bg-card text-muted-foreground hover:border-border/80'
                                         }`}
                                     >
-                                        <CreditCard className="size-4 mb-1 text-emerald-600" />
+                                        <CreditCard className="mb-1 size-4 text-primary" />
                                         <div>
-                                            <p className="text-xs text-foreground font-semibold">Transfer Bank</p>
-                                            <p className="text-xs text-muted-foreground">Kode unik 3-digit</p>
+                                            <p className="text-foreground text-xs font-semibold">
+                                                Transfer Bank
+                                            </p>
+                                            <p className="text-muted-foreground text-xs">
+                                                Kode unik 3-digit
+                                            </p>
                                         </div>
                                     </button>
 
                                     <button
                                         type="button"
-                                        onClick={() => setData('payment_method', 'cash')}
-                                        className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                                        onClick={() =>
+                                            setData((previousData) => ({
+                                                ...previousData,
+                                                payment_method: 'cash',
+                                                use_points: false,
+                                            }))
+                                        }
+                                        className={`flex flex-col justify-between rounded-xl border p-3 text-left transition-all ${
                                             data.payment_method === 'cash'
-                                                ? 'border-emerald-600 bg-emerald-500/10 font-bold ring-1 ring-emerald-600'
+                                                ? 'border-primary bg-primary/10 font-bold ring-1 ring-primary'
                                                 : 'border-border bg-card text-muted-foreground hover:border-border/80'
                                         }`}
                                     >
-                                        <Banknote className="size-4 mb-1 text-emerald-600" />
+                                        <Banknote className="mb-1 size-4 text-primary" />
                                         <div>
-                                            <p className="text-xs text-foreground font-semibold">Cash di Lokasi</p>
-                                            <p className="text-xs text-muted-foreground">Bayar ke kasir</p>
+                                            <p className="text-foreground text-xs font-semibold">
+                                                Cash di Lokasi
+                                            </p>
+                                            <p className="text-muted-foreground text-xs">
+                                                Bayar ke kasir
+                                            </p>
                                         </div>
                                     </button>
                                 </div>
                             </div>
 
+                            {data.payment_method === 'transfer' &&
+                                availablePoints > 0 && (
+                                    <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/10 p-3">
+                                        <div>
+                                            <Label>
+                                                Gunakan Poin Tersedia?
+                                            </Label>
+                                            <p className="text-muted-foreground text-xs">
+                                                Saldo yang dapat digunakan:{' '}
+                                                {availablePoints.toLocaleString(
+                                                    'id-ID',
+                                                )}{' '}
+                                                poin. Poin mengurangi harga
+                                                sewa, sedangkan kode unik tetap
+                                                ditambahkan ke transfer.
+                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant={
+                                                    data.use_points
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                                onClick={() =>
+                                                    setData('use_points', true)
+                                                }
+                                            >
+                                                Ya, Gunakan Poin
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant={
+                                                    !data.use_points
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                                onClick={() =>
+                                                    setData('use_points', false)
+                                                }
+                                            >
+                                                Tidak
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+
                             <div className="space-y-1">
-                                <Label htmlFor="notes">Catatan Tambahan (Opsional)</Label>
+                                <Label htmlFor="notes">
+                                    Catatan Tambahan (Opsional)
+                                </Label>
                                 <Input
                                     id="notes"
                                     value={data.notes}
-                                    onChange={(e) => setData('notes', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('notes', e.target.value)
+                                    }
                                     placeholder="Contoh: Sewa rompi atau bola tambahan"
                                     className="h-9 rounded-lg"
                                 />
@@ -558,19 +806,23 @@ export default function LapanganShow({
                         </div>
 
                         {errors.start_time && (
-                            <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600 text-xs flex items-center gap-2">
+                            <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-600">
                                 <AlertCircle className="size-4 shrink-0" />
                                 <span>{errors.start_time}</span>
                             </div>
                         )}
 
                         {currentUser && currentUser.is_verified === false && (
-                            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2.5">
-                                <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
+                                <AlertCircle className="mt-0.5 size-4 shrink-0 text-amber-600" />
                                 <div className="space-y-1">
-                                    <p className="font-semibold">Email Anda Belum Diverifikasi</p>
+                                    <p className="font-semibold">
+                                        Email Anda Belum Diverifikasi
+                                    </p>
                                     <p className="text-xs leading-relaxed">
-                                        Untuk melanjutkan pemesanan dan menjamin validitas invoice, silakan verifikasi email Anda ({currentUser.email}).
+                                        Untuk melanjutkan pemesanan dan menjamin
+                                        validitas invoice, silakan verifikasi
+                                        email Anda ({currentUser.email}).
                                     </p>
                                 </div>
                             </div>
@@ -581,24 +833,29 @@ export default function LapanganShow({
                                 type="button"
                                 variant="outline"
                                 onClick={() => setIsCheckoutOpen(false)}
-                                className="flex-1 rounded-xl h-10"
+                                className="h-10 flex-1 rounded-xl"
                             >
                                 Batal
                             </Button>
-                            {currentUser && currentUser.is_verified === false ? (
+                            {currentUser &&
+                            currentUser.is_verified === false ? (
                                 <Button
                                     asChild
-                                    className="flex-1 bg-amber-600 hover:bg-amber-500 text-white rounded-xl h-10 font-bold"
+                                    className="h-10 flex-1 rounded-xl bg-amber-600 font-bold text-white hover:bg-amber-500"
                                 >
-                                    <Link href="/email/verify">Verifikasi Email Dulu</Link>
+                                    <Link href="/email/verify">
+                                        Verifikasi Email Dulu
+                                    </Link>
                                 </Button>
                             ) : (
                                 <Button
                                     type="submit"
                                     disabled={processing}
-                                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl h-10 font-bold"
+                                    className="h-10 flex-1 rounded-xl bg-primary font-bold text-primary-foreground hover:bg-primary/90"
                                 >
-                                    {processing ? 'Memproses...' : 'Konfirmasi & Buat Invoice'}
+                                    {processing
+                                        ? 'Memproses...'
+                                        : 'Konfirmasi & Buat Invoice'}
                                 </Button>
                             )}
                         </div>

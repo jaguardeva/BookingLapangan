@@ -20,7 +20,7 @@ export default function AdminLogsIndex({ logs }: Props) {
 
     const getActionBadge = (action: string) => {
         if (action.includes('approved')) {
-            return <Badge className="bg-emerald-600 text-white text-xs">{action}</Badge>;
+            return <Badge className="bg-primary text-primary-foreground text-xs">{action}</Badge>;
         }
         if (action.includes('rejected') || action.includes('deleted')) {
             return <Badge className="bg-rose-600 text-white text-xs">{action}</Badge>;
@@ -38,7 +38,7 @@ export default function AdminLogsIndex({ logs }: Props) {
             <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                        <History className="size-6 text-emerald-600" /> Audit Log & Rekam Aktivitas Sistem
+                        <History className="size-6 text-primary" /> Audit Log & Rekam Aktivitas Sistem
                     </h1>
                     <p className="text-xs text-muted-foreground mt-0.5">
                         Rekam jejak setiap aksi superadmin, kasir, dan pengguna dalam sistem booking lapangan.
@@ -112,7 +112,7 @@ export default function AdminLogsIndex({ logs }: Props) {
                                 preserveScroll
                                 className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                                     link.active
-                                        ? 'bg-emerald-600 text-white border-emerald-600'
+                                        ? 'bg-primary text-primary-foreground border-primary'
                                         : link.url
                                         ? 'bg-card text-foreground hover:bg-muted border-border'
                                         : 'text-muted-foreground/50 border-transparent cursor-not-allowed pointer-events-none'

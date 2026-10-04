@@ -68,6 +68,8 @@ class HandleInertiaRequests extends Middleware
                     'avatar' => $user->avatar,
                     'email_verified_at' => $user->email_verified_at,
                     'is_verified' => $user->hasVerifiedEmail(),
+                    'points_balance' => $user->points_balance,
+                    'available_points' => $user->availablePoints(),
                     'unread_notifications_count' => $user->unreadNotifications()->count(),
                 ] : null,
             ],

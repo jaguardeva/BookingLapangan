@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Trophy, CalendarCheck, Shield, LogOut, User as UserIcon, LayoutDashboard } from 'lucide-react';
+import { Trophy, CalendarCheck, Shield, ShieldCheck, LogOut, User as UserIcon, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotificationCenter } from '@/components/notification-center';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
+import { edit as editSecurity } from '@/routes/security';
 import type { User } from '@/types/auth';
 
 export function Navbar() {
@@ -31,16 +32,16 @@ export function Navbar() {
                     </Link>
                 </div>
             )}
-            <div className="container mx-auto flex h-14 items-center justify-between gap-2 px-3 sm:h-16 sm:px-6">
+            <div className="public-container max-w-[1240px] flex h-14 items-center justify-between gap-2 sm:h-16">
                 {/* Brand Logo */}
                 <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-8">
                     <Link href="/" className="group flex min-w-0 items-center gap-2 sm:gap-2.5">
-                        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-500/20 transition-colors group-hover:bg-emerald-500 sm:size-9">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20 transition-colors group-hover:bg-primary/90 sm:size-9">
                             <Trophy className="size-4 sm:size-5" />
                         </div>
                         <div className="min-w-0 flex flex-col">
                             <span className="flex items-center gap-1 text-sm font-bold tracking-tight text-foreground sm:gap-1.5 sm:text-base">
-                                Sport<span className="text-emerald-600 dark:text-emerald-400">Booking</span>
+                                Sport<span className="text-primary dark:text-primary">Booking</span>
                             </span>
                             <span className="-mt-1 hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:block sm:text-xs">
                                 Arena Sports Hub
@@ -52,20 +53,20 @@ export function Navbar() {
                     <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
                         <Link
                             href="/"
-                            className="hover:text-foreground transition-colors hover:text-emerald-600 dark:hover:text-emerald-400"
+                            className="hover:text-foreground transition-colors hover:text-primary dark:hover:text-primary"
                         >
                             Beranda
                         </Link>
                         <Link
                             href="/lapangan"
-                            className="hover:text-foreground transition-colors hover:text-emerald-600 dark:hover:text-emerald-400"
+                            className="hover:text-foreground transition-colors hover:text-primary dark:hover:text-primary"
                         >
                             Cari Lapangan
                         </Link>
                         {user && (
                             <Link
                                 href="/my-bookings"
-                                className="hover:text-foreground transition-colors hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1.5"
+                                className="hover:text-foreground transition-colors hover:text-primary dark:hover:text-primary flex items-center gap-1.5"
                             >
                                 <CalendarCheck className="size-4" />
                                 Riwayat Booking
@@ -74,7 +75,7 @@ export function Navbar() {
                         {isStaff && (
                             <Link
                                 href="/admin"
-                                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
+                                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 dark:bg-primary/20 px-3 py-1 text-xs font-semibold text-primary dark:text-primary border border-primary/20 hover:bg-primary/20 transition-all"
                             >
                                 <Shield className="size-3.5" />
                                 Admin Panel
@@ -94,7 +95,7 @@ export function Navbar() {
                                     <Button variant="ghost" className="relative size-9 rounded-full p-0">
                                         <Avatar className="size-9 border border-border">
                                             <AvatarImage src={user.avatar} alt={user.name} />
-                                            <AvatarFallback className="bg-emerald-600/10 text-emerald-700 dark:text-emerald-300 font-semibold text-xs">
+                                            <AvatarFallback className="bg-primary/10 text-primary dark:text-primary font-semibold text-xs">
                                                 {getInitials(user.name)}
                                             </AvatarFallback>
                                         </Avatar>
@@ -110,7 +111,7 @@ export function Navbar() {
                                     <DropdownMenuSeparator />
                                     {isStaff && (
                                         <DropdownMenuItem asChild>
-                                            <Link href="/admin" className="flex items-center gap-2 cursor-pointer font-medium text-emerald-600 dark:text-emerald-400">
+                                            <Link href="/admin" className="flex items-center gap-2 cursor-pointer font-medium text-primary dark:text-primary">
                                                 <LayoutDashboard className="size-4" />
                                                 Dashboard Admin
                                             </Link>
@@ -126,6 +127,12 @@ export function Navbar() {
                                         <Link href="/settings/profile" className="flex items-center gap-2 cursor-pointer">
                                             <UserIcon className="size-4" />
                                             Pengaturan Akun
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href={editSecurity()} className="flex items-center gap-2 cursor-pointer">
+                                            <ShieldCheck className="size-4" />
+                                            Keamanan
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
@@ -148,7 +155,7 @@ export function Navbar() {
                             <Button variant="ghost" size="sm" className="px-2 sm:px-3" asChild>
                                 <Link href="/login">Masuk</Link>
                             </Button>
-                            <Button size="sm" className="bg-emerald-600 px-2.5 text-white shadow-sm hover:bg-emerald-500 sm:px-3" asChild>
+                            <Button size="sm" className="bg-primary px-2.5 text-primary-foreground shadow-sm hover:bg-primary/90 sm:px-3" asChild>
                                 <Link href="/register"><span className="sm:hidden">Daftar</span><span className="hidden sm:inline">Daftar Sekarang</span></Link>
                             </Button>
                         </div>

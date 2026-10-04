@@ -44,7 +44,12 @@ export type BankAccount = {
     is_active: boolean;
 };
 
-export type BookingStatus = 'pending' | 'pending_validation' | 'approved' | 'rejected' | 'cancelled';
+export type BookingStatus =
+    | 'pending'
+    | 'pending_validation'
+    | 'approved'
+    | 'rejected'
+    | 'cancelled';
 
 export type Booking = {
     id: number;
@@ -58,6 +63,7 @@ export type Booking = {
     base_price: number;
     validation_code: number;
     total_price: number;
+    points_redeemed: number;
     payment_method: 'cash' | 'transfer';
     payment_status: BookingStatus;
     customer_name: string;

@@ -86,6 +86,7 @@ test('user cannot book more than 2 days in advance (PRD Rule)', function () {
         'start_time' => '10:00',
         'duration_hours' => 2,
         'payment_method' => 'transfer',
+        'use_points' => false,
         'customer_name' => 'John Doe',
         'customer_phone' => '08123456789',
     ]);
@@ -104,6 +105,7 @@ test('user can book valid slot with 3-digit validation code generated', function
         'start_time' => '14:00',
         'duration_hours' => 2,
         'payment_method' => 'transfer',
+        'use_points' => false,
         'customer_name' => 'Dimas Anggara',
         'customer_phone' => '081234567890',
         'notes' => 'Pesan bola 2',
@@ -152,6 +154,7 @@ test('user cannot double book overlapping slots', function () {
         'start_time' => '11:00',
         'duration_hours' => 2,
         'payment_method' => 'transfer',
+        'use_points' => false,
         'customer_name' => 'Second Booker',
         'customer_phone' => '0822222222',
     ]);
@@ -216,8 +219,23 @@ test('admin can approve payment and notification is dispatched', function () {
     $response = $this->post(route('admin.bookings.approve', $booking->id));
 
     $booking->refresh();
+    $this->user->refresh();
     expect($booking->payment_status)->toBe('approved')
-        ->and($booking->validated_by)->toBe($this->admin->id);
+        ->and($booking->validated_by)->toBe($this->admin->id)
+        ->and($this->user->points_balance)->toBe(789);
+
+    $this->assertDatabaseHas('point_transactions', [
+        'booking_id' => $booking->id,
+        'type' => 'earned',
+        'points' => 789,
+        'balance_after' => 789,
+    ]);
+
+    $this->post(route('admin.bookings.approve', $booking->id))
+        ->assertSessionHas('info');
+    $this->user->refresh();
+    expect($this->user->points_balance)->toBe(789);
+    $this->assertDatabaseCount('point_transactions', 1);
 
     Notification::assertSentTo($this->user, PaymentApprovedNotification::class);
 });
@@ -257,6 +275,67 @@ test('admin can reject payment with reason and notification is dispatched', func
         ->and($booking->rejection_reason)->toBe($reason);
 
     Notification::assertSentTo($this->user, PaymentRejectedNotification::class);
+});
+
+test('transfer booking reserves available points and applies them only after approval', function () {
+    $this->user->forceFill(['points_balance' => 500])->save();
+    $this->actingAs($this->user);
+
+    $response = $this->post(route('booking.store'), [
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '12:00',
+        'duration_hours' => 1,
+        'payment_method' => 'transfer',
+        'use_points' => true,
+        'customer_name' => 'Customer Test',
+        'customer_phone' => '08123456789',
+    ]);
+
+    $booking = Booking::query()->where('customer_phone', '08123456789')->latest()->firstOrFail();
+    $this->user->refresh();
+
+    $response->assertRedirect(route('booking.show', $booking->booking_code));
+    expect($booking->points_redeemed)->toBe(500)
+        ->and($booking->total_price)->toBe(100000 - 500 + $booking->validation_code)
+        ->and($this->user->points_balance)->toBe(500)
+        ->and($this->user->availablePoints())->toBe(0);
+
+    $this->post(route('booking.submit-payment', $booking->booking_code));
+    $this->actingAs($this->admin)
+        ->post(route('admin.bookings.approve', $booking->id))
+        ->assertSessionHas('success');
+
+    $this->user->refresh();
+    expect($this->user->points_balance)->toBe($booking->validation_code);
+
+    $this->assertDatabaseHas('point_transactions', [
+        'booking_id' => $booking->id,
+        'type' => 'redeemed',
+        'points' => 500,
+        'balance_after' => 0,
+    ]);
+});
+
+test('cash booking cannot use points', function () {
+    $this->user->forceFill(['points_balance' => 500])->save();
+    $this->actingAs($this->user);
+
+    $response = $this->post(route('booking.store'), [
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '13:00',
+        'duration_hours' => 1,
+        'payment_method' => 'cash',
+        'use_points' => true,
+        'customer_name' => 'Customer Test',
+        'customer_phone' => '08123456789',
+    ]);
+
+    $response->assertSessionHasErrors('use_points');
+    $this->assertDatabaseMissing('bookings', [
+        'customer_phone' => '08123456789',
+    ]);
 });
 
 test('user can cancel booking if >= 24h before play but cannot if < 24h (PRD Rule)', function () {

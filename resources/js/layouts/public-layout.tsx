@@ -22,7 +22,7 @@ export function PublicLayout({ children }: PropsWithChildren) {
     }, [flash]);
 
     return (
-        <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-emerald-500 selection:text-white">
+        <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
 
             <Navbar />
 
@@ -32,12 +32,12 @@ export function PublicLayout({ children }: PropsWithChildren) {
 
             {/* Modern Sports Footer */}
             <footer className="border-t border-border/60 bg-muted/30 pt-12 pb-8">
-                <div className="container mx-auto px-4 sm:px-6">
+                <div className="public-container max-w-[1240px]">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
                         {/* Col 1 */}
                         <div className="space-y-3 md:col-span-1">
                             <div className="flex items-center gap-2">
-                                <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white">
+                                <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                                     <Trophy className="size-4" />
                                 </div>
                                 <span className="text-base font-bold tracking-tight">SportBooking</span>
@@ -51,10 +51,10 @@ export function PublicLayout({ children }: PropsWithChildren) {
                         <div className="space-y-2">
                             <p className="text-xs font-semibold uppercase tracking-wider text-foreground">Kategori Lapangan</p>
                             <ul className="space-y-1.5 text-xs text-muted-foreground">
-                                <li><a href="/lapangan?category=futsal" className="hover:text-emerald-500 transition-colors">Lapangan Futsal Pro</a></li>
-                                <li><a href="/lapangan?category=badminton" className="hover:text-emerald-500 transition-colors">Badminton Court BWF</a></li>
-                                <li><a href="/lapangan?category=mini-soccer" className="hover:text-emerald-500 transition-colors">Mini Soccer 7 vs 7</a></li>
-                                <li><a href="/lapangan?category=basket" className="hover:text-emerald-500 transition-colors">Basketball Arena Hardwood</a></li>
+                                <li><a href="/lapangan?category=futsal" className="hover:text-primary transition-colors">Lapangan Futsal Pro</a></li>
+                                <li><a href="/lapangan?category=badminton" className="hover:text-primary transition-colors">Badminton Court BWF</a></li>
+                                <li><a href="/lapangan?category=mini-soccer" className="hover:text-primary transition-colors">Mini Soccer 7 vs 7</a></li>
+                                <li><a href="/lapangan?category=basket" className="hover:text-primary transition-colors">Basketball Arena Hardwood</a></li>
                             </ul>
                         </div>
 
@@ -71,15 +71,15 @@ export function PublicLayout({ children }: PropsWithChildren) {
                             <p className="text-xs font-semibold uppercase tracking-wider text-foreground">Hubungi Kami</p>
                             <ul className="space-y-2 text-xs text-muted-foreground">
                                 <li className="flex items-center gap-2">
-                                    <MapPin className="size-3.5 text-emerald-500 shrink-0" />
+                                    <MapPin className="size-3.5 text-primary shrink-0" />
                                     <span>Jl. Gelora Olahraga No. 45, Jakarta Selatan</span>
                                 </li>
                                 <li className="flex items-center gap-2">
-                                    <Phone className="size-3.5 text-emerald-500 shrink-0" />
+                                    <Phone className="size-3.5 text-primary shrink-0" />
                                     <span>+62 812-3456-7890</span>
                                 </li>
                                 <li className="flex items-center gap-2">
-                                    <Mail className="size-3.5 text-emerald-500 shrink-0" />
+                                    <Mail className="size-3.5 text-primary shrink-0" />
                                     <span>support@sportbooking.local</span>
                                 </li>
                             </ul>

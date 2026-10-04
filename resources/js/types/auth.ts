@@ -6,6 +6,8 @@ export type User = {
     phone?: string | null;
     avatar?: string;
     unread_notifications_count?: number;
+    points_balance?: number;
+    available_points?: number;
     email_verified_at: string | null;
     is_verified?: boolean;
     two_factor_enabled?: boolean;
