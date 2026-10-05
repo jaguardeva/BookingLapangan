@@ -18,6 +18,7 @@ class HomeController extends Controller
             ->get();
 
         $featuredLapangans = Lapangan::where('is_active', true)
+            ->whereHas('category', fn ($query) => $query->where('is_active', true))
             ->with(['category', 'facilities'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
@@ -38,7 +39,9 @@ class HomeController extends Controller
             'facilities' => $facilities,
             'testimonials' => $testimonials,
             'stats' => [
-                'total_lapangan' => Lapangan::where('is_active', true)->count(),
+                'total_lapangan' => Lapangan::where('is_active', true)
+                    ->whereHas('category', fn ($query) => $query->where('is_active', true))
+                    ->count(),
                 'total_categories' => $categories->count(),
                 'satisfaction_rate' => 99,
             ],

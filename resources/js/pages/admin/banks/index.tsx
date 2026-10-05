@@ -1,7 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
-import { Plus, Edit2, Trash2, CreditCard } from 'lucide-react';
+import { Plus, Edit2, Trash2, CreditCard, Landmark, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -177,14 +177,21 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
 
             {/* Modal Dialog */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-md rounded-2xl border-border">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-base font-bold">
-                            {editingBank ? 'Edit Rekening Bank' : 'Tambah Rekening Bank Baru'}
-                        </DialogTitle>
-                        <DialogDescription className="text-xs">
-                            Masukkan data rekening bank resmi untuk menerima transfer pembayaran booking.
-                        </DialogDescription>
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                {editingBank ? <Pencil className="size-5" /> : <Landmark className="size-5" />}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <DialogTitle className="text-base">
+                                    {editingBank ? 'Edit Rekening Bank' : 'Tambah Rekening Bank Baru'}
+                                </DialogTitle>
+                                <DialogDescription className="text-xs">
+                                    Masukkan data rekening bank resmi untuk menerima transfer pembayaran booking.
+                                </DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
 
                     <form onSubmit={handleFormSubmit} className="space-y-4 pt-2 text-xs">

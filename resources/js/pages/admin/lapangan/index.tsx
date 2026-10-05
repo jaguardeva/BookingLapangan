@@ -1,5 +1,5 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import {
     Plus,
@@ -11,6 +11,8 @@ import {
     Check,
     Clock,
     DollarSign,
+    LayoutGrid,
+    Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +28,13 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import type { Category, Facility, Lapangan } from '@/types/booking';
+import {
+    store as storeLapangan,
+    update as updateLapangan,
+    toggleStatus as toggleLapanganStatus,
+    destroy as destroyLapangan,
+} from '@/actions/App/Http/Controllers/Admin/LapanganManagementController';
+import { index as catalogIndex } from '@/actions/App/Http/Controllers/Admin/CatalogManagementController';
 
 interface Props {
     lapangans: {
@@ -45,33 +54,45 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLapangan, setEditingLapangan] = useState<Lapangan | null>(null);
+    const activeCategories = categories.filter((category) => category.is_active);
 
     const { data, setData, post, processing, reset, errors } = useForm({
         name: '',
-        category_id: categories[0]?.id || 1,
+        category_id: activeCategories[0]?.id ?? '',
         description: '',
         price_per_hour: 100000,
         operational_start: '07:00',
         operational_end: '23:00',
         slot_duration_minutes: 60,
         image_url: '',
-        image_file: null as File | null,
-        facilities: [] as number[],
+        image_files: [] as File[],
+        images_to_keep: [] as string[],
+        facilities: [] as string[],
     });
+
+    const [imagePreviews, setImagePreviews] = useState<{ file: File; url: string }[]>([]);
+
+    useEffect(() => {
+        const previews = data.image_files.map((file) => ({ file, url: URL.createObjectURL(file) }));
+        setImagePreviews(previews);
+
+        return () => previews.forEach(({ url }) => URL.revokeObjectURL(url));
+    }, [data.image_files]);
 
     const openCreateModal = () => {
         setEditingLapangan(null);
         reset();
         setData({
             name: '',
-            category_id: categories[0]?.id || 1,
+            category_id: activeCategories[0]?.id ?? '',
             description: '',
             price_per_hour: 100000,
             operational_start: '07:00',
             operational_end: '23:00',
             slot_duration_minutes: 60,
             image_url: '',
-            image_file: null,
+            image_files: [],
+            images_to_keep: [],
             facilities: [],
         });
         setIsModalOpen(true);
@@ -87,8 +108,9 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
             operational_start: lapangan.operational_start,
             operational_end: lapangan.operational_end,
             slot_duration_minutes: lapangan.slot_duration_minutes,
-            image_url: lapangan.images?.[0] || '',
-            image_file: null,
+            image_url: '',
+            image_files: [],
+            images_to_keep: lapangan.images || [],
             facilities: lapangan.facilities?.map((f) => f.id) || [],
         });
         setIsModalOpen(true);
@@ -96,37 +118,36 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
 
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const options = {
+            forceFormData: true,
+            onSuccess: () => {
+                setIsModalOpen(false);
+                reset();
+            },
+        };
+
         if (editingLapangan) {
-            router.post(`/admin/lapangans/${editingLapangan.id}`, {
+            router.post(updateLapangan.url(editingLapangan.id), {
                 _method: 'put',
                 ...data,
-            }, {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    reset();
-                },
-            });
+                images_to_keep_count: data.images_to_keep.length,
+            }, options);
         } else {
-            post('/admin/lapangans', {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    reset();
-                },
-            });
+            post(storeLapangan.url(), options);
         }
     };
 
     const handleToggle = (lapangan: Lapangan) => {
-        router.post(`/admin/lapangans/${lapangan.id}/toggle`, {}, { preserveScroll: true });
+        router.post(toggleLapanganStatus.url(lapangan.id), {}, { preserveScroll: true });
     };
 
     const handleDelete = (lapangan: Lapangan) => {
         if (confirm(`Hapus lapangan ${lapangan.name}? Semua riwayat booking di lapangan ini akan ikut terhapus.`)) {
-            router.delete(`/admin/lapangans/${lapangan.id}`, { preserveScroll: true });
+            router.delete(destroyLapangan.url(lapangan.id), { preserveScroll: true });
         }
     };
 
-    const toggleFacility = (facilityId: number) => {
+    const toggleFacility = (facilityId: string) => {
         setData((prev) => {
             const exists = prev.facilities.includes(facilityId);
             return {
@@ -265,14 +286,21 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
 
             {/* Create & Edit Modal */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-xl rounded-2xl border-border max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="text-lg font-bold">
-                            {editingLapangan ? 'Edit Data Lapangan' : 'Tambah Lapangan Baru'}
-                        </DialogTitle>
-                        <DialogDescription className="text-xs">
-                            Isi informasi lengkap lapangan, tarif sewa per jam, dan fasilitas pendukung.
-                        </DialogDescription>
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                {editingLapangan ? <Pencil className="size-5" /> : <LayoutGrid className="size-5" />}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <DialogTitle>
+                                    {editingLapangan ? 'Edit Data Lapangan' : 'Tambah Lapangan Baru'}
+                                </DialogTitle>
+                                <DialogDescription className="text-xs">
+                                    Isi informasi lengkap lapangan, tarif sewa per jam, dan fasilitas pendukung.
+                                </DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
 
                     <form onSubmit={handleFormSubmit} className="space-y-4 pt-2 text-xs">
@@ -292,12 +320,20 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
 
                             <div className="space-y-1 col-span-2 sm:col-span-1">
                                 <Label htmlFor="category_id">Kategori Olahraga</Label>
-                                <Select value={String(data.category_id)} onValueChange={(value) => setData('category_id', Number(value))}>
+                                <Select value={data.category_id} onValueChange={(value) => setData('category_id', value)}>
                                     <SelectTrigger id="category_id" className="h-9 w-full rounded-lg text-sm"><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
                                     <SelectContent>
-                                        {categories.map((category) => <SelectItem key={category.id} value={String(category.id)}>{category.name}</SelectItem>)}
+                                        {categories.filter((category) => category.is_active || category.id === editingLapangan?.category_id).map((category) => (
+                                            <SelectItem key={category.id} value={category.id}>
+                                                {category.name}{category.is_active ? '' : ' (kategori nonaktif)'}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
+                                <Link href={catalogIndex.url()} className="inline-block text-xs font-medium text-primary hover:underline">
+                                    Tambah atau kelola kategori
+                                </Link>
+                                {errors.category_id && <p className="text-rose-500 text-xs">{errors.category_id}</p>}
                             </div>
                         </div>
 
@@ -356,55 +392,86 @@ export default function AdminLapanganIndex({ lapangans, categories = [], facilit
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Foto Lapangan</Label>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <Label htmlFor="image_file" className="text-xs text-muted-foreground">Upload File Gambar (Storage)</Label>
-                                    <Input
-                                        id="image_file"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => setData('image_file', e.target.files?.[0] || null)}
-                                        className="h-9 text-xs rounded-lg cursor-pointer file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:bg-muted"
-                                    />
-                                    {errors.image_file && <p className="text-rose-500 text-xs">{errors.image_file}</p>}
-                                </div>
-
-                                <div className="space-y-1">
-                                    <Label htmlFor="image_url" className="text-xs text-muted-foreground">Atau URL Gambar External</Label>
-                                    <Input
-                                        id="image_url"
-                                        value={data.image_url}
-                                        onChange={(e) => setData('image_url', e.target.value)}
-                                        placeholder="https://images.unsplash.com/..."
-                                        className="h-9 text-xs rounded-lg"
-                                    />
-                                </div>
+                            <div className="flex items-center justify-between gap-3">
+                                <Label>Foto Lapangan</Label>
+                                <span className="text-xs text-muted-foreground">
+                                    {data.images_to_keep.length + data.image_files.length + (data.image_url ? 1 : 0)} / 4 foto
+                                </span>
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                                Pilih sampai 4 foto. Foto lama tetap tersimpan kecuali dihapus dari galeri.
+                            </p>
 
-                            {(data.image_file || data.image_url) && (
-                                <div className="mt-2 flex items-center gap-3 p-2 rounded-lg border border-border bg-muted/30">
-                                    <img
-                                        src={data.image_file ? URL.createObjectURL(data.image_file) : data.image_url}
-                                        alt="Preview"
-                                        className="size-12 rounded-lg object-cover border border-border shrink-0"
-                                    />
-                                    <div className="text-xs text-muted-foreground truncate flex-1">
-                                        <p className="font-semibold text-foreground truncate">
-                                            {data.image_file ? data.image_file.name : 'Gambar Lapangan'}
-                                        </p>
-                                        <p className="text-xs">
-                                            {data.image_file ? `${(data.image_file.size / 1024).toFixed(1)} KB (Akan disimpan ke Storage public)` : 'Gambar via URL'}
-                                        </p>
-                                    </div>
+                            <Input
+                                id="image_files"
+                                key={`${editingLapangan?.id ?? 'new'}-${data.image_files.length}`}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                multiple
+                                onChange={(event) => setData('image_files', Array.from(event.target.files ?? []))}
+                                className="h-10 cursor-pointer rounded-lg text-xs file:mr-2 file:rounded-md file:border-0 file:bg-muted file:px-2 file:py-1 file:text-xs"
+                            />
+                            {errors.image_files && <p className="text-rose-500 text-xs">{errors.image_files}</p>}
+                            {errors['image_files.0'] && <p className="text-rose-500 text-xs">{errors['image_files.0']}</p>}
+
+                            {data.images_to_keep.length > 0 && (
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    {data.images_to_keep.map((image, index) => (
+                                        <div key={`${image}-${index}`} className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
+                                            <img src={image} alt={`Foto lapangan ${index + 1}`} className="size-full object-cover" />
+                                            <button
+                                                type="button"
+                                                onClick={() => setData('images_to_keep', data.images_to_keep.filter((_, imageIndex) => imageIndex !== index))}
+                                                aria-label={`Hapus foto ${index + 1}`}
+                                                className="absolute right-1 top-1 rounded-md bg-background/90 px-2 py-1 text-xs font-semibold text-destructive shadow-sm hover:bg-background"
+                                            >
+                                                Hapus
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
+
+                            {imagePreviews.length > 0 && (
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    {imagePreviews.map(({ file, url }, index) => (
+                                        <div key={`${file.name}-${file.lastModified}-${index}`} className="group relative aspect-[4/3] overflow-hidden rounded-lg border border-primary/30 bg-muted">
+                                            <img src={url} alt={`Preview foto baru ${index + 1}`} className="size-full object-cover" />
+                                            <button
+                                                type="button"
+                                                onClick={() => setData('image_files', data.image_files.filter((_, fileIndex) => fileIndex !== index))}
+                                                aria-label={`Hapus foto baru ${index + 1}`}
+                                                className="absolute right-1 top-1 rounded-md bg-background/90 px-2 py-1 text-xs font-semibold text-destructive shadow-sm hover:bg-background"
+                                            >
+                                                Hapus
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="space-y-1">
+                                <Label htmlFor="image_url" className="text-xs text-muted-foreground">Tambahkan satu URL gambar (opsional)</Label>
+                                <Input
+                                    id="image_url"
+                                    type="url"
+                                    value={data.image_url}
+                                    onChange={(event) => setData('image_url', event.target.value)}
+                                    placeholder="https://contoh.com/foto-lapangan.jpg"
+                                    className="h-9 rounded-lg text-xs"
+                                />
+                                {errors.image_url && <p className="text-rose-500 text-xs">{errors.image_url}</p>}
+                            </div>
                         </div>
 
                         {/* Facilities Selection */}
                         <div className="space-y-2 pt-2">
-                            <Label>Fasilitas yang Tersedia</Label>
+                            <div className="flex items-center justify-between gap-3">
+                                <Label>Fasilitas yang Tersedia</Label>
+                                <Link href={catalogIndex.url()} className="text-xs font-medium text-primary hover:underline">
+                                    Tambah fasilitas
+                                </Link>
+                            </div>
                             <div className="grid grid-cols-2 gap-2 p-3 rounded-xl border border-border/70 bg-muted/20">
                                 {facilities.map((f) => {
                                     const checked = data.facilities.includes(f.id);

@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Booking;
+use App\Support\AppUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -48,10 +49,10 @@ class BookingCreatedNotification extends Notification implements ShouldQueue
 
         if ($this->booking->payment_method === 'transfer') {
             $mail->line("Harap transfer **tepat sesuai nominal** (termasuk 3 digit kode unik Rp {$this->booking->validation_code}) sebelum **{$deadline}**.")
-                ->action('Lihat Invoice & Bayar', url("/booking/{$this->booking->booking_code}"));
+                ->action('Lihat Invoice & Bayar', AppUrl::route('booking.show', ['booking_code' => $this->booking->booking_code]));
         } else {
             $mail->line("Silakan lakukan pembayaran tunai di kasir lapangan sebelum **{$deadline}**.")
-                ->action('Lihat Detail Booking', url("/booking/{$this->booking->booking_code}"));
+                ->action('Lihat Detail Booking', AppUrl::route('booking.show', ['booking_code' => $this->booking->booking_code]));
         }
 
         return $mail->line('Terima kasih telah berolahraga bersama kami!');

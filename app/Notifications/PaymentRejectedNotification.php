@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Booking;
+use App\Support\AppUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -30,7 +31,7 @@ class PaymentRejectedNotification extends Notification implements ShouldQueue
             ->line('**Alasan Penolakan:**')
             ->line("> {$this->reason}")
             ->line('Silakan periksa kembali transfer Anda atau hubungi kasir/admin lapangan.')
-            ->action('Periksa Invoice & Coba Lagi', url("/booking/{$this->booking->booking_code}"))
+            ->action('Periksa Invoice & Coba Lagi', AppUrl::route('booking.show', ['booking_code' => $this->booking->booking_code]))
             ->line('Jika Anda merasa ini adalah kekeliruan, mohon segera hubungi kami.');
     }
 

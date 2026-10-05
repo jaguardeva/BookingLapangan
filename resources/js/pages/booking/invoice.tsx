@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { PublicLayout } from '@/layouts/public-layout';
 import {
@@ -15,6 +15,7 @@ import {
     ShieldCheck,
     Info,
     Send,
+    Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +37,7 @@ export default function BookingInvoice({
     bankAccounts = [],
     canCancel,
 }: Props) {
+    const { name: appName = 'SportBooking' } = usePage<{ name?: string }>().props;
     const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
     const [copiedAmount, setCopiedAmount] = useState(false);
     const [timeLeft, setTimeLeft] = useState<string>('');
@@ -141,11 +143,11 @@ export default function BookingInvoice({
 
     return (
         <PublicLayout>
-            <Head title={`Invoice #${booking.booking_code} - SportBooking`} />
+            <Head title={`Invoice #${booking.booking_code}`} />
 
-            <div className="public-container max-w-4xl py-8">
+            <div className="public-container max-w-4xl py-8 print:m-0 print:max-w-none print:p-0">
                 {/* Header Back & Print buttons */}
-                <div className="no-print mb-6 flex items-center justify-between">
+                <div className="no-print mb-6 flex items-center justify-between print:hidden">
                     <Button
                         variant="ghost"
                         size="sm"
@@ -172,7 +174,26 @@ export default function BookingInvoice({
                 </div>
 
                 {/* Main Invoice Card */}
-                <div className="border-border/80 bg-card space-y-8 rounded-2xl border p-6 shadow-lg sm:p-8 print:border-none print:shadow-none">
+                <div className="border-border/80 bg-card space-y-8 rounded-2xl border p-6 shadow-lg sm:p-8 print:border-none print:bg-transparent print:p-0 print:shadow-none print:space-y-6">
+                    {/* Official Print Header (Only shown when printing) */}
+                    <div className="hidden border-b-2 border-primary/40 pb-4 print:flex print:items-center print:justify-between">
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                                <Trophy className="size-5" />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-black tracking-tight text-foreground">{appName}</h2>
+                                <p className="text-[10px] text-muted-foreground">Platform Sewa Lapangan Olahraga Resmi</p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <span className="inline-block text-xs font-bold uppercase tracking-wider text-primary">
+                                Bukti Reservasi Resmi
+                            </span>
+                            <p className="text-[10px] text-muted-foreground">ID: #{booking.booking_code}</p>
+                        </div>
+                    </div>
+
                     {/* Invoice Top Strip */}
                     <div className="border-border/60 flex flex-col justify-between gap-4 border-b pb-6 sm:flex-row sm:items-center">
                         <div>
@@ -192,11 +213,16 @@ export default function BookingInvoice({
                             {getStatusBadge()}
                             {booking.payment_status === 'pending' &&
                                 timeLeft && (
-                                    <p className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                    <p className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 no-print print:hidden">
                                         <Clock className="size-3.5" /> Sisa
                                         waktu: {timeLeft}
                                     </p>
                                 )}
+                            {booking.payment_status === 'pending' && (
+                                <p className="hidden text-[11px] text-muted-foreground print:block">
+                                    Batas Pembayaran: {formatDateTimeIndonesia(booking.payment_deadline)} WIB
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -351,7 +377,7 @@ export default function BookingInvoice({
                                                     'amount',
                                                 )
                                             }
-                                            className="text-muted-foreground hover:text-foreground no-print ml-2 inline-flex items-center gap-1 text-xs"
+                                            className="text-muted-foreground hover:text-foreground no-print ml-2 inline-flex items-center gap-1 text-xs print:hidden"
                                         >
                                             {copiedAmount ? (
                                                 <Check className="size-3 text-primary" />
@@ -371,7 +397,7 @@ export default function BookingInvoice({
                     {/* Bank Transfer Instructions & Active Accounts (if Transfer) */}
                     {booking.payment_method === 'transfer' &&
                         booking.payment_status === 'pending' && (
-                            <div className="no-print space-y-4 pt-2">
+                            <div className="no-print space-y-4 pt-2 print:hidden">
                                 <div className="space-y-3 rounded-2xl border border-primary/20 bg-primary/5 p-5">
                                     <div className="flex items-center gap-2">
                                         <CreditCard className="size-5 text-primary" />
@@ -481,7 +507,7 @@ export default function BookingInvoice({
                     {/* Cash Instructions (if Cash) */}
                     {booking.payment_method === 'cash' &&
                         booking.payment_status === 'pending' && (
-                            <div className="bg-muted/40 border-border/70 no-print space-y-2 rounded-2xl border p-5 text-xs">
+                            <div className="bg-muted/40 border-border/70 no-print space-y-2 rounded-2xl border p-5 text-xs print:hidden">
                                 <h3 className="text-foreground flex items-center gap-2 text-sm font-bold">
                                     <Banknote className="size-5 text-primary" />{' '}
                                     Pembayaran Tunai (Cash di Lokasi)
@@ -499,7 +525,7 @@ export default function BookingInvoice({
 
                     {/* Footer Actions: Cancel if allowed */}
                     {canCancel && (
-                        <div className="border-border/60 no-print flex justify-end border-t pt-4">
+                        <div className="border-border/60 no-print flex justify-end border-t pt-4 print:hidden">
                             <Button
                                 type="button"
                                 variant="outline"
@@ -519,6 +545,7 @@ export default function BookingInvoice({
                                 title="Batalkan Booking"
                                 description="Apakah Anda yakin ingin membatalkan booking ini? Tindakan ini tidak dapat dibatalkan."
                                 variant="destructive"
+                                icon={XCircle}
                                 onConfirm={() => {
                                     cancelPost(
                                         `/booking/${booking.booking_code}/cancel`,
@@ -529,6 +556,19 @@ export default function BookingInvoice({
                             />
                         </div>
                     )}
+
+                    {/* Official Print Footer Note (Only shown when printing) */}
+                    <div className="hidden border-t border-border/60 pt-6 text-center text-[10px] text-muted-foreground space-y-1 print:block">
+                        <p className="font-semibold text-foreground">
+                            Terima kasih atas pemesanan Anda di {appName}.
+                        </p>
+                        <p>
+                            Harap tunjukkan lembar invoice ini atau sebutkan Kode Booking #{booking.booking_code} saat tiba di lokasi lapangan.
+                        </p>
+                        <p className="text-[9px] text-muted-foreground/80">
+                            Dicetak secara resmi oleh sistem {appName}
+                        </p>
+                    </div>
                 </div>
             </div>
         </PublicLayout>

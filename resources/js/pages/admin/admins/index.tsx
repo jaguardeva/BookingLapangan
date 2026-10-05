@@ -1,7 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
-import { Plus, Edit2, Trash2, Users, Shield, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Shield, Check, UserPlus, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -43,7 +43,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
         email: '',
         phone: '',
         password: '',
-        lapangan_ids: [] as number[],
+        lapangan_ids: [] as string[],
     });
 
     const openCreateModal = () => {
@@ -89,7 +89,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
         }
     };
 
-    const toggleLapangan = (lapanganId: number) => {
+    const toggleLapangan = (lapanganId: string) => {
         setData((prev) => {
             const exists = prev.lapangan_ids.includes(lapanganId);
             return {
@@ -197,14 +197,21 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
 
             {/* Modal Dialog */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-md rounded-2xl border-border">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-base font-bold">
-                            {editingAdmin ? 'Edit Data Admin' : 'Tambah Staf Kasir Baru'}
-                        </DialogTitle>
-                        <DialogDescription className="text-xs">
-                            Masukkan detail akun login admin dan centang lapangan yang boleh dikelola.
-                        </DialogDescription>
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                {editingAdmin ? <Pencil className="size-5" /> : <UserPlus className="size-5" />}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <DialogTitle className="text-base">
+                                    {editingAdmin ? 'Edit Data Admin' : 'Tambah Staf Kasir Baru'}
+                                </DialogTitle>
+                                <DialogDescription className="text-xs">
+                                    Masukkan detail akun login admin dan centang lapangan yang boleh dikelola.
+                                </DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
 
                     <form onSubmit={handleFormSubmit} className="space-y-4 pt-2 text-xs">

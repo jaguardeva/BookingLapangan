@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Booking;
+use App\Support\AppUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -35,7 +36,7 @@ class PaymentApprovedNotification extends Notification implements ShouldQueue
             ->line("- **Tanggal**: {$date}")
             ->line("- **Jam Main**: {$time}")
             ->line("- **Total Bayar**: {$price}")
-            ->action('Lihat Detail Booking & Invoice', url("/booking/{$this->booking->booking_code}"))
+            ->action('Lihat Detail Booking & Invoice', AppUrl::route('booking.show', ['booking_code' => $this->booking->booking_code]))
             ->line('Harap hadir 10 menit sebelum jadwal bermain. Selamat berolahraga!');
     }
 

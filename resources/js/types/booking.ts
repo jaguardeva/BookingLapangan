@@ -1,7 +1,7 @@
 import { User } from './auth';
 
 export type Category = {
-    id: number;
+    id: string;
     name: string;
     slug: string;
     icon?: string;
@@ -11,14 +11,15 @@ export type Category = {
 };
 
 export type Facility = {
-    id: number;
+    id: string;
     name: string;
     icon?: string;
+    lapangans_count?: number;
 };
 
 export type Lapangan = {
-    id: number;
-    category_id: number;
+    id: string;
+    category_id: string;
     name: string;
     slug: string;
     description?: string;

@@ -4,7 +4,10 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AdminManagementController;
 use App\Http\Controllers\Admin\BankAccountController;
 use App\Http\Controllers\Admin\BookingManagementController;
+use App\Http\Controllers\Admin\CatalogManagementController;
+use App\Http\Controllers\Admin\CategoryManagementController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\FacilityManagementController;
 use App\Http\Controllers\Admin\LapanganManagementController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\WhatsappContactController;
@@ -13,8 +16,8 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LapanganController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReviewController;
+use App\Support\InternalRedirect;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // --- Public Routes ---
@@ -40,16 +43,25 @@ Route::middleware(['auth', 'admin.workspace'])->group(function () {
 
         // 2. Superadmin and Admin always go to admin workspace
         if ($user->isSuperAdmin() || $user->isAdmin()) {
-            return redirect()->route('admin.dashboard');
+            return redirect()->to(InternalRedirect::path(
+                config('auth.redirects.admin'),
+                route('admin.dashboard', absolute: false),
+            ));
         }
 
         // 3. User just completed email verification
         if ($request->has('verified')) {
-            return redirect()->route('booking.history')->with('success', 'Email Anda berhasil diverifikasi! Selamat datang di SportBooking.');
+            return redirect()->to(InternalRedirect::path(
+                config('auth.redirects.after_verification'),
+                route('booking.history', absolute: false),
+            ))->with('success', 'Email Anda berhasil diverifikasi! Selamat datang di '.config('app.name').'.');
         }
 
         // 4. Regular verified user redirected to intended page or booking history
-        return redirect()->intended(route('booking.history'));
+        return redirect()->intended(InternalRedirect::path(
+            config('auth.redirects.member'),
+            route('booking.history', absolute: false),
+        ));
     })->name('dashboard');
 
     // Customer actions requiring verified email
@@ -84,6 +96,13 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'role:superadmin,admin
 
     // Superadmin-only controls
     Route::middleware(['role:superadmin'])->group(function () {
+        Route::get('/catalog', [CatalogManagementController::class, 'index'])->name('catalog.index');
+        Route::post('/categories', [CategoryManagementController::class, 'store'])->name('categories.store');
+        Route::put('/categories/{category}', [CategoryManagementController::class, 'update'])->name('categories.update');
+        Route::post('/categories/{category}/toggle', [CategoryManagementController::class, 'toggle'])->name('categories.toggle');
+        Route::post('/facilities', [FacilityManagementController::class, 'store'])->name('facilities.store');
+        Route::put('/facilities/{facility}', [FacilityManagementController::class, 'update'])->name('facilities.update');
+
         // Lapangan Management
         Route::get('/lapangans', [LapanganManagementController::class, 'index'])->name('lapangans.index');
         Route::post('/lapangans', [LapanganManagementController::class, 'store'])->name('lapangans.store');
@@ -116,4 +135,4 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'role:superadmin,admin
     });
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

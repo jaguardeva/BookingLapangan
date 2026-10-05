@@ -73,7 +73,7 @@ export default function AdminDashboard({
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dashboard Analytics - SportBooking" />
+            <Head title="Dashboard Analytics" />
 
             <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
                 {/* Header Strip */}

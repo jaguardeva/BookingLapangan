@@ -41,3 +41,17 @@ test('verification email uses the configured application URL', function () {
 
     expect($mail->actionUrl)->toStartWith('https://sportbooking.example/');
 });
+
+test('verification email expiry matches the configured token lifetime', function () {
+    config([
+        'app.url' => 'https://sportbooking.example',
+        'auth.verification.expire' => 37,
+    ]);
+    $user = User::factory()->unverified()->create();
+
+    $mail = (new VerifyEmailNotification)->toMail($user);
+    parse_str((string) parse_url($mail->actionUrl, PHP_URL_QUERY), $query);
+
+    expect((int) $query['expires'])->toBe(now()->addMinutes(37)->timestamp)
+        ->and(str_contains((string) $mail->render(), 'Tautan verifikasi ini akan kedaluwarsa dalam 37 menit.'))->toBeTrue();
+});

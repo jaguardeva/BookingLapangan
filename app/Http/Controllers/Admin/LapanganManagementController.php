@@ -9,10 +9,14 @@ use App\Models\Facility;
 use App\Models\Lapangan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class LapanganManagementController extends Controller
 {
@@ -36,44 +40,74 @@ class LapanganManagementController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'category_id' => ['required', 'exists:categories,id'],
+            'category_id' => ['required', Rule::exists('categories', 'id')->where('is_active', true)],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price_per_hour' => ['required', 'integer', 'min:10000'],
             'operational_start' => ['required', 'string'],
             'operational_end' => ['required', 'string'],
             'slot_duration_minutes' => ['required', 'integer', 'in:30,60,90,120'],
-            'image_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
-            'image_url' => ['nullable', 'string'],
+            'image_files' => ['nullable', 'array', 'max:4'],
+            'image_files.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
+            'image_url' => ['nullable', 'url', 'max:2048'],
             'facilities' => ['nullable', 'array'],
             'facilities.*' => ['exists:facilities,id'],
         ]);
 
-        $images = [];
-        if ($request->hasFile('image_file')) {
-            $path = $request->file('image_file')->store('lapangans', 'public');
-            $images[] = Storage::url($path);
-        } elseif (! empty($validated['image_url'])) {
-            $images[] = $validated['image_url'];
-        } else {
-            $images[] = 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80';
+        $imageFiles = $request->file('image_files', []);
+
+        if (count($imageFiles) + (empty($validated['image_url']) ? 0 : 1) > 4) {
+            throw ValidationException::withMessages([
+                'image_files' => 'Maksimal 4 foto dapat disimpan untuk satu lapangan.',
+            ]);
         }
 
-        $lapangan = Lapangan::create([
-            'category_id' => $validated['category_id'],
-            'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']).'-'.Str::random(4),
-            'description' => $validated['description'] ?? null,
-            'price_per_hour' => $validated['price_per_hour'],
-            'operational_start' => $validated['operational_start'],
-            'operational_end' => $validated['operational_end'],
-            'slot_duration_minutes' => $validated['slot_duration_minutes'],
-            'images' => $images,
-            'is_active' => true,
-        ]);
+        $storedPaths = [];
 
-        if (! empty($validated['facilities'])) {
-            $lapangan->facilities()->sync($validated['facilities']);
+        try {
+            $images = [];
+
+            foreach ($imageFiles as $imageFile) {
+                $path = $imageFile->store('lapangans', 'public');
+
+                if ($path === false) {
+                    throw new \RuntimeException('Foto lapangan gagal disimpan.');
+                }
+
+                $storedPaths[] = $path;
+                $images[] = Storage::disk('public')->url($path);
+            }
+
+            if (! empty($validated['image_url'])) {
+                $images[] = $validated['image_url'];
+            }
+
+            if ($images === []) {
+                $images[] = 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80';
+            }
+
+            $lapangan = DB::transaction(function () use ($validated, $images): Lapangan {
+                $lapangan = Lapangan::create([
+                    'category_id' => $validated['category_id'],
+                    'name' => $validated['name'],
+                    'slug' => Str::slug($validated['name']).'-'.Str::random(4),
+                    'description' => $validated['description'] ?? null,
+                    'price_per_hour' => $validated['price_per_hour'],
+                    'operational_start' => $validated['operational_start'],
+                    'operational_end' => $validated['operational_end'],
+                    'slot_duration_minutes' => $validated['slot_duration_minutes'],
+                    'images' => $images,
+                    'is_active' => true,
+                ]);
+
+                $lapangan->facilities()->sync($validated['facilities'] ?? []);
+
+                return $lapangan;
+            });
+        } catch (Throwable $exception) {
+            Storage::disk('public')->delete($storedPaths);
+
+            throw $exception;
         }
 
         ActivityLog::log('lapangan_created', "Superadmin membuat lapangan baru: {$lapangan->name}", [
@@ -86,41 +120,99 @@ class LapanganManagementController extends Controller
     public function update(Request $request, Lapangan $lapangan): RedirectResponse
     {
         $validated = $request->validate([
-            'category_id' => ['required', 'exists:categories,id'],
+            'category_id' => [
+                'required',
+                Rule::exists('categories', 'id')->where(function ($query) use ($lapangan): void {
+                    $query->where('is_active', true)->orWhere('id', $lapangan->category_id);
+                }),
+            ],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price_per_hour' => ['required', 'integer', 'min:10000'],
             'operational_start' => ['required', 'string'],
             'operational_end' => ['required', 'string'],
             'slot_duration_minutes' => ['required', 'integer'],
-            'image_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
-            'image_url' => ['nullable', 'string'],
+            'image_files' => ['nullable', 'array', 'max:4'],
+            'image_files.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
+            'images_to_keep' => ['nullable', 'array', 'max:4'],
+            'images_to_keep.*' => ['string', 'distinct', Rule::in($lapangan->images ?? [])],
+            'images_to_keep_count' => ['nullable', 'integer', 'between:0,4'],
+            'image_url' => ['nullable', 'url', 'max:2048'],
             'facilities' => ['nullable', 'array'],
             'facilities.*' => ['exists:facilities,id'],
         ]);
 
-        $images = $lapangan->images ?? [];
-        if ($request->hasFile('image_file')) {
-            $path = $request->file('image_file')->store('lapangans', 'public');
-            $uploadedUrl = Storage::url($path);
-            $images = array_merge([$uploadedUrl], array_slice($images, 0, 3));
-        } elseif (! empty($validated['image_url'])) {
-            $images = array_merge([$validated['image_url']], array_slice($images, 0, 3));
+        $existingImages = $lapangan->images ?? [];
+        $imagesToKeep = array_key_exists('images_to_keep_count', $validated)
+            ? ($validated['images_to_keep'] ?? [])
+            : ($validated['images_to_keep'] ?? $existingImages);
+
+        if (array_key_exists('images_to_keep_count', $validated) && (int) $validated['images_to_keep_count'] !== count($imagesToKeep)) {
+            throw ValidationException::withMessages([
+                'images_to_keep' => 'Daftar foto yang dipertahankan tidak valid. Muat ulang form dan coba lagi.',
+            ]);
         }
 
-        $lapangan->update([
-            'category_id' => $validated['category_id'],
-            'name' => $validated['name'],
-            'description' => $validated['description'] ?? null,
-            'price_per_hour' => $validated['price_per_hour'],
-            'operational_start' => $validated['operational_start'],
-            'operational_end' => $validated['operational_end'],
-            'slot_duration_minutes' => $validated['slot_duration_minutes'],
-            'images' => $images,
-        ]);
+        $imagesToKeep = array_values(array_filter(
+            $existingImages,
+            fn (string $image): bool => in_array($image, $imagesToKeep, true),
+        ));
+        $imageFiles = $request->file('image_files', []);
 
-        if (isset($validated['facilities'])) {
-            $lapangan->facilities()->sync($validated['facilities']);
+        if (count($imagesToKeep) + count($imageFiles) + (empty($validated['image_url']) ? 0 : 1) > 4) {
+            throw ValidationException::withMessages([
+                'image_files' => 'Maksimal 4 foto dapat disimpan untuk satu lapangan. Hapus foto lama atau kurangi foto baru.',
+            ]);
+        }
+
+        $storedPaths = [];
+
+        try {
+            $images = $imagesToKeep;
+
+            foreach ($imageFiles as $imageFile) {
+                $path = $imageFile->store('lapangans', 'public');
+
+                if ($path === false) {
+                    throw new \RuntimeException('Foto lapangan gagal disimpan.');
+                }
+
+                $storedPaths[] = $path;
+                $images[] = Storage::disk('public')->url($path);
+            }
+
+            if (! empty($validated['image_url'])) {
+                $images[] = $validated['image_url'];
+            }
+
+            DB::transaction(function () use ($lapangan, $validated, $images): void {
+                $lapangan->update([
+                    'category_id' => $validated['category_id'],
+                    'name' => $validated['name'],
+                    'description' => $validated['description'] ?? null,
+                    'price_per_hour' => $validated['price_per_hour'],
+                    'operational_start' => $validated['operational_start'],
+                    'operational_end' => $validated['operational_end'],
+                    'slot_duration_minutes' => $validated['slot_duration_minutes'],
+                    'images' => $images,
+                ]);
+
+                if (isset($validated['facilities'])) {
+                    $lapangan->facilities()->sync($validated['facilities']);
+                }
+            });
+        } catch (Throwable $exception) {
+            Storage::disk('public')->delete($storedPaths);
+
+            throw $exception;
+        }
+
+        foreach (array_diff($existingImages, $imagesToKeep) as $removedImage) {
+            $path = $this->lapanganImagePath($removedImage);
+
+            if ($path !== null) {
+                Storage::disk('public')->delete($path);
+            }
         }
 
         ActivityLog::log('lapangan_updated', "Superadmin memperbarui lapangan: {$lapangan->name}", [
@@ -147,5 +239,16 @@ class LapanganManagementController extends Controller
         ActivityLog::log('lapangan_deleted', "Superadmin menghapus lapangan: {$name}");
 
         return back()->with('info', "Lapangan {$name} berhasil dihapus.");
+    }
+
+    private function lapanganImagePath(string $imageUrl): ?string
+    {
+        $path = parse_url($imageUrl, PHP_URL_PATH);
+
+        if (! is_string($path) || ! str_starts_with($path, '/storage/lapangans/')) {
+            return null;
+        }
+
+        return substr($path, strlen('/storage/'));
     }
 }

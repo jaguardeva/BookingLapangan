@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Booking;
+use App\Support\AppUrl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -33,7 +34,7 @@ class BookingReminderNotification extends Notification implements ShouldQueue
                 ->line("Siapkan perlengkapan olahraga Anda! Jadwal bermain Anda di **{$lapanganName}** akan dimulai dalam **1 jam**.")
                 ->line("- **Tanggal**: {$date}")
                 ->line("- **Jam**: {$time}")
-                ->action('Lihat Detail Booking', url("/booking/{$this->booking->booking_code}"))
+                ->action('Lihat Detail Booking', AppUrl::route('booking.show', ['booking_code' => $this->booking->booking_code]))
                 ->line('Jangan sampai terlambat ya!');
         }
 
@@ -43,7 +44,7 @@ class BookingReminderNotification extends Notification implements ShouldQueue
             ->line("Ini adalah pengingat untuk jadwal booking Anda di **{$lapanganName}** besok.")
             ->line("- **Tanggal**: {$date}")
             ->line("- **Jam**: {$time}")
-            ->action('Lihat Detail Booking', url("/booking/{$this->booking->booking_code}"))
+            ->action('Lihat Detail Booking', AppUrl::route('booking.show', ['booking_code' => $this->booking->booking_code]))
             ->line('Sampai jumpa di lapangan!');
     }
 

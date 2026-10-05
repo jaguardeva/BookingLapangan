@@ -1,5 +1,5 @@
 import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,68 +10,18 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
 import type { InAppNotification } from '@/types/booking';
 
-export function NotificationCenter() {
+export function NotificationCenter({
+    onUnreadCountChange,
+}: {
+    onUnreadCountChange?: (count: number) => void;
+}) {
     const page = usePage<{ auth: { user?: { id?: number; unread_notifications_count?: number } } }>();
-    const userId = page.props.auth?.user?.id;
     const unreadCount = page.props.auth?.user?.unread_notifications_count ?? 0;
 
     const [notifications, setNotifications] = useState<InAppNotification[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-
-    // Real-time polling for new notifications
-    useEffect(() => {
-        if (!userId) return;
-
-        let isSubscribed = true;
-        const checkNotifications = async () => {
-            try {
-                const res = await fetch('/notifications/recent', {
-                    headers: {
-                        Accept: 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    credentials: 'same-origin',
-                });
-                if (res.ok && isSubscribed) {
-                    const data = await res.json();
-                    const fetched: InAppNotification[] = data.notifications || [];
-
-                    setNotifications((prev) => {
-                        const prevIds = new Set(prev.map((n) => n.id));
-                        const newItems = fetched.filter((n) => !n.read_at && !prevIds.has(n.id));
-
-                        if (newItems.length > 0 && prev.length > 0) {
-                            newItems.forEach((item) => {
-                                toast.info(item.data.title, {
-                                    description: item.data.message,
-                                    action: item.data.url
-                                        ? {
-                                              label: 'Lihat',
-                                              onClick: () => router.visit(item.data.url!),
-                                          }
-                                        : undefined,
-                                });
-                            });
-                        }
-                        return fetched;
-                    });
-                }
-            } catch (e) {
-                // silent
-            }
-        };
-
-        checkNotifications();
-        const interval = setInterval(checkNotifications, 4000);
-
-        return () => {
-            isSubscribed = false;
-            clearInterval(interval);
-        };
-    }, [userId]);
 
     const fetchNotifications = async () => {
         setIsLoading(true);
@@ -86,6 +36,7 @@ export function NotificationCenter() {
             if (res.ok) {
                 const data = await res.json();
                 setNotifications(data.notifications || []);
+                onUnreadCountChange?.(data.unread_count ?? 0);
             }
         } catch (e) {
             console.error('Failed to load notifications', e);
@@ -112,6 +63,7 @@ export function NotificationCenter() {
                 setNotifications((prev) =>
                     prev.map((n) => ({ ...n, read_at: new Date().toISOString() }))
                 );
+                onUnreadCountChange?.(0);
             },
         });
     };

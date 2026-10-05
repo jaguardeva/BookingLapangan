@@ -53,6 +53,9 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'site' => [
+                'contact' => config('site.contact'),
+            ],
             'whatsapp_contacts' => WhatsappContact::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')

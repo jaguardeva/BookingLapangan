@@ -4,6 +4,7 @@ import {
     CalendarCheck,
     FileText,
     Layers,
+    Shapes,
     Users,
     CreditCard,
     History,
@@ -28,7 +29,10 @@ import type { NavItem } from '@/types';
 import type { User } from '@/types/auth';
 
 export function AppSidebar() {
-    const { auth } = usePage<{ auth: { user: User | null } }>().props;
+    const { auth, name } = usePage<{
+        auth: { user: User | null };
+        name?: string;
+    }>().props;
     const user = auth?.user;
     const isSuperAdmin = user?.role === 'superadmin';
     const isAdmin = user?.role === 'admin';
@@ -55,6 +59,8 @@ export function AppSidebar() {
             title: 'Pemberitahuan',
             href: '/notifications',
             icon: Bell,
+            hasNotification: (user?.unread_notifications_count ?? 0) > 0,
+            badgeCount: user?.unread_notifications_count ?? 0,
         },
     ];
 
@@ -77,17 +83,17 @@ export function AppSidebar() {
         },
     ];
 
-    // Superadmin Special Controls
-    const superAdminNavItems: NavItem[] = [
+    // Master Data
+    const masterDataNavItems: NavItem[] = [
+        {
+            title: 'Kategori & Fasilitas',
+            href: '/admin/catalog',
+            icon: Shapes,
+        },
         {
             title: 'Kelola Lapangan',
             href: '/admin/lapangans',
             icon: Layers,
-        },
-        {
-            title: 'Kelola Staf Admin',
-            href: '/admin/admins',
-            icon: Users,
         },
         {
             title: 'Rekening Bank',
@@ -95,14 +101,23 @@ export function AppSidebar() {
             icon: CreditCard,
         },
         {
-            title: 'Log Aktivitas',
-            href: '/admin/logs',
-            icon: History,
-        },
-        {
             title: 'Kontak WhatsApp',
             href: '/admin/whatsapp-contacts',
             icon: MessageCircle,
+        },
+    ];
+
+    // Superadmin Special Controls
+    const superAdminNavItems: NavItem[] = [
+        {
+            title: 'Kelola Staf Admin',
+            href: '/admin/admins',
+            icon: Users,
+        },
+        {
+            title: 'Log Aktivitas',
+            href: '/admin/logs',
+            icon: History,
         },
     ];
 
@@ -125,7 +140,7 @@ export function AppSidebar() {
                                     <Trophy className="size-4" />
                                 </div>
                                 <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                                    <span className="text-sm font-bold text-foreground">SportBooking</span>
+                                    <span className="text-sm font-bold text-foreground">{name ?? 'SportBooking'}</span>
                                     <span className="text-xs text-muted-foreground uppercase font-semibold">
                                         {isSuperAdmin
                                             ? 'Superadmin Workspace'
@@ -144,6 +159,10 @@ export function AppSidebar() {
                 {isStaff ? (
                     <>
                         <NavMain items={adminNavItems} label="Menu Utama" />
+
+                        {isSuperAdmin && (
+                            <NavMain items={masterDataNavItems} label="Master Data" />
+                        )}
 
                         {isSuperAdmin && (
                             <NavMain items={superAdminNavItems} label="Superadmin Controls" />

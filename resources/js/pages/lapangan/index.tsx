@@ -91,7 +91,7 @@ export default function LapanganIndex({
 
     return (
         <PublicLayout>
-            <Head title="Cari & Sewa Lapangan Olahraga - SportBooking" />
+            <Head title="Cari & Sewa Lapangan Olahraga" />
 
             <div className="bg-muted/30 border-b border-border/50 py-8">
                 <div className="public-container max-w-[1240px]">

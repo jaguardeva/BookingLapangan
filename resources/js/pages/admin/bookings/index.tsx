@@ -15,6 +15,7 @@ import {
     User,
     Plus,
     ChevronDown,
+    CalendarPlus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -468,12 +469,19 @@ export default function AdminBookingsIndex({
             </div>
 
             <Dialog open={isManualBookingOpen} onOpenChange={setIsManualBookingOpen}>
-                <DialogContent className="max-h-[92vh] overflow-y-auto rounded-2xl border-border p-5 sm:max-w-2xl sm:p-7">
+                <DialogContent className="max-h-[92vh] overflow-y-auto p-5 sm:max-w-2xl sm:p-7">
                     <DialogHeader>
-                        <DialogTitle className="text-base font-bold">Booking Manual / Walk-in</DialogTitle>
-                        <DialogDescription className="text-xs">
-                            Buat booking untuk pelanggan yang datang langsung ke lapangan. Pembayaran dicatat sebagai cash dan langsung dikonfirmasi.
-                        </DialogDescription>
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                <CalendarPlus className="size-5" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <DialogTitle className="text-base">Booking Manual / Walk-in</DialogTitle>
+                                <DialogDescription className="text-xs">
+                                    Buat booking untuk pelanggan yang datang langsung ke lapangan. Pembayaran dicatat sebagai cash dan langsung dikonfirmasi.
+                                </DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
 
                     <form
@@ -673,19 +681,27 @@ export default function AdminBookingsIndex({
                 confirmLabel="Setujui Pembayaran"
                 cancelLabel="Batal"
                 variant="default"
+                icon={CheckCircle2}
                 onConfirm={handleConfirmApprove}
             />
 
             {/* Rejection Dialog with Mandatory Reason */}
             <Dialog open={!!rejectBooking} onOpenChange={(open) => !open && setRejectBooking(null)}>
-                <DialogContent className="sm:max-w-md rounded-2xl border-border">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-base font-bold text-rose-600 flex items-center gap-2">
-                            <AlertCircle className="size-5" /> Tolak Pembayaran Booking #{rejectBooking?.booking_code}
-                        </DialogTitle>
-                        <DialogDescription className="text-xs">
-                            Sistem mewajibkan pencatatan alasan penolakan. Pesan ini akan dikirim via email dan in-app notification kepada pemesan.
-                        </DialogDescription>
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+                                <AlertCircle className="size-5" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <DialogTitle className="text-base">
+                                    Tolak Pembayaran Booking #{rejectBooking?.booking_code}
+                                </DialogTitle>
+                                <DialogDescription className="text-xs">
+                                    Sistem mewajibkan pencatatan alasan penolakan. Pesan ini akan dikirim via email dan in-app notification kepada pemesan.
+                                </DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
 
                     <form onSubmit={handleRejectSubmit} className="space-y-4 pt-2">

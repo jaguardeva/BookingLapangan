@@ -99,3 +99,12 @@ test('already verified user visiting verification link is redirected without fir
     Event::assertNotDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
 });
+
+test('verified users are redirected to the configured destination after following their email link', function () {
+    config(['auth.redirects.after_verification' => '/welcome-back']);
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('dashboard', ['verified' => 1]))
+        ->assertRedirect(url('/welcome-back'));
+});

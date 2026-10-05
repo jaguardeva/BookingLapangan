@@ -65,7 +65,17 @@ class BookingController extends Controller
             ]);
         }
 
-        $lapangan = Lapangan::findOrFail($validated['lapangan_id']);
+        $lapangan = Lapangan::query()
+            ->whereKey($validated['lapangan_id'])
+            ->where('is_active', true)
+            ->whereHas('category', fn ($query) => $query->where('is_active', true))
+            ->first();
+
+        if ($lapangan === null) {
+            throw ValidationException::withMessages([
+                'lapangan_id' => 'Lapangan ini sedang tidak tersedia untuk booking.',
+            ]);
+        }
 
         // Check operational hours
         $opStart = Carbon::parse($validated['booking_date'].' '.$lapangan->operational_start);

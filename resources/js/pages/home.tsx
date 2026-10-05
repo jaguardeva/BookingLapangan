@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { PublicLayout } from '@/layouts/public-layout';
 import {
@@ -43,6 +43,8 @@ export default function Home({
     testimonials = [],
     stats,
 }: Props) {
+    const { name } = usePage<{ name?: string }>().props;
+    const appName = name ?? 'SportBooking';
     const [search, setSearch] = useState('');
 
     const handleSearchSubmit = (e: React.FormEvent) => {
@@ -67,7 +69,7 @@ export default function Home({
 
     return (
         <PublicLayout>
-            <Head title="Sewa Lapangan Olahraga Online - SportBooking" />
+            <Head title="Sewa Lapangan Olahraga Online" />
 
             {/* Hero Section */}
             <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 via-background to-background py-16 sm:py-24 border-b border-border/40">
@@ -179,7 +181,7 @@ export default function Home({
                         <Badge variant="outline" className="mb-2 text-primary border-primary/30">
                             Mudah & Praktis
                         </Badge>
-                        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Cara Booking di SportBooking</h2>
+                        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Cara Booking di {appName}</h2>
                         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                             Hanya 3 langkah sederhana untuk memastikan slot bermain Anda aman.
                         </p>

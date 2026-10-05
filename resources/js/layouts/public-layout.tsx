@@ -6,8 +6,20 @@ import { WhatsappWidget } from '@/components/whatsapp-widget';
 import { Trophy, Phone, Mail, MapPin, Heart } from 'lucide-react';
 
 export function PublicLayout({ children }: PropsWithChildren) {
-    const page = usePage<{ flash?: { success?: string; error?: string; info?: string } }>();
+    const page = usePage<{
+        name?: string;
+        site?: {
+            contact?: {
+                address?: string;
+                phone?: string;
+                email?: string;
+            };
+        };
+        flash?: { success?: string; error?: string; info?: string };
+    }>();
     const flash = page.props.flash;
+    const appName = page.props.name ?? 'SportBooking';
+    const contact = page.props.site?.contact;
 
     useEffect(() => {
         if (flash?.success) {
@@ -22,16 +34,20 @@ export function PublicLayout({ children }: PropsWithChildren) {
     }, [flash]);
 
     return (
-        <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
+        <div className="min-h-screen flex flex-col bg-background pb-[calc(4rem+env(safe-area-inset-bottom))] text-foreground selection:bg-primary selection:text-primary-foreground md:pb-0 print:min-h-0 print:bg-white print:p-0 print:text-black">
 
-            <Navbar />
+            <div className="print:hidden">
+                <Navbar />
+            </div>
 
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 print:flex-initial print:p-0">{children}</main>
 
-            <WhatsappWidget />
+            <div className="print:hidden">
+                <WhatsappWidget />
+            </div>
 
             {/* Modern Sports Footer */}
-            <footer className="border-t border-border/60 bg-muted/30 pt-12 pb-8">
+            <footer className="border-t border-border/60 bg-muted/30 pt-12 pb-8 print:hidden">
                 <div className="public-container max-w-[1240px]">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
                         {/* Col 1 */}
@@ -40,7 +56,7 @@ export function PublicLayout({ children }: PropsWithChildren) {
                                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                                     <Trophy className="size-4" />
                                 </div>
-                                <span className="text-base font-bold tracking-tight">SportBooking</span>
+                                <span className="text-base font-bold tracking-tight">{appName}</span>
                             </div>
                             <p className="text-xs text-muted-foreground leading-relaxed">
                                 Platform sewa lapangan olahraga online tercepat, transparan, dan terpercaya dengan sistem validasi otomatis dan bantuan WhatsApp.
@@ -67,27 +83,35 @@ export function PublicLayout({ children }: PropsWithChildren) {
                         </div>
 
                         {/* Col 4 */}
+                        {(contact?.address || contact?.phone || contact?.email) && (
                         <div className="space-y-2">
                             <p className="text-xs font-semibold uppercase tracking-wider text-foreground">Hubungi Kami</p>
                             <ul className="space-y-2 text-xs text-muted-foreground">
-                                <li className="flex items-center gap-2">
-                                    <MapPin className="size-3.5 text-primary shrink-0" />
-                                    <span>Jl. Gelora Olahraga No. 45, Jakarta Selatan</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Phone className="size-3.5 text-primary shrink-0" />
-                                    <span>+62 812-3456-7890</span>
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <Mail className="size-3.5 text-primary shrink-0" />
-                                    <span>support@sportbooking.local</span>
-                                </li>
+                                {contact?.address && (
+                                    <li className="flex items-center gap-2">
+                                        <MapPin className="size-3.5 text-primary shrink-0" />
+                                        <span>{contact.address}</span>
+                                    </li>
+                                )}
+                                {contact?.phone && (
+                                    <li className="flex items-center gap-2">
+                                        <Phone className="size-3.5 text-primary shrink-0" />
+                                        <span>{contact.phone}</span>
+                                    </li>
+                                )}
+                                {contact?.email && (
+                                    <li className="flex items-center gap-2">
+                                        <Mail className="size-3.5 text-primary shrink-0" />
+                                        <span>{contact.email}</span>
+                                    </li>
+                                )}
                             </ul>
                         </div>
+                        )}
                     </div>
 
                     <div className="border-t border-border/40 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-3">
-                        <p>© 2026 SportBooking Platform. All rights reserved.</p>
+                        <p>© {new Date().getFullYear()} {appName}. All rights reserved.</p>
                         <p className="flex items-center gap-1">
                             Dirancang dengan <Heart className="size-3 text-rose-500 fill-rose-500" /> untuk pecinta olahraga.
                         </p>

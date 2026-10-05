@@ -25,6 +25,20 @@ test('reset password link can be requested', function () {
     Notification::assertSentTo($user, ResetPasswordNotification::class);
 });
 
+test('password reset email uses the configured application URL and expiration', function () {
+    config([
+        'app.url' => 'https://accounts.example',
+        'auth.passwords.users.expire' => 42,
+    ]);
+    $user = User::factory()->create();
+    $notification = new ResetPasswordNotification('reset-token');
+
+    $mail = $notification->toMail($user);
+
+    expect($mail->actionUrl)->toStartWith('https://accounts.example/reset-password/reset-token?email=')
+        ->and(str_contains((string) $mail->render(), 'Tautan reset password ini akan kedaluwarsa dalam 42 menit.'))->toBeTrue();
+});
+
 test('reset password screen can be rendered', function () {
     Notification::fake();
 

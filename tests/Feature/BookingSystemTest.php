@@ -4,10 +4,12 @@ use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Lapangan;
 use App\Models\User;
+use App\Notifications\BookingCreatedNotification;
 use App\Notifications\PaymentApprovedNotification;
 use App\Notifications\PaymentRejectedNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\URL;
 
 beforeEach(function () {
     $this->category = Category::firstOrCreate(
@@ -67,6 +69,47 @@ test('public can view home page and lapangan catalog', function () {
 
     $catalogResponse = $this->get(route('lapangan.index'));
     $catalogResponse->assertOk();
+});
+
+test('public pages receive configured site contact details', function () {
+    config([
+        'site.contact.address' => 'Jl. Arena No. 1',
+        'site.contact.phone' => '+62 812 0000 0000',
+        'site.contact.email' => 'hello@example.test',
+    ]);
+
+    $this->get(route('home'))
+        ->assertInertia(fn ($page) => $page
+            ->where('site.contact.address', 'Jl. Arena No. 1')
+            ->where('site.contact.phone', '+62 812 0000 0000')
+            ->where('site.contact.email', 'hello@example.test')
+        );
+});
+
+test('booking email actions use the configured application origin', function () {
+    config(['app.url' => 'https://production.example']);
+    URL::forceRootUrl('https://request-host.example');
+    $booking = Booking::create([
+        'booking_code' => 'BKG-CANONICAL-URL',
+        'user_id' => $this->user->id,
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '15:00',
+        'end_time' => '16:00',
+        'duration_hours' => 1,
+        'base_price' => 100000,
+        'validation_code' => 123,
+        'total_price' => 100123,
+        'payment_method' => 'transfer',
+        'payment_status' => 'pending',
+        'customer_name' => 'Customer Test',
+        'customer_phone' => '08123456789',
+        'payment_deadline' => now()->addHours(2),
+    ]);
+
+    $mail = (new BookingCreatedNotification($booking))->toMail($this->user);
+
+    expect($mail->actionUrl)->toBe('https://production.example/booking/BKG-CANONICAL-URL');
 });
 
 test('public can view lapangan detail with slots data', function () {

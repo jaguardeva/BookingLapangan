@@ -43,10 +43,18 @@ export function NavMain({
                         </SidebarMenuButton>
                         {item.hasNotification && (
                             <SidebarMenuBadge
-                                className="text-red-500"
+                                className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 dark:bg-red-500 px-1 text-[10px] font-bold text-white shadow-xs"
                                 aria-label={`Ada pesan baru di ${item.title}`}
                             >
-                                <span className="size-2 rounded-full bg-red-500" />
+                                {item.badgeCount && item.badgeCount > 0 ? (
+                                    <span>
+                                        {item.badgeCount > 99
+                                            ? '99+'
+                                            : item.badgeCount}
+                                    </span>
+                                ) : (
+                                    <span className="size-2 rounded-full bg-white" />
+                                )}
                             </SidebarMenuBadge>
                         )}
                     </SidebarMenuItem>

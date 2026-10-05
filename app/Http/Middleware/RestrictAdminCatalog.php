@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\InternalRedirect;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,7 +19,10 @@ class RestrictAdminCatalog
             || $request->is('lapangan/*/slots');
 
         if ($user?->isAdmin() && ! $user->isSuperAdmin() && ! $isNotificationEndpoint) {
-            return redirect()->route('admin.dashboard')->with(
+            return redirect()->to(InternalRedirect::path(
+                config('auth.redirects.admin'),
+                route('admin.dashboard', absolute: false),
+            ))->with(
                 'info',
                 'Admin diarahkan ke workspace admin. Halaman publik hanya tersedia untuk user dan superadmin.',
             );

@@ -17,6 +17,7 @@ class LapanganController extends Controller
     public function index(Request $request): Response
     {
         $query = Lapangan::where('is_active', true)
+            ->whereHas('category', fn ($query) => $query->where('is_active', true))
             ->with(['category', 'facilities'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews');
@@ -74,6 +75,7 @@ class LapanganController extends Controller
     {
         $lapangan = Lapangan::where('slug', $slug)
             ->where('is_active', true)
+            ->whereHas('category', fn ($query) => $query->where('is_active', true))
             ->with(['category', 'facilities', 'reviews.user'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')

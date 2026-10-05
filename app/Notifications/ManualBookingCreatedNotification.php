@@ -32,7 +32,7 @@ class ManualBookingCreatedNotification extends Notification implements ShouldQue
         $this->booking->loadMissing('lapangan');
 
         return (new MailMessage)
-            ->subject("Booking SportBooking {$this->booking->booking_code} berhasil dikonfirmasi")
+            ->subject('Booking '.config('app.name')." {$this->booking->booking_code} berhasil dikonfirmasi")
             ->view('emails.manual-booking', [
                 'booking' => $this->booking,
                 'customerName' => $this->booking->customer_name,

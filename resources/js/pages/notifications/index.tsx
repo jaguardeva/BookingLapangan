@@ -48,7 +48,7 @@ export default function NotificationsIndex({ notifications }: Props) {
 
     return (
         <PublicLayout>
-            <Head title="Pusat Notifikasi - SportBooking" />
+            <Head title="Pusat Notifikasi" />
 
             <div className="public-container max-w-3xl py-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-border/60 gap-4">

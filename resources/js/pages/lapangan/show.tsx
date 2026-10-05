@@ -8,6 +8,7 @@ import {
     AlertCircle,
     Info,
     Calendar,
+    ChevronLeft,
     ChevronRight,
     MapPin,
     ShieldCheck,
@@ -15,6 +16,8 @@ import {
     Banknote,
     MessageSquare,
     User,
+    RotateCcw,
+    ShoppingCart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +64,23 @@ export default function LapanganShow({
     );
     const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const galleryImages = useMemo(
+        () => lapangan.images?.filter((image) => image.length > 0) ?? [],
+        [lapangan.images],
+    );
+    const photos = galleryImages.length > 0
+        ? galleryImages
+        : ['https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80'];
+    const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+    const currentPhotoIndex = Math.min(activePhotoIndex, photos.length - 1);
+
+    const showPreviousPhoto = () => {
+        setActivePhotoIndex((currentPhotoIndex - 1 + photos.length) % photos.length);
+    };
+
+    const showNextPhoto = () => {
+        setActivePhotoIndex((currentPhotoIndex + 1) % photos.length);
+    };
 
     // Form for booking submission
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -238,13 +258,45 @@ export default function LapanganShow({
                         {/* Main Photo Gallery */}
                         <div className="border-border/80 bg-card relative aspect-[16/9] overflow-hidden rounded-2xl border shadow-sm">
                             <img
-                                src={
-                                    lapangan.images?.[0] ||
-                                    'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80'
-                                }
-                                alt={lapangan.name}
+                                src={photos[currentPhotoIndex]}
+                                alt={`${lapangan.name} — foto ${currentPhotoIndex + 1}`}
                                 className="size-full object-cover"
                             />
+                            {photos.length > 1 && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={showPreviousPhoto}
+                                        aria-label="Lihat foto sebelumnya"
+                                        className="absolute left-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/45 text-white shadow-lg backdrop-blur transition hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                    >
+                                        <ChevronLeft className="size-5" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={showNextPhoto}
+                                        aria-label="Lihat foto berikutnya"
+                                        className="absolute right-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/45 text-white shadow-lg backdrop-blur transition hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                    >
+                                        <ChevronRight className="size-5" />
+                                    </button>
+                                    <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/45 px-3 py-2 backdrop-blur">
+                                        {photos.map((_, index) => (
+                                            <button
+                                                key={index}
+                                                type="button"
+                                                onClick={() => setActivePhotoIndex(index)}
+                                                aria-label={`Lihat foto ${index + 1}`}
+                                                aria-current={currentPhotoIndex === index ? 'true' : undefined}
+                                                className={`size-2.5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${currentPhotoIndex === index ? 'bg-primary' : 'bg-white/70 hover:bg-white'}`}
+                                            />
+                                        ))}
+                                    </div>
+                                    <span className="absolute bottom-4 right-4 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                                        {currentPhotoIndex + 1} / {photos.length}
+                                    </span>
+                                </>
+                            )}
                             <div className="absolute top-4 left-4 flex gap-2">
                                 <Badge className="bg-background/90 text-foreground border-border/40 border font-semibold backdrop-blur-md">
                                     {lapangan.category?.name}
@@ -387,27 +439,32 @@ export default function LapanganShow({
 
                     {/* Right Column: Interactive Slot Booking Picker (1 Col Sticky) */}
                     <div className="lg:col-span-1">
-                        <div className="border-border/80 bg-card sticky top-20 space-y-6 rounded-2xl border p-6 shadow-md">
-                            <div>
-                                <span className="text-muted-foreground text-xs">
-                                    Harga Sewa
-                                </span>
-                                <div className="mt-0.5 flex items-baseline gap-1">
-                                    <span className="text-2xl font-extrabold text-primary sm:text-3xl dark:text-primary">
-                                        Rp{' '}
-                                        {Number(
-                                            lapangan.price_per_hour,
-                                        ).toLocaleString('id-ID')}
+                        <div className="border-border/70 bg-card sticky top-20 space-y-5 rounded-2xl border p-5 shadow-lg shadow-foreground/5 sm:p-6">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <span className="text-muted-foreground text-xs font-medium">
+                                        Harga Sewa
                                     </span>
-                                    <span className="text-muted-foreground text-xs">
-                                        / jam
-                                    </span>
+                                    <div className="mt-0.5 flex items-baseline gap-1">
+                                        <span className="text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">
+                                            Rp{' '}
+                                            {Number(
+                                                lapangan.price_per_hour,
+                                            ).toLocaleString('id-ID')}
+                                        </span>
+                                        <span className="text-muted-foreground text-xs">
+                                            / jam
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mt-1 flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                    <Calendar className="size-5" />
                                 </div>
                             </div>
 
                             {/* 1. Date Selector Tabs (Hari Ini, Besok, Lusa) */}
-                            <div className="space-y-2">
-                                <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                            <div className="space-y-2.5">
+                                <Label className="text-foreground text-xs font-bold tracking-wide uppercase">
                                     Pilih Tanggal Main
                                 </Label>
                                 <div className="grid grid-cols-3 gap-2">
@@ -422,16 +479,17 @@ export default function LapanganShow({
                                                     setSelectedDate(d.date);
                                                     setSelectedSlots([]);
                                                 }}
-                                                className={`rounded-xl border p-2.5 text-center transition-all ${
+                                                aria-pressed={isSelected}
+                                                className={`rounded-xl border px-2 py-3 text-center transition-colors ${
                                                     isSelected
-                                                        ? 'border-primary bg-primary/10 font-bold text-primary ring-1 ring-primary dark:text-primary'
-                                                        : 'border-border bg-card/60 text-muted-foreground hover:text-foreground hover:border-primary/40'
+                                                        ? 'border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                                                        : 'border-border bg-muted/20 text-muted-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-foreground'
                                                 }`}
                                             >
-                                                <p className="text-xs tracking-wider uppercase">
+                                                <p className="text-[10px] font-semibold tracking-wider uppercase opacity-80">
                                                     {d.day_name}
                                                 </p>
-                                                <p className="mt-0.5 text-xs font-bold">
+                                                <p className="mt-1 text-xs font-bold">
                                                     {d.formatted.split(' ')[0]}{' '}
                                                     {d.formatted.split(' ')[1]}
                                                 </p>
@@ -442,14 +500,32 @@ export default function LapanganShow({
                             </div>
 
                             {/* 2. Interactive Time Slot Grid */}
-                            <div className="space-y-2.5">
-                                <div className="flex items-center justify-between text-xs">
-                                    <Label className="text-muted-foreground font-semibold tracking-wider uppercase">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between gap-2">
+                                    <Label className="text-foreground text-xs font-bold tracking-wide uppercase">
                                         Pilih Jam Bermain
                                     </Label>
+                                    {selectedSlots.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedSlots([])}
+                                            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                                            aria-label="Reset pilihan jam"
+                                        >
+                                            <RotateCcw className="size-3" />
+                                            Reset jam
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex items-center justify-between text-xs">
                                     <span className="text-muted-foreground text-xs">
                                         {lapangan.operational_start} -{' '}
                                         {lapangan.operational_end} WIB
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                        {selectedSlots.length > 0
+                                            ? `${selectedSlots.length} jam dipilih`
+                                            : 'Pilih jam berurutan'}
                                     </span>
                                 </div>
 
@@ -480,12 +556,12 @@ export default function LapanganShow({
                                                                   slot.start,
                                                               )
                                                 }
-                                                className={`flex items-center justify-between rounded-xl border p-2.5 text-xs font-semibold transition-all ${
+                                                className={`flex min-h-11 items-center justify-between gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-semibold transition-colors ${
                                                     selected
-                                                        ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                                                        ? 'border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20'
                                                         : disabled
-                                                          ? 'bg-muted/40 text-muted-foreground/50 border-border/40 cursor-not-allowed'
-                                                          : 'bg-card text-foreground border-border hover:border-primary/50 hover:bg-primary/5'
+                                                          ? 'border-border/40 bg-muted/40 text-muted-foreground/50 cursor-not-allowed'
+                                                          : 'border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary/5'
                                                 }`}
                                             >
                                                 <span>
@@ -508,7 +584,7 @@ export default function LapanganShow({
                                 </div>
 
                                 {/* Slot Legend */}
-                                <div className="text-muted-foreground border-border/60 flex items-center justify-between border-t pt-2 text-xs">
+                                <div className="text-muted-foreground border-border/60 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-t pt-3 text-[11px]">
                                     <div className="flex items-center gap-1.5">
                                         <div className="size-2.5 rounded bg-primary" />
                                         <span>Terpilih</span>
@@ -578,15 +654,22 @@ export default function LapanganShow({
 
             {/* Checkout Confirmation Dialog */}
             <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-                <DialogContent className="border-border rounded-2xl sm:max-w-md">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-lg font-bold">
-                            Konfirmasi Booking Lapangan
-                        </DialogTitle>
-                        <DialogDescription className="text-xs">
-                            Periksa kembali jadwal dan masukkan informasi kontak
-                            Anda untuk konfirmasi pesanan.
-                        </DialogDescription>
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                <ShoppingCart className="size-5" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <DialogTitle>
+                                    Konfirmasi Booking Lapangan
+                                </DialogTitle>
+                                <DialogDescription className="text-xs">
+                                    Periksa kembali jadwal dan masukkan informasi kontak
+                                    Anda untuk konfirmasi pesanan.
+                                </DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
 
                     <form

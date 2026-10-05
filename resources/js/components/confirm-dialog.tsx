@@ -1,9 +1,9 @@
 import * as React from "react";
 
+import { AlertTriangle, HelpCircle, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
-  AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogFooter,
@@ -21,6 +21,7 @@ type ConfirmDialogProps = {
   confirmLabel?: string; // default "Ya, Lanjutkan"
   cancelLabel?: string; // default "Batal"
   variant?: "destructive" | "default"; // controls confirm button style
+  icon?: LucideIcon; // custom icon override
   onConfirm: () => void;
 };
 
@@ -32,22 +33,44 @@ export default function ConfirmDialog({
   confirmLabel = "Ya, Lanjutkan",
   cancelLabel = "Batal",
   variant = "default",
+  icon,
   onConfirm,
 }: ConfirmDialogProps) {
+  const isDestructive = variant === "destructive";
+  const Icon = icon ?? (isDestructive ? AlertTriangle : HelpCircle);
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
+          <div className="flex items-start gap-3">
+            <div
+              className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl ${
+                isDestructive
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-primary/10 text-primary"
+              }`}
+            >
+              <Icon className="size-5" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <AlertDialogTitle className="text-base">{title}</AlertDialogTitle>
+              <AlertDialogDescription className="text-xs">
+                {description}
+              </AlertDialogDescription>
+            </div>
+          </div>
         </AlertDialogHeader>
-        <AlertDialogFooter>
+        <AlertDialogFooter className="pt-2">
           <AlertDialogCancel asChild>
-            <Button variant="outline">{cancelLabel}</Button>
+            <Button variant="outline" className="rounded-xl">
+              {cancelLabel}
+            </Button>
           </AlertDialogCancel>
           <AlertDialogAction asChild>
             <Button
-              variant={variant === "destructive" ? "destructive" : "default"}
+              variant={isDestructive ? "destructive" : "default"}
+              className="rounded-xl font-bold"
               onClick={onConfirm}
             >
               {confirmLabel}

@@ -52,7 +52,7 @@ export default function VerifyEmail({ status }: Props) {
 
     return (
         <>
-            <Head title="Verifikasi Email - SportBooking" />
+            <Head title="Verifikasi Email" />
 
             <div className="space-y-5">
                 {status === 'verification-link-sent' && (
