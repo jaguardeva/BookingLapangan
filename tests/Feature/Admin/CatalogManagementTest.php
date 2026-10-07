@@ -186,6 +186,38 @@ test('superadmin can create a lapangan with multiple photos', function () {
     }
 });
 
+test('superadmin can open dedicated lapangan create and edit pages', function () {
+    $superadmin = User::factory()->create(['role' => 'superadmin']);
+    $category = Category::create([
+        'name' => 'Tennis',
+        'slug' => 'tennis',
+        'is_active' => true,
+    ]);
+    $lapangan = Lapangan::create([
+        'category_id' => $category->id,
+        'name' => 'Tennis Arena',
+        'slug' => 'tennis-arena',
+        'price_per_hour' => 150000,
+        'operational_start' => '07:00',
+        'operational_end' => '23:00',
+        'slot_duration_minutes' => 60,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($superadmin)
+        ->get(route('admin.lapangans.create'))
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/lapangan/create')
+            ->has('categories')
+            ->has('facilities'));
+
+    $this->get(route('admin.lapangans.edit', $lapangan))
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/lapangan/edit')
+            ->where('lapangan.id', $lapangan->id)
+            ->where('lapangan.name', 'Tennis Arena'));
+});
+
 test('lapangan detail exposes all stored photos in their saved order', function () {
     $category = Category::create([
         'name' => 'Voli Pantai',
@@ -307,7 +339,6 @@ test('editing a lapangan keeps selected old photos and removes deleted stored ph
             'slot_duration_minutes' => 60,
             'images_to_keep' => [$sideUrl],
             'image_files' => [UploadedFile::fake()->image('new.jpg')],
-            'image_url' => '',
             'facilities' => [],
         ])
         ->assertRedirect()
@@ -357,7 +388,6 @@ test('editing a lapangan can remove its entire photo gallery', function () {
             'slot_duration_minutes' => 60,
             'images_to_keep_count' => 0,
             'image_files' => [],
-            'image_url' => '',
             'facilities' => [],
         ])
         ->assertRedirect()

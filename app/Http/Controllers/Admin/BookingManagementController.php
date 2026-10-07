@@ -24,6 +24,22 @@ use Inertia\Response;
 
 class BookingManagementController extends Controller
 {
+    public function createManual(): Response
+    {
+        $user = auth()->user();
+        $columns = ['id', 'category_id', 'name', 'operational_start', 'operational_end', 'slot_duration_minutes', 'price_per_hour', 'images'];
+        $lapangans = $user->isSuperAdmin()
+            ? Lapangan::with('category:id,name')->where('is_active', true)->get($columns)
+            : $user->assignedLapangans()->with('category:id,name')->where('is_active', true)->get(array_map(
+                static fn (string $column): string => $column === 'id' ? 'lapangans.id' : "lapangans.{$column}",
+                $columns,
+            ));
+
+        return Inertia::render('admin/bookings/manual', [
+            'lapangans' => $lapangans,
+        ]);
+    }
+
     public function storeManual(Request $request): RedirectResponse
     {
         $user = $request->user();
@@ -31,7 +47,7 @@ class BookingManagementController extends Controller
             'lapangan_id' => ['required', 'exists:lapangans,id'],
             'booking_date' => ['required', 'date'],
             'start_time' => ['required', 'date_format:H:i'],
-            'duration_hours' => ['required', 'integer', 'min:1', 'max:6'],
+            'duration_hours' => ['required', 'integer', 'min:1'],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:20'],
             'customer_email' => ['nullable', 'email', 'max:255'],

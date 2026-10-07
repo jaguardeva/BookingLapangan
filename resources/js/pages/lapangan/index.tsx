@@ -1,4 +1,4 @@
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { useEffect, useRef, useState } from "react";
 import { PublicLayout } from "@/layouts/public-layout";
 import { Search, Filter } from "lucide-react";
@@ -13,6 +13,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { LapanganCard } from "@/components/lapangan-card";
+import { Pagination } from "@/components/pagination";
 import type { Category, Lapangan } from "@/types/booking";
 import { index as catalogIndex } from "@/routes/lapangan/index";
 
@@ -108,7 +109,7 @@ export default function LapanganIndex({
             </div>
 
             <div className="public-container grid max-w-[1240px] gap-6 py-8 sm:py-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
-                <aside className="border-border/80 bg-card rounded-2xl border p-4 shadow-sm lg:sticky lg:top-6">
+                <aside className="border-border/80 bg-card self-start rounded-2xl border p-4 shadow-sm lg:sticky lg:top-24">
                     <div className="mb-5 flex items-center justify-between">
                         <div>
                             <p className="text-foreground text-sm font-semibold">
@@ -242,28 +243,11 @@ export default function LapanganIndex({
                         </div>
                     )}
 
-                    {/* Pagination */}
-                    {lapangans.links && lapangans.links.length > 3 && (
-                        <div className="mt-10 flex items-center justify-center gap-1.5">
-                            {lapangans.links.map((link, idx) => (
-                                <Link
-                                    key={idx}
-                                    href={link.url || "#"}
-                                    preserveScroll
-                                    className={`rounded-lg border px-3 py-1.5 text-xs transition-colors ${
-                                        link.active
-                                            ? "bg-primary text-primary-foreground border-primary"
-                                            : link.url
-                                              ? "bg-card text-foreground hover:bg-muted border-border"
-                                              : "text-muted-foreground/50 pointer-events-none cursor-not-allowed border-transparent"
-                                    }`}
-                                    dangerouslySetInnerHTML={{
-                                        __html: link.label,
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    )}
+                    <Pagination
+                        links={lapangans.links}
+                        total={lapangans.total}
+                        className="mt-10"
+                    />
                 </main>
             </div>
         </PublicLayout>

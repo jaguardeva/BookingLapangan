@@ -18,11 +18,8 @@ class VerifyEmailNotification extends Notification
     {
         return (new MailMessage)
             ->subject('Verifikasi Alamat Email Anda - '.config('app.name'))
-            ->greeting('Halo!')
-            ->line('Terima kasih telah mendaftar di '.config('app.name').'.')
-            ->line('Gunakan kode OTP berikut untuk memverifikasi alamat email Anda:')
-            ->line('## '.$this->code)
-            ->line('Kode ini berlaku selama 10 menit dan hanya dapat digunakan satu kali.')
-            ->line('Jika Anda tidak merasa membuat akun di '.config('app.name').', abaikan email ini.');
+            ->markdown('emails.verify-email', [
+                'code' => $this->code,
+            ]);
     }
 }

@@ -12,6 +12,23 @@
 width: 100% !important;
 }
 
+.content-cell {
+padding: 28px 20px !important;
+}
+
+.otp-code {
+font-size: 28px !important;
+letter-spacing: 6px !important;
+}
+
+.booking-code {
+font-size: 20px !important;
+}
+
+.header {
+padding: 22px 16px 16px !important;
+}
+
 .footer {
 width: 100% !important;
 }
@@ -20,6 +37,10 @@ width: 100% !important;
 @media only screen and (max-width: 500px) {
 .button {
 width: 100% !important;
+}
+
+.button a {
+display: block !important;
 }
 }
 </style>

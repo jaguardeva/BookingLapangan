@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { AlertTriangle, HelpCircle, type LucideIcon } from "lucide-react";
+import { AlertTriangle, Check, HelpCircle, Trash2, X, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -38,10 +38,11 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   const isDestructive = variant === "destructive";
   const Icon = icon ?? (isDestructive ? AlertTriangle : HelpCircle);
+  const ConfirmIcon = isDestructive ? Trash2 : Check;
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="sm:max-w-md">
+      <AlertDialogContent className="max-h-[min(90dvh,32rem)] overscroll-contain sm:max-w-md">
         <AlertDialogHeader>
           <div className="flex items-start gap-3">
             <div
@@ -61,18 +62,20 @@ export default function ConfirmDialog({
             </div>
           </div>
         </AlertDialogHeader>
-        <AlertDialogFooter className="pt-2">
+        <AlertDialogFooter>
           <AlertDialogCancel asChild>
-            <Button variant="outline" className="rounded-xl">
+            <Button variant="outline" className="w-full rounded-xl sm:w-auto">
+              <X className="size-4" />
               {cancelLabel}
             </Button>
           </AlertDialogCancel>
           <AlertDialogAction asChild>
             <Button
               variant={isDestructive ? "destructive" : "default"}
-              className="rounded-xl font-bold"
+              className="w-full rounded-xl font-bold sm:w-auto"
               onClick={onConfirm}
             >
+              <ConfirmIcon className="size-4" />
               {confirmLabel}
             </Button>
           </AlertDialogAction>

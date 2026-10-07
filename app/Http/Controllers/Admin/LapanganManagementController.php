@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Facility;
 use App\Models\Lapangan;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,21 @@ use Throwable;
 
 class LapanganManagementController extends Controller
 {
+    public function create(): Response
+    {
+        return Inertia::render('admin/lapangan/create', $this->formProps());
+    }
+
+    public function edit(Lapangan $lapangan): Response
+    {
+        $lapangan->load(['category', 'facilities']);
+
+        return Inertia::render('admin/lapangan/edit', [
+            ...$this->formProps(),
+            'lapangan' => $lapangan,
+        ]);
+    }
+
     public function index(): Response
     {
         $lapangans = Lapangan::with(['category', 'facilities'])
@@ -37,6 +53,17 @@ class LapanganManagementController extends Controller
         ]);
     }
 
+    /**
+     * @return array{categories: Collection<int, Category>, facilities: Collection<int, Facility>}
+     */
+    private function formProps(): array
+    {
+        return [
+            'categories' => Category::all(),
+            'facilities' => Facility::all(),
+        ];
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -49,14 +76,13 @@ class LapanganManagementController extends Controller
             'slot_duration_minutes' => ['required', 'integer', 'in:30,60,90,120'],
             'image_files' => ['nullable', 'array', 'max:4'],
             'image_files.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
-            'image_url' => ['nullable', 'url', 'max:2048'],
             'facilities' => ['nullable', 'array'],
             'facilities.*' => ['exists:facilities,id'],
         ]);
 
         $imageFiles = $request->file('image_files', []);
 
-        if (count($imageFiles) + (empty($validated['image_url']) ? 0 : 1) > 4) {
+        if (count($imageFiles) > 4) {
             throw ValidationException::withMessages([
                 'image_files' => 'Maksimal 4 foto dapat disimpan untuk satu lapangan.',
             ]);
@@ -76,10 +102,6 @@ class LapanganManagementController extends Controller
 
                 $storedPaths[] = $path;
                 $images[] = Storage::disk('public')->url($path);
-            }
-
-            if (! empty($validated['image_url'])) {
-                $images[] = $validated['image_url'];
             }
 
             if ($images === []) {
@@ -137,7 +159,6 @@ class LapanganManagementController extends Controller
             'images_to_keep' => ['nullable', 'array', 'max:4'],
             'images_to_keep.*' => ['string', 'distinct', Rule::in($lapangan->images ?? [])],
             'images_to_keep_count' => ['nullable', 'integer', 'between:0,4'],
-            'image_url' => ['nullable', 'url', 'max:2048'],
             'facilities' => ['nullable', 'array'],
             'facilities.*' => ['exists:facilities,id'],
         ]);
@@ -159,7 +180,7 @@ class LapanganManagementController extends Controller
         ));
         $imageFiles = $request->file('image_files', []);
 
-        if (count($imagesToKeep) + count($imageFiles) + (empty($validated['image_url']) ? 0 : 1) > 4) {
+        if (count($imagesToKeep) + count($imageFiles) > 4) {
             throw ValidationException::withMessages([
                 'image_files' => 'Maksimal 4 foto dapat disimpan untuk satu lapangan. Hapus foto lama atau kurangi foto baru.',
             ]);
@@ -179,10 +200,6 @@ class LapanganManagementController extends Controller
 
                 $storedPaths[] = $path;
                 $images[] = Storage::disk('public')->url($path);
-            }
-
-            if (! empty($validated['image_url'])) {
-                $images[] = $validated['image_url'];
             }
 
             DB::transaction(function () use ($lapangan, $validated, $images): void {

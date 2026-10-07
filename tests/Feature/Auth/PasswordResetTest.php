@@ -37,7 +37,8 @@ test('password reset email uses the configured application URL and expiration', 
     $mail = $notification->toMail($user);
 
     expect($mail->actionUrl)->toStartWith('https://accounts.example/reset-password/reset-token?email=')
-        ->and(str_contains((string) $mail->render(), 'Tautan reset password ini akan kedaluwarsa dalam 42 menit.'))->toBeTrue();
+        ->and(str_contains((string) $mail->render(), 'Tautan reset password ini akan kedaluwarsa dalam 42 menit.'))->toBeTrue()
+        ->and(str_contains((string) $mail->render(), '/favicon.svg'))->toBeTrue();
 });
 
 test('reset password screen can be rendered', function () {

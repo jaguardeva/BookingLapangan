@@ -1,9 +1,10 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { Check, Edit2, Eye, MailCheck, Plus, Search, Trash2, UserPlus, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, Edit2, Eye, MailCheck, Plus, Search, Trash2, UserPlus, X } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { Pagination } from '@/components/pagination';
 import { ProfileAvatarPreview } from '@/components/profile-avatar-preview';
+import ConfirmDialog from '@/components/confirm-dialog';
 import { useInitials } from '@/hooks/use-initials';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ export default function AdminUsersIndex({ users, filters, lapangans = [] }: Prop
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
     const [previewUser, setPreviewUser] = useState<{ name: string; avatarUrl: string } | null>(null);
+    const [deletingUser, setDeletingUser] = useState<ManagedUser | null>(null);
     const filterKey = JSON.stringify([search, role, verification, sort, direction]);
     const lastAppliedFilterKey = useRef(filterKey);
     const { data, setData, post, put, processing, reset, errors } = useForm(emptyForm);
@@ -154,6 +156,17 @@ export default function AdminUsersIndex({ users, filters, lapangans = [] }: Prop
         }));
     };
 
+    const confirmDelete = () => {
+        if (!deletingUser) {
+            return;
+        }
+
+        router.delete(usersDestroy.url(deletingUser.id), {
+            preserveScroll: true,
+            onSuccess: () => setDeletingUser(null),
+        });
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Kelola Pengguna - Superadmin" />
@@ -234,7 +247,7 @@ export default function AdminUsersIndex({ users, filters, lapangans = [] }: Prop
                                             <Button size="sm" variant="ghost" title="Detail" onClick={() => router.visit(usersShow.url(user.id))} className="size-8 p-0 text-muted-foreground hover:text-foreground"><Eye className="size-3.5" /></Button>
                                             <Button size="sm" variant="ghost" title="Ubah verifikasi" onClick={() => router.patch(usersVerification.url(user.id), {}, { preserveScroll: true })} className="size-8 p-0 text-muted-foreground hover:text-foreground"><MailCheck className="size-3.5" /></Button>
                                             <Button size="sm" variant="ghost" onClick={() => openEditModal(user)} className="size-8 p-0 text-muted-foreground hover:text-foreground"><Edit2 className="size-3.5" /></Button>
-                                            <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Hapus pengguna ${user.name}?`)) router.delete(usersDestroy.url(user.id), { preserveScroll: true }); }} className="size-8 p-0 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30"><Trash2 className="size-3.5" /></Button>
+                                            <Button size="sm" variant="ghost" onClick={() => setDeletingUser(user)} className="size-8 p-0 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30"><Trash2 className="size-3.5" /></Button>
                                         </div></td>
                                     </tr>
                                 ))}
@@ -267,11 +280,23 @@ export default function AdminUsersIndex({ users, filters, lapangans = [] }: Prop
                 name={previewUser?.name ?? 'Pengguna'}
                 onOpenChange={(open) => !open && setPreviewUser(null)}
             />
+            <ConfirmDialog
+                open={deletingUser !== null}
+                onOpenChange={(open) => !open && setDeletingUser(null)}
+                title="Hapus pengguna?"
+                description={`Akun ${deletingUser?.name ?? ''} dan data terkait akan dihapus dari sistem.`}
+                confirmLabel="Hapus Pengguna"
+                variant="destructive"
+                icon={Trash2}
+                onConfirm={confirmDelete}
+            />
         </AppLayout>
     );
 }
 
 function SortableHeader({ label, column, sort, direction, onSort }: { label: string; column: string; sort: string; direction: string; onSort: (column: string) => void }) {
     const active = sort === column;
-    return <th className="px-4 py-3"><button type="button" onClick={() => onSort(column)} className="inline-flex items-center gap-1 hover:text-foreground">{label}<span className="text-[10px]">{active ? direction === 'asc' ? '↑' : '↓' : '↕'}</span></button></th>;
+    const Icon = active ? (direction === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
+
+    return <th className="px-4 py-3"><button type="button" onClick={() => onSort(column)} className="inline-flex items-center gap-1 hover:text-foreground">{label}<Icon className="size-3.5" aria-hidden="true" /></button></th>;
 }

@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { Star, Clock, ArrowRight, Layers } from 'lucide-react';
+import { Star, Clock, ArrowRight } from 'lucide-react';
+import { CatalogIcon } from '@/components/catalog-icon';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Lapangan } from '@/types/booking';
@@ -27,7 +28,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
                 />
                 <div className="absolute left-3 top-3 max-w-[68%]">
                     <Badge variant="secondary" className="max-w-full truncate border-white/50 bg-slate-950/75 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white shadow-sm backdrop-blur-md dark:bg-slate-950/80">
-                        <Layers className="size-3 shrink-0 text-primary" />
+                        <CatalogIcon name={item.category?.icon ?? item.category?.slug} className="size-3 shrink-0 text-primary" />
                         <span className="truncate">{item.category?.name ?? 'Lapangan olahraga'}</span>
                     </Badge>
                 </div>
@@ -41,7 +42,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
             </div>
 
             {/* Compact Card Content */}
-            <div className="flex min-w-0 flex-1 flex-col justify-between space-y-3 p-3.5">
+            <div className="flex min-w-0 flex-1 flex-col justify-between space-y-2.5 p-3 sm:space-y-3 sm:p-3.5">
                 <div className="min-w-0 space-y-1">
                     <h3 className="font-bold text-sm text-foreground group-hover:text-primary dark:group-hover:text-primary transition-colors line-clamp-1">
                         {item.name}
@@ -76,7 +77,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
                 </div>
 
                 {/* Compact Price & Action */}
-                <div className="flex flex-col items-stretch gap-3 border-t border-border/50 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col items-stretch gap-2.5 border-t border-border/50 pt-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                     <div>
                         <span className="text-xs text-muted-foreground block leading-none">Harga</span>
                         <p className="text-sm font-extrabold text-primary dark:text-primary mt-0.5">

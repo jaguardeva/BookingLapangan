@@ -21,6 +21,36 @@ use Inertia\Response;
 
 class BookingController extends Controller
 {
+    public function checkout(Request $request, Lapangan $lapangan): Response
+    {
+        $validated = $request->validate([
+            'booking_date' => ['required', 'date_format:Y-m-d'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'duration_hours' => ['required', 'integer', 'min:1', 'max:6'],
+        ]);
+
+        $bookingDate = Carbon::createFromFormat('Y-m-d', $validated['booking_date'])->startOfDay();
+
+        if ($bookingDate->lt(Carbon::today()) || $bookingDate->gt(Carbon::today()->addDays(2)->endOfDay())) {
+            throw ValidationException::withMessages([
+                'booking_date' => 'Booking hanya diperbolehkan untuk hari ini, besok, atau lusa.',
+            ]);
+        }
+
+        $lapangan->load('category');
+
+        if (! $lapangan->is_active || ! $lapangan->category?->is_active) {
+            abort(404);
+        }
+
+        return Inertia::render('booking/checkout', [
+            'lapangan' => $lapangan,
+            'selectedDate' => $validated['booking_date'],
+            'startTime' => $validated['start_time'],
+            'durationHours' => (int) $validated['duration_hours'],
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([

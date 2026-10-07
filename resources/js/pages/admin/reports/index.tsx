@@ -1,9 +1,10 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Download, Calendar, DollarSign, FileText, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Pagination } from '@/components/pagination';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -267,26 +268,7 @@ export default function AdminReportsIndex({
                     </div>
                 </div>
 
-                {/* Pagination */}
-                {bookings.links && bookings.links.length > 3 && (
-                    <div className="flex justify-center items-center gap-1.5 mt-2">
-                        {bookings.links.map((link, idx) => (
-                            <Link
-                                key={idx}
-                                href={link.url || '#'}
-                                preserveScroll
-                                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                                    link.active
-                                        ? 'bg-primary text-primary-foreground border-primary'
-                                        : link.url
-                                        ? 'bg-card text-foreground hover:bg-muted border-border'
-                                        : 'text-muted-foreground/50 border-transparent cursor-not-allowed pointer-events-none'
-                                }`}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                            />
-                        ))}
-                    </div>
-                )}
+                <Pagination links={bookings.links} total={bookings.total} className="mt-2" />
             </div>
         </AppLayout>
     );

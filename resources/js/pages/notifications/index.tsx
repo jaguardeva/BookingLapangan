@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { PublicLayout } from '@/layouts/public-layout';
+import { Pagination } from '@/components/pagination';
 import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -120,25 +121,11 @@ export default function NotificationsIndex({ notifications }: Props) {
                     )}
                 </div>
 
-                {notifications.links && notifications.links.length > 3 && (
-                    <div className="mt-8 flex flex-wrap items-center justify-center gap-1.5">
-                        {notifications.links.map((link, idx) => (
-                            <Link
-                                key={idx}
-                                href={link.url || '#'}
-                                preserveScroll
-                                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                                    link.active
-                                        ? 'bg-primary text-primary-foreground border-primary'
-                                        : link.url
-                                        ? 'bg-card text-foreground hover:bg-muted border-border'
-                                        : 'text-muted-foreground/50 border-transparent cursor-not-allowed pointer-events-none'
-                                }`}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                            />
-                        ))}
-                    </div>
-                )}
+                <Pagination
+                    links={notifications.links}
+                    total={notifications.total}
+                    className="mt-8"
+                />
             </div>
         </PublicLayout>
     );

@@ -1,9 +1,12 @@
 import { PropsWithChildren, useEffect } from 'react';
-import { usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/navbar';
 import { WhatsappWidget } from '@/components/whatsapp-widget';
 import { useAppearance } from '@/hooks/use-appearance';
+import { useCurrentUrl } from '@/hooks/use-current-url';
+import { home } from '@/routes';
+import { index as lapanganIndex } from '@/routes/lapangan';
 import { Trophy, Phone, Mail, MapPin, Heart } from 'lucide-react';
 
 export function PublicLayout({ children }: PropsWithChildren) {
@@ -22,6 +25,8 @@ export function PublicLayout({ children }: PropsWithChildren) {
     const flash = page.props.flash;
     const appName = page.props.name ?? 'SportBooking';
     const contact = page.props.site?.contact;
+    const { isCurrentUrl } = useCurrentUrl();
+    const isLanding = isCurrentUrl(home.url());
 
     useEffect(() => {
         if (appearance === 'system') {
@@ -42,13 +47,13 @@ export function PublicLayout({ children }: PropsWithChildren) {
     }, [flash]);
 
     return (
-        <div className="min-h-screen flex flex-col bg-background pb-[calc(4rem+env(safe-area-inset-bottom))] text-foreground selection:bg-primary selection:text-primary-foreground md:pb-0 print:min-h-0 print:bg-white print:p-0 print:text-black">
+        <div className="public-shell flex min-h-screen flex-col bg-background pb-[calc(4rem+env(safe-area-inset-bottom))] text-foreground selection:bg-primary selection:text-primary-foreground md:pb-0 print:min-h-0 print:bg-white print:p-0 print:text-black">
 
             <div className="print:hidden">
                 <Navbar />
             </div>
 
-            <main className="flex-1 print:flex-initial print:p-0">{children}</main>
+            <main className={`flex-1 ${isLanding ? '' : 'pt-14 sm:pt-16'} print:flex-initial print:p-0`}>{children}</main>
 
             <div className="print:hidden">
                 <WhatsappWidget />
@@ -66,19 +71,17 @@ export function PublicLayout({ children }: PropsWithChildren) {
                                 </div>
                                 <span className="text-base font-bold tracking-tight">{appName}</span>
                             </div>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                Platform sewa lapangan olahraga online tercepat, transparan, dan terpercaya dengan sistem validasi otomatis dan bantuan WhatsApp.
+                            <p className="text-xs leading-relaxed text-muted-foreground">
+                                Pusat booking lapangan Sportify untuk melihat jadwal, memilih slot, dan mengatur pertandingan tanpa proses yang berbelit.
                             </p>
                         </div>
 
                         {/* Col 2 */}
                         <div className="space-y-2">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-foreground">Kategori Lapangan</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-foreground">Eksplorasi</p>
                             <ul className="space-y-1.5 text-xs text-muted-foreground">
-                                <li><a href="/lapangan?category=futsal" className="hover:text-primary transition-colors">Lapangan Futsal Pro</a></li>
-                                <li><a href="/lapangan?category=badminton" className="hover:text-primary transition-colors">Badminton Court BWF</a></li>
-                                <li><a href="/lapangan?category=mini-soccer" className="hover:text-primary transition-colors">Mini Soccer 7 vs 7</a></li>
-                                <li><a href="/lapangan?category=basket" className="hover:text-primary transition-colors">Basketball Arena Hardwood</a></li>
+                                <li><Link href={lapanganIndex.url()} className="transition-colors hover:text-primary">Lihat semua lapangan</Link></li>
+                                <li><Link href={lapanganIndex.url()} className="transition-colors hover:text-primary">Cek jadwal hari ini</Link></li>
                             </ul>
                         </div>
 
@@ -86,7 +89,7 @@ export function PublicLayout({ children }: PropsWithChildren) {
                         <div className="space-y-2">
                             <p className="text-xs font-semibold uppercase tracking-wider text-foreground">Metode Pembayaran</p>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                Transfer Bank (BCA, Mandiri, BRI) dengan kode validasi 3-digit instan atau pembayaran Cash langsung ke kasir lapangan.
+                                Pilih metode pembayaran yang tersedia, simpan kode booking, lalu datang sesuai jadwal yang sudah dikonfirmasi.
                             </p>
                         </div>
 

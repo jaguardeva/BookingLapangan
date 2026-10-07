@@ -12,6 +12,7 @@ import {
     Layers,
     Bell,
     LogIn,
+    ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotificationCenter } from '@/components/notification-center';
@@ -47,13 +48,40 @@ export function Navbar() {
     const getInitials = useInitials();
     const { currentUrl, isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
     const isLanding = isCurrentUrl(home.url());
+    const [landingNavState, setLandingNavState] = useState<'top' | 'revealed'>('top');
+    const isLandingOverlay = isLanding && landingNavState === 'top';
     const navLinkClass = isLanding
-        ? 'text-brand-foreground/75 hover:text-brand-foreground transition-colors'
+        ? isLandingOverlay
+            ? 'text-brand-deep/75 hover:text-brand-deep dark:text-brand-foreground/75 dark:hover:text-brand-foreground transition-colors'
+            : 'text-foreground/75 hover:text-primary transition-colors'
         : 'text-muted-foreground hover:text-primary transition-colors';
 
     useEffect(() => {
         setUnreadNotificationsCount(user?.unread_notifications_count ?? 0);
     }, [user?.unread_notifications_count]);
+
+    useEffect(() => {
+        if (!isLanding) {
+            setLandingNavState('top');
+
+            return;
+        }
+
+        const handleScroll = () => {
+            if (window.scrollY <= 0) {
+                setLandingNavState('top');
+            } else if (window.scrollY > 240) {
+                setLandingNavState('revealed');
+            } else {
+                setLandingNavState('top');
+            }
+        };
+
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [isLanding]);
 
     const isStaff = user?.role === 'admin' || user?.role === 'superadmin';
     const isBookingActive =
@@ -117,7 +145,7 @@ export function Navbar() {
 
     return (
         <>
-            <header className={`sticky top-0 z-40 w-full border-b backdrop-blur-md transition-all print:hidden ${isLanding ? 'border-brand-soft/20 bg-brand-deep/95 text-brand-foreground' : 'border-border/60 bg-background/80'}`}>
+            <header className={`fixed inset-x-0 top-0 z-40 w-full border-b backdrop-blur-md transition-all duration-300 print:hidden ${isLandingOverlay ? 'border-transparent bg-transparent text-brand-deep backdrop-blur-sm dark:text-brand-foreground' : isLanding ? 'border-border/70 bg-white/95 text-foreground shadow-sm dark:bg-card/95' : 'border-border/60 bg-background/95 text-foreground shadow-sm dark:bg-card/95'}`}>
                 {user && user.is_verified === false && !isStaff && (
                     <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 border-b border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-center text-xs text-amber-700 sm:px-4 dark:bg-amber-500/15 dark:text-amber-300">
                         <span>
@@ -127,7 +155,8 @@ export function Navbar() {
                             href="/email/verify"
                             className="inline-flex items-center gap-1 font-bold underline hover:text-amber-900 dark:hover:text-amber-200"
                         >
-                            Verifikasi Sekarang &rarr;
+                            Verifikasi Sekarang
+                            <ArrowRight className="size-3.5" aria-hidden="true" />
                         </Link>
                     </div>
                 )}
@@ -138,15 +167,15 @@ export function Navbar() {
                             href={home()}
                             className="group flex min-w-0 items-center gap-2 sm:gap-2.5"
                         >
-                            <div className={`${isLanding ? 'bg-brand-soft text-brand-deep shadow-black/20 group-hover:bg-brand-soft/90' : 'bg-primary text-primary-foreground shadow-primary/20 group-hover:bg-primary/90'} flex size-8 shrink-0 items-center justify-center rounded-xl shadow-md transition-colors sm:size-9`}>
+                            <div className={`${isLandingOverlay ? 'bg-brand-deep text-brand-soft shadow-black/20 group-hover:bg-brand-deep/90 dark:bg-brand-soft dark:text-brand-deep dark:group-hover:bg-brand-soft/90' : 'bg-primary text-primary-foreground shadow-primary/20 group-hover:bg-primary/90'} flex size-8 shrink-0 items-center justify-center rounded-xl shadow-md transition-colors sm:size-9`}>
                                 <Trophy className="size-4 sm:size-5" />
                             </div>
                             <div className="flex min-w-0 flex-col">
-                                <span className={`flex items-center gap-1 text-sm font-bold tracking-tight sm:gap-1.5 sm:text-base ${isLanding ? 'text-brand-foreground' : 'text-foreground'}`}>
-                                    <span className={isLanding ? 'text-brand-soft' : 'text-primary'}>{appName}</span>
+                                <span className={`flex items-center gap-1 text-sm font-bold tracking-tight sm:gap-1.5 sm:text-base ${isLandingOverlay ? 'text-brand-deep dark:text-brand-foreground' : 'text-foreground'}`}>
+                                    <span className={isLandingOverlay ? 'text-brand-deep dark:text-brand-soft' : 'text-primary'}>{appName}</span>
                                 </span>
-                                <span className={`-mt-1 hidden text-[10px] font-medium tracking-wider uppercase sm:block sm:text-xs ${isLanding ? 'text-brand-foreground/55' : 'text-muted-foreground'}`}>
-                                    Arena Sports Hub
+                                <span className={`-mt-1 hidden text-[10px] font-medium tracking-wider uppercase sm:block sm:text-xs ${isLandingOverlay ? 'text-brand-deep/55 dark:text-brand-foreground/55' : 'text-muted-foreground'}`}>
+                                    Venue olahraga Sportify
                                 </span>
                             </div>
                         </Link>
@@ -177,7 +206,7 @@ export function Navbar() {
                             {isStaff && (
                                 <Link
                                     href="/admin"
-                                    className={`${isLanding ? 'border-brand-soft/30 bg-brand-soft/10 text-brand-soft hover:bg-brand-soft/20' : 'border-primary/20 bg-primary/10 text-primary hover:bg-primary/20'} inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all`}
+                                    className={`${isLandingOverlay ? 'border-brand-deep/20 bg-brand-deep/5 text-brand-deep hover:bg-brand-deep/10 dark:border-brand-soft/30 dark:bg-brand-soft/10 dark:text-brand-soft dark:hover:bg-brand-soft/20' : 'border-primary/20 bg-primary/10 text-primary hover:bg-primary/20'} inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all`}
                                 >
                                     <Shield className="size-3.5" />
                                     Admin Panel
@@ -203,9 +232,9 @@ export function Navbar() {
                                     <DropdownMenuTrigger asChild>
                                         <Button
                                             variant="ghost"
-                                            className={`relative size-9 rounded-full p-0 ${isLanding ? 'hover:bg-brand-foreground/10' : ''}`}
+                                            className={`relative size-9 rounded-full p-0 ${isLandingOverlay ? 'hover:bg-brand-deep/10 dark:hover:bg-brand-foreground/10' : ''}`}
                                         >
-                                            <Avatar className={`size-9 border ${isLanding ? 'border-brand-foreground/30' : 'border-border'}`}>
+                                            <Avatar className={`size-9 border ${isLandingOverlay ? 'border-brand-deep/25 dark:border-brand-foreground/30' : 'border-border'}`}>
                                                 <AvatarImage
                                                     src={user.avatar ?? undefined}
                                                     alt={user.name}
@@ -289,14 +318,14 @@ export function Navbar() {
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className={`px-2 sm:px-3 ${isLanding ? 'text-brand-foreground hover:bg-brand-foreground/10 hover:text-brand-foreground' : ''}`}
+                                    className={`px-2 sm:px-3 ${isLandingOverlay ? 'text-brand-deep hover:bg-brand-deep/10 hover:text-brand-deep dark:text-brand-foreground dark:hover:bg-brand-foreground/10 dark:hover:text-brand-foreground' : ''}`}
                                     asChild
                                 >
                                     <Link href={login()}>Masuk</Link>
                                 </Button>
                                 <Button
                                     size="sm"
-                                    className={`${isLanding ? 'bg-brand-soft text-brand-deep hover:bg-brand-soft/90' : 'bg-primary text-primary-foreground hover:bg-primary/90'} px-2.5 shadow-sm sm:px-3`}
+                                    className={`${isLandingOverlay ? 'bg-brand-deep text-brand-foreground hover:bg-brand-deep/90 dark:bg-brand-soft dark:text-brand-deep dark:hover:bg-brand-soft/90' : 'bg-primary text-primary-foreground hover:bg-primary/90'} px-2.5 shadow-sm sm:px-3`}
                                     asChild
                                 >
                                     <Link href={register()}>

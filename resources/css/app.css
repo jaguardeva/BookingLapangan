@@ -158,6 +158,30 @@
 @layer base {
     * {
         @apply border-border;
+        scrollbar-color: var(--primary) var(--muted);
+        scrollbar-width: thin;
+    }
+
+    *::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: color-mix(in oklch, var(--muted) 58%, transparent);
+        border-radius: 9999px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background: color-mix(in oklch, var(--primary) 62%, var(--muted));
+        border: 1px solid transparent;
+        border-radius: 9999px;
+        background-clip: padding-box;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: var(--primary);
+        background-clip: padding-box;
     }
 
     button:not(:disabled),
@@ -168,6 +192,20 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-gutter-stable {
+    box-sizing: border-box;
+    scrollbar-gutter: stable;
 }
 
 @media print {
@@ -193,4 +231,74 @@
         margin: 15mm;
         size: auto;
     }
+}
+
+/* Keep the public experience aligned with Sportify's green brand in dark mode. */
+.public-shell {
+    --background: oklch(0.985 0.018 100);
+    --foreground: oklch(0.24 0.04 160);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.24 0.04 160);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.24 0.04 160);
+    --primary: oklch(0.58 0.17 150);
+    --primary-foreground: oklch(0.985 0.01 160);
+    --secondary: oklch(0.94 0.045 150);
+    --secondary-foreground: oklch(0.24 0.04 160);
+    --muted: oklch(0.95 0.035 150);
+    --muted-foreground: oklch(0.45 0.045 160);
+    --accent: oklch(0.93 0.06 150);
+    --accent-foreground: oklch(0.24 0.04 160);
+    --border: oklch(0.88 0.055 150);
+    --input: oklch(0.9 0.045 150);
+    --ring: var(--primary);
+    --brand-surface: oklch(0.975 0.035 150);
+}
+
+.dark .public-shell {
+    --background: oklch(0.16 0.035 160);
+    --foreground: oklch(0.94 0.02 160);
+    --card: oklch(0.205 0.04 160);
+    --card-foreground: oklch(0.94 0.02 160);
+    --popover: oklch(0.22 0.045 160);
+    --popover-foreground: oklch(0.94 0.02 160);
+    --primary: oklch(0.74 0.16 160);
+    --primary-foreground: oklch(0.16 0.035 160);
+    --secondary: oklch(0.25 0.04 160);
+    --secondary-foreground: oklch(0.94 0.02 160);
+    --muted: oklch(0.235 0.035 160);
+    --muted-foreground: oklch(0.75 0.035 160);
+    --accent: oklch(0.28 0.05 160);
+    --accent-foreground: oklch(0.95 0.02 160);
+    --border: oklch(0.32 0.045 160);
+    --input: oklch(0.29 0.04 160);
+    --ring: var(--primary);
+}
+
+@utility eyebrow {
+    color: var(--primary);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+@utility section-title {
+    max-width: 42rem;
+    font-size: 2.25rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+
+    @media (width >= 40rem) {
+        font-size: 3rem;
+    }
+}
+
+@utility section-copy {
+    max-width: 38rem;
+    color: var(--muted-foreground);
+    font-size: 0.95rem;
+    line-height: 1.7;
 }

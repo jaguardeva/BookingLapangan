@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowRight, Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
@@ -170,7 +170,10 @@ export function NotificationCenter({
                         href="/notifications"
                         className="text-xs font-medium text-primary hover:text-primary dark:text-primary dark:hover:text-primary transition-colors"
                     >
-                        Lihat Semua Notifikasi →
+                        <span className="inline-flex items-center gap-1">
+                            Lihat Semua Notifikasi
+                            <ArrowRight className="size-3.5" aria-hidden="true" />
+                        </span>
                     </Link>
                 </div>
             </DropdownMenuContent>

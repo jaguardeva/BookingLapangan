@@ -35,4 +35,6 @@ test('verification notification contains a six digit OTP', function () {
     expect($notification->via($user))->toBe(['mail']);
     expect(str_contains($mail->render(), '123456'))->toBeTrue();
     expect(str_contains($mail->render(), '10 menit'))->toBeTrue();
+    expect(str_contains($mail->render(), '32px'))->toBeTrue();
+    expect(str_contains($mail->render(), '/favicon.svg'))->toBeTrue();
 });

@@ -1,5 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { Pagination } from '@/components/pagination';
 import { History, Shield, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { ActivityLog } from '@/types/booking';
@@ -102,26 +103,7 @@ export default function AdminLogsIndex({ logs }: Props) {
                     </div>
                 </div>
 
-                {/* Pagination */}
-                {logs.links && logs.links.length > 3 && (
-                    <div className="flex justify-center items-center gap-1.5 mt-2">
-                        {logs.links.map((link, idx) => (
-                            <Link
-                                key={idx}
-                                href={link.url || '#'}
-                                preserveScroll
-                                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                                    link.active
-                                        ? 'bg-primary text-primary-foreground border-primary'
-                                        : link.url
-                                        ? 'bg-card text-foreground hover:bg-muted border-border'
-                                        : 'text-muted-foreground/50 border-transparent cursor-not-allowed pointer-events-none'
-                                }`}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                            />
-                        ))}
-                    </div>
-                )}
+                <Pagination links={logs.links} total={logs.total} className="mt-2" />
             </div>
         </AppLayout>
     );

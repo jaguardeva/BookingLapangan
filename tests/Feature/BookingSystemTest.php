@@ -90,6 +90,53 @@ test('public pages receive configured site contact details', function () {
         );
 });
 
+test('authenticated users can open the dedicated booking checkout page', function () {
+    $bookingDate = Carbon::tomorrow()->format('Y-m-d');
+
+    $this->actingAs($this->user)
+        ->get(route('booking.checkout', [
+            'lapangan' => $this->lapangan->slug,
+            'booking_date' => $bookingDate,
+            'start_time' => '14:00',
+            'duration_hours' => 2,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('booking/checkout')
+            ->where('selectedDate', $bookingDate)
+            ->where('startTime', '14:00')
+            ->where('durationHours', 2)
+            ->where('lapangan.slug', $this->lapangan->slug)
+        );
+});
+
+test('unverified users can open checkout and verify before submitting', function () {
+    $unverifiedUser = User::factory()->unverified()->create([
+        'role' => 'user',
+    ]);
+
+    $this->actingAs($unverifiedUser)
+        ->get(route('booking.checkout', [
+            'lapangan' => $this->lapangan->slug,
+            'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '14:00',
+            'duration_hours' => 1,
+        ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('booking/checkout'));
+});
+
+test('checkout rejects dates outside the available booking window', function () {
+    $this->actingAs($this->user)
+        ->get(route('booking.checkout', [
+            'lapangan' => $this->lapangan->slug,
+            'booking_date' => Carbon::today()->addDays(3)->format('Y-m-d'),
+            'start_time' => '14:00',
+            'duration_hours' => 1,
+        ]))
+        ->assertSessionHasErrors('booking_date');
+});
+
 test('booking email actions use the configured application origin', function () {
     config(['app.url' => 'https://production.example']);
     URL::forceRootUrl('https://request-host.example');
@@ -555,6 +602,36 @@ test('admin can create an approved manual walk-in booking for an assigned lapang
         ->and($booking->payment_status)->toBe('approved')
         ->and($booking->customer_email)->toBe('pelanggan@example.com')
         ->and($booking->validated_by)->toBe($this->admin->id);
+});
+
+test('admin can create a manual booking longer than six hours within operating hours', function () {
+    $this->actingAs($this->admin);
+
+    $response = $this->post(route('admin.bookings.manual'), [
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '08:00',
+        'duration_hours' => 7,
+        'customer_name' => 'Pelanggan Durasi Panjang',
+        'customer_phone' => '081234567891',
+    ]);
+
+    $booking = Booking::query()->where('customer_phone', '081234567891')->latest()->firstOrFail();
+
+    $response->assertRedirect()->assertSessionHasNoErrors();
+    expect($booking->duration_hours)->toBe(7)
+        ->and($booking->start_time)->toBe('08:00')
+        ->and($booking->end_time)->toBe('15:00');
+});
+
+test('admin can open the dedicated manual booking page', function () {
+    $this->actingAs($this->admin)
+        ->get(route('admin.bookings.manual.create'))
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/bookings/manual')
+            ->has('lapangans')
+            ->where('lapangans.0.id', $this->lapangan->id)
+            ->has('lapangans.0.images'));
 });
 
 test('admin booking search matches code, customer name, and phone case-insensitively', function () {

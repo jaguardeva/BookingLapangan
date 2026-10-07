@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
+import ConfirmDialog from '@/components/confirm-dialog';
 import { Plus, Edit2, Trash2, CreditCard, Landmark, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,7 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBank, setEditingBank] = useState<BankAccount | null>(null);
+    const [deletingBank, setDeletingBank] = useState<BankAccount | null>(null);
 
     const { data, setData, post, put, processing, reset, errors } = useForm({
         bank_name: '',
@@ -74,9 +76,18 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
     };
 
     const handleDelete = (bank: BankAccount) => {
-        if (confirm(`Hapus rekening ${bank.bank_name} - ${bank.account_number}?`)) {
-            router.delete(`/admin/banks/${bank.id}`, { preserveScroll: true });
+        setDeletingBank(bank);
+    };
+
+    const confirmDelete = () => {
+        if (!deletingBank) {
+            return;
         }
+
+        router.delete(`/admin/banks/${deletingBank.id}`, {
+            preserveScroll: true,
+            onSuccess: () => setDeletingBank(null),
+        });
     };
 
     return (
@@ -254,6 +265,17 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={deletingBank !== null}
+                onOpenChange={(open) => !open && setDeletingBank(null)}
+                title="Hapus rekening bank?"
+                description={`Rekening ${deletingBank?.bank_name ?? ''} - ${deletingBank?.account_number ?? ''} akan dihapus dari sistem.`}
+                confirmLabel="Hapus Rekening"
+                variant="destructive"
+                icon={Trash2}
+                onConfirm={confirmDelete}
+            />
         </AppLayout>
     );
 }

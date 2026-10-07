@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import ConfirmDialog from '@/components/confirm-dialog';
 import {
     Dialog,
     DialogContent,
@@ -37,6 +38,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
+    const [deletingAdmin, setDeletingAdmin] = useState<AdminUser | null>(null);
 
     const { data, setData, post, put, processing, reset, errors } = useForm({
         name: '',
@@ -84,9 +86,18 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
     };
 
     const handleDelete = (admin: AdminUser) => {
-        if (confirm(`Hapus admin kasir ${admin.name}?`)) {
-            router.delete(`/admin/admins/${admin.id}`, { preserveScroll: true });
+        setDeletingAdmin(admin);
+    };
+
+    const confirmDelete = () => {
+        if (!deletingAdmin) {
+            return;
         }
+
+        router.delete(`/admin/admins/${deletingAdmin.id}`, {
+            preserveScroll: true,
+            onSuccess: () => setDeletingAdmin(null),
+        });
     };
 
     const toggleLapangan = (lapanganId: string) => {
@@ -321,6 +332,16 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                     </form>
                 </DialogContent>
             </Dialog>
+            <ConfirmDialog
+                open={deletingAdmin !== null}
+                onOpenChange={(open) => !open && setDeletingAdmin(null)}
+                title="Hapus admin kasir?"
+                description={`Akun ${deletingAdmin?.name ?? ''} dan penugasannya akan dihapus dari sistem.`}
+                confirmLabel="Hapus Admin"
+                variant="destructive"
+                icon={Trash2}
+                onConfirm={confirmDelete}
+            />
         </AppLayout>
     );
 }

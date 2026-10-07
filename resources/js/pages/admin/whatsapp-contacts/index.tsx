@@ -2,6 +2,7 @@ import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { Edit2, MessageCircle, Plus, Trash2 } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
+import ConfirmDialog from '@/components/confirm-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +29,7 @@ const emptyForm = {
 
 export default function WhatsappContactsIndex({ contacts }: Props) {
     const [editingContact, setEditingContact] = useState<WhatsappContact | null>(null);
+    const [deletingContact, setDeletingContact] = useState<WhatsappContact | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const { data, setData, post, put, processing, reset, errors } = useForm(emptyForm);
 
@@ -64,6 +66,16 @@ export default function WhatsappContactsIndex({ contacts }: Props) {
         } else {
             post('/admin/whatsapp-contacts', options);
         }
+    };
+
+    const confirmDelete = () => {
+        if (!deletingContact) {
+            return;
+        }
+
+        router.delete(`/admin/whatsapp-contacts/${deletingContact.id}`, {
+            onSuccess: () => setDeletingContact(null),
+        });
     };
 
     return (
@@ -131,12 +143,23 @@ export default function WhatsappContactsIndex({ contacts }: Props) {
                             <div className="mt-4 flex justify-end gap-1 border-t border-border/60 pt-3">
                                 <Button size="sm" variant="ghost" onClick={() => openEdit(contact)}><Edit2 className="mr-1.5 size-3.5" /> Edit</Button>
                                 <Button size="sm" variant="ghost" onClick={() => router.post(`/admin/whatsapp-contacts/${contact.id}/toggle`)}>{contact.is_active ? 'Nonaktifkan' : 'Aktifkan'}</Button>
-                                <Button size="sm" variant="ghost" className="text-red-600" onClick={() => window.confirm('Hapus kontak ini?') && router.delete(`/admin/whatsapp-contacts/${contact.id}`)}><Trash2 className="size-3.5" /></Button>
+                                <Button size="sm" variant="ghost" className="text-red-600" onClick={() => setDeletingContact(contact)}><Trash2 className="size-3.5" /></Button>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
+
+            <ConfirmDialog
+                open={deletingContact !== null}
+                onOpenChange={(open) => !open && setDeletingContact(null)}
+                title="Hapus kontak WhatsApp?"
+                description={`Kontak ${deletingContact?.name ?? ''} akan dihapus dari daftar bantuan pengguna.`}
+                confirmLabel="Hapus Kontak"
+                variant="destructive"
+                icon={Trash2}
+                onConfirm={confirmDelete}
+            />
         </AppLayout>
     );
 }

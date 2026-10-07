@@ -97,12 +97,15 @@ Route::middleware(['auth', 'admin.workspace'])->group(function () {
         Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notification.read');
         Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notification.read-all');
     });
+
+    Route::get('/booking/checkout/{lapangan:slug}', [BookingController::class, 'checkout'])->name('booking.checkout');
 });
 
 // --- Admin & Superadmin Workspace ---
 Route::prefix('admin')->as('admin.')->middleware(['auth', 'role:superadmin,admin'])->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/bookings', [BookingManagementController::class, 'index'])->name('bookings.index');
+    Route::get('/bookings/manual', [BookingManagementController::class, 'createManual'])->name('bookings.manual.create');
     Route::post('/bookings/manual', [BookingManagementController::class, 'storeManual'])->name('bookings.manual');
     Route::post('/bookings/{booking}/approve', [BookingManagementController::class, 'approve'])->name('bookings.approve');
     Route::post('/bookings/{booking}/reject', [BookingManagementController::class, 'reject'])->name('bookings.reject');
@@ -120,6 +123,8 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'role:superadmin,admin
 
         // Lapangan Management
         Route::get('/lapangans', [LapanganManagementController::class, 'index'])->name('lapangans.index');
+        Route::get('/lapangans/create', [LapanganManagementController::class, 'create'])->name('lapangans.create');
+        Route::get('/lapangans/{lapangan}/edit', [LapanganManagementController::class, 'edit'])->name('lapangans.edit');
         Route::post('/lapangans', [LapanganManagementController::class, 'store'])->name('lapangans.store');
         Route::put('/lapangans/{lapangan}', [LapanganManagementController::class, 'update'])->name('lapangans.update');
         Route::post('/lapangans/{lapangan}/toggle', [LapanganManagementController::class, 'toggleStatus'])->name('lapangans.toggle');

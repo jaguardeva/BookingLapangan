@@ -1,7 +1,8 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import { Layers, Plus, Pencil, ToggleLeft, ToggleRight, Wifi } from 'lucide-react';
+import { Layers, Plus, Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
+import { CatalogIcon, catalogIconOptions, getCatalogIconName } from '@/components/catalog-icon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     store as storeCategory,
     update as updateCategory,
@@ -145,7 +147,7 @@ export default function CatalogIndex({ categories, facilities }: Props) {
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex min-w-0 items-start gap-3">
                                         <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                                            <Layers className="size-5" />
+                                            <CatalogIcon name={category.icon} className="size-5" />
                                         </div>
                                         <div className="min-w-0">
                                             <h2 className="truncate font-semibold text-foreground">{category.name}</h2>
@@ -193,7 +195,7 @@ export default function CatalogIndex({ categories, facilities }: Props) {
                             <article key={facility.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
                                 <div className="flex min-w-0 items-center gap-3">
                                     <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                                        <Wifi className="size-5" />
+                                        <CatalogIcon name={facility.icon} className="size-5" />
                                     </div>
                                     <div className="min-w-0">
                                         <h2 className="truncate font-semibold text-foreground">{facility.name}</h2>
@@ -219,8 +221,15 @@ export default function CatalogIndex({ categories, facilities }: Props) {
             <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
                 <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>{editingCategory ? 'Edit Kategori' : 'Tambah Kategori'}</DialogTitle>
-                        <DialogDescription>Slug dibuat otomatis dari nama kategori dan tidak berubah saat nama diedit.</DialogDescription>
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                {editingCategory ? <Pencil className="size-5" /> : <Layers className="size-5" />}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <DialogTitle>{editingCategory ? 'Edit Kategori' : 'Tambah Kategori'}</DialogTitle>
+                                <DialogDescription>Slug dibuat otomatis dari nama kategori dan tidak berubah saat nama diedit.</DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
                     <form onSubmit={submitCategory} className="space-y-4">
                         <div className="space-y-2">
@@ -229,8 +238,22 @@ export default function CatalogIndex({ categories, facilities }: Props) {
                             {categoryForm.errors.name && <p className="text-xs text-destructive">{categoryForm.errors.name}</p>}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="category-icon">Nama ikon (opsional)</Label>
-                            <Input id="category-icon" value={categoryForm.data.icon} onChange={(event) => categoryForm.setData('icon', event.target.value)} placeholder="Contoh: Trophy" maxLength={100} />
+                            <Label htmlFor="category-icon">Ikon kategori</Label>
+                            <Select value={getCatalogIconName(categoryForm.data.icon)} onValueChange={(value) => categoryForm.setData('icon', value)}>
+                                <SelectTrigger id="category-icon" className="h-10 rounded-xl">
+                                    <SelectValue placeholder="Pilih ikon" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {catalogIconOptions.map(({ name, label, icon: Icon }) => (
+                                        <SelectItem key={name} value={name}>
+                                            <span className="flex items-center gap-2">
+                                                <Icon className="size-4" aria-hidden="true" />
+                                                {label}
+                                            </span>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             {categoryForm.errors.icon && <p className="text-xs text-destructive">{categoryForm.errors.icon}</p>}
                         </div>
                         <div className="space-y-2">
@@ -249,8 +272,15 @@ export default function CatalogIndex({ categories, facilities }: Props) {
             <Dialog open={facilityDialogOpen} onOpenChange={setFacilityDialogOpen}>
                 <DialogContent className="rounded-2xl sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>{editingFacility ? 'Edit Fasilitas' : 'Tambah Fasilitas'}</DialogTitle>
-                        <DialogDescription>Fasilitas yang ditambahkan dapat dipilih untuk lapangan mana pun.</DialogDescription>
+                        <div className="flex items-start gap-3">
+                            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                {editingFacility ? <Pencil className="size-5" /> : <CatalogIcon name={facilityForm.data.icon} className="size-5" />}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <DialogTitle>{editingFacility ? 'Edit Fasilitas' : 'Tambah Fasilitas'}</DialogTitle>
+                                <DialogDescription>Fasilitas yang ditambahkan dapat dipilih untuk lapangan mana pun.</DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
                     <form onSubmit={submitFacility} className="space-y-4">
                         <div className="space-y-2">
@@ -259,8 +289,22 @@ export default function CatalogIndex({ categories, facilities }: Props) {
                             {facilityForm.errors.name && <p className="text-xs text-destructive">{facilityForm.errors.name}</p>}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="facility-icon">Nama ikon (opsional)</Label>
-                            <Input id="facility-icon" value={facilityForm.data.icon} onChange={(event) => facilityForm.setData('icon', event.target.value)} placeholder="Contoh: Wifi" maxLength={100} />
+                            <Label htmlFor="facility-icon">Ikon fasilitas</Label>
+                            <Select value={getCatalogIconName(facilityForm.data.icon)} onValueChange={(value) => facilityForm.setData('icon', value)}>
+                                <SelectTrigger id="facility-icon" className="h-10 rounded-xl">
+                                    <SelectValue placeholder="Pilih ikon" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {catalogIconOptions.map(({ name, label, icon: Icon }) => (
+                                        <SelectItem key={name} value={name}>
+                                            <span className="flex items-center gap-2">
+                                                <Icon className="size-4" aria-hidden="true" />
+                                                {label}
+                                            </span>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             {facilityForm.errors.icon && <p className="text-xs text-destructive">{facilityForm.errors.icon}</p>}
                         </div>
                         <div className="flex justify-end gap-2 pt-2">

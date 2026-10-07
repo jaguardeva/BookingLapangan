@@ -33,7 +33,7 @@ class ManualBookingCreatedNotification extends Notification implements ShouldQue
 
         return (new MailMessage)
             ->subject('Booking '.config('app.name')." {$this->booking->booking_code} berhasil dikonfirmasi")
-            ->view('emails.manual-booking', [
+            ->markdown('emails.manual-booking', [
                 'booking' => $this->booking,
                 'customerName' => $this->booking->customer_name,
             ]);
