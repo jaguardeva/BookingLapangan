@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\WhatsappContact;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -67,8 +68,8 @@ class HandleInertiaRequests extends Middleware
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $user->role,
-                    'phone' => $user->phone,
-                    'avatar' => $user->avatar,
+                    'phone' => $user->profile?->phone,
+                    'avatar' => $user->profile?->avatar_path ? Storage::url($user->profile->avatar_path) : null,
                     'email_verified_at' => $user->email_verified_at,
                     'is_verified' => $user->hasVerifiedEmail(),
                     'points_balance' => $user->points_balance,
@@ -76,6 +77,8 @@ class HandleInertiaRequests extends Middleware
                     'unread_notifications_count' => $user->unreadNotifications()->count(),
                 ] : null,
             ],
+            'profile' => $user?->profile,
+            'profile_completion' => $user?->profileCompletion(),
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),

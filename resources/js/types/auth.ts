@@ -4,7 +4,7 @@ export type User = {
     email: string;
     role: 'superadmin' | 'admin' | 'user';
     phone?: string | null;
-    avatar?: string;
+    avatar?: string | null;
     unread_notifications_count?: number;
     points_balance?: number;
     available_points?: number;
@@ -18,14 +18,6 @@ export type User = {
 
 export type Auth = {
     user: User;
-};
-
-export type Passkey = {
-    id: string;
-    name: string;
-    authenticator: string | null;
-    created_at_diff: string;
-    last_used_at_diff: string | null;
 };
 
 export type TwoFactorSetupData = {

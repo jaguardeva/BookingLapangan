@@ -1,9 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import { useRef } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
-import ManagePasskeys, {
-    type Props as ManagePasskeysProps,
-} from '@/components/manage-passkeys';
 import ManageTwoFactor, {
     type Props as ManageTwoFactorProps,
 } from '@/components/manage-two-factor';
@@ -13,11 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { PublicLayout } from '@/layouts/public-layout';
 import { edit } from '@/routes/security';
+import { request as requestPasswordReset } from '@/routes/user-password';
 
-type Props = {
-    passwordRules: string;
-} & ManagePasskeysProps &
-    ManageTwoFactorProps;
+type Props = { passwordRules: string; hasLocalPassword: boolean; passwordResetEmail: string } & ManageTwoFactorProps;
 
 export default function Security(props: Props) {
     const passwordInput = useRef<HTMLInputElement>(null);
@@ -50,7 +45,7 @@ export default function Security(props: Props) {
                             </p>
                         </div>
 
-                        <Form
+                        {props.hasLocalPassword ? <Form
                             {...SecurityController.update.form()}
                             options={{ preserveScroll: true }}
                             resetOnError={[
@@ -117,17 +112,22 @@ export default function Security(props: Props) {
                                     </Button>
                                 </>
                             )}
-                        </Form>
+                        </Form> : <Form {...requestPasswordReset.form()} options={{ preserveScroll: true }} className="space-y-4">
+                            {({ processing, errors }) => <>
+                                <p className="text-muted-foreground text-sm">Akun Anda menggunakan Google. Kirim tautan ke email terverifikasi untuk membuat password lokal.</p>
+                                <p className="text-muted-foreground text-sm">Email tujuan: {props.passwordResetEmail}</p>
+                                <InputError message={errors.request} />
+                                <Button disabled={processing} data-test="request-local-password-button">
+                                    {processing ? 'Mengirim tautan...' : 'Buat password lokal melalui email'}
+                                </Button>
+                            </>}
+                        </Form>}
                     </section>
 
                     <ManageTwoFactor
                         canManageTwoFactor={props.canManageTwoFactor}
                         requiresConfirmation={props.requiresConfirmation}
                         twoFactorEnabled={props.twoFactorEnabled}
-                    />
-                    <ManagePasskeys
-                        canManagePasskeys={props.canManagePasskeys}
-                        passkeys={props.passkeys}
                     />
                 </div>
             </main>

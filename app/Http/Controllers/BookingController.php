@@ -7,7 +7,9 @@ use App\Models\BankAccount;
 use App\Models\Booking;
 use App\Models\Lapangan;
 use App\Models\User;
+use App\Notifications\BookingCreatedDatabaseNotification;
 use App\Notifications\BookingCreatedNotification;
+use App\Notifications\CashBookingCreatedNotification;
 use App\Notifications\PaymentProofSubmittedNotification;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -148,7 +150,17 @@ class BookingController extends Controller
         });
 
         // Send notification to customer
+        auth()->user()->notify(new BookingCreatedDatabaseNotification($booking));
         auth()->user()->notify(new BookingCreatedNotification($booking));
+
+        if ($booking->payment_method === 'cash') {
+            $admins = $lapangan->assignedAdmins;
+            $superadmins = User::where('role', 'superadmin')->get();
+
+            foreach ($admins->merge($superadmins)->unique('id') as $admin) {
+                $admin->notify(new CashBookingCreatedNotification($booking));
+            }
+        }
 
         // Log activity
         ActivityLog::log('booking_created', "Booking #{$booking->booking_code} dibuat oleh ".auth()->user()->name, [

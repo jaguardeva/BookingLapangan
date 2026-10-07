@@ -1,13 +1,14 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
-import { Download, Calendar, DollarSign, Filter, FileText, CheckCircle2 } from 'lucide-react';
+import { Download, Calendar, DollarSign, FileText, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Booking, Lapangan } from '@/types/booking';
+import { index as reportsIndex } from '@/routes/admin/reports/index';
 
 interface Props {
     bookings: {
@@ -45,15 +46,72 @@ export default function AdminReportsIndex({
     const [endDate, setEndDate] = useState(filters.end_date || '');
     const [selectedLapangan, setSelectedLapangan] = useState(filters.lapangan_id || 'all');
     const [selectedStatus, setSelectedStatus] = useState(filters.status || 'all');
+    const filterKey = JSON.stringify([startDate, endDate, selectedLapangan, selectedStatus]);
+    const latestFilterKey = useRef(filterKey);
+    const lastAppliedFilterKey = useRef(filterKey);
+    const pendingFilterTimeout = useRef<number | undefined>(undefined);
 
-    const handleFilterSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        router.get('/admin/reports', {
-            start_date: startDate,
-            end_date: endDate,
-            lapangan_id: selectedLapangan,
-            status: selectedStatus,
-        }, { preserveState: true, preserveScroll: true });
+    useEffect(() => {
+        latestFilterKey.current = filterKey;
+
+        if (lastAppliedFilterKey.current === filterKey) {
+            return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            lastAppliedFilterKey.current = filterKey;
+            const query: Record<string, string> = {
+                start_date: startDate,
+                end_date: endDate,
+                lapangan_id: selectedLapangan !== 'all' ? selectedLapangan : '',
+                status: selectedStatus !== 'all' ? selectedStatus : '',
+            };
+            const activeFilters = Object.fromEntries(
+                Object.entries(query).filter(([, value]) => value !== ''),
+            );
+
+            router.get(reportsIndex.url(), activeFilters, {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    if (latestFilterKey.current !== filterKey) {
+                        return;
+                    }
+
+                    const resolvedFilters = page.props.filters as Props['filters'];
+                    lastAppliedFilterKey.current = JSON.stringify([
+                        resolvedFilters.start_date,
+                        resolvedFilters.end_date,
+                        resolvedFilters.lapangan_id,
+                        resolvedFilters.status,
+                    ]);
+                    setStartDate(resolvedFilters.start_date);
+                    setEndDate(resolvedFilters.end_date);
+                    setSelectedLapangan(resolvedFilters.lapangan_id);
+                    setSelectedStatus(resolvedFilters.status);
+                },
+            });
+        }, 300);
+        pendingFilterTimeout.current = timeoutId;
+
+        return () => {
+            window.clearTimeout(timeoutId);
+            if (pendingFilterTimeout.current === timeoutId) {
+                pendingFilterTimeout.current = undefined;
+            }
+        };
+    }, [filterKey, startDate, endDate, selectedLapangan, selectedStatus]);
+
+    const resetFilters = () => {
+        if (pendingFilterTimeout.current !== undefined) {
+            window.clearTimeout(pendingFilterTimeout.current);
+            pendingFilterTimeout.current = undefined;
+        }
+
+        router.get(reportsIndex.url(), {}, {
+            preserveState: false,
+            preserveScroll: true,
+        });
     };
 
     const exportUrl = `/admin/reports/export?start_date=${startDate}&end_date=${endDate}&lapangan_id=${selectedLapangan}&status=${selectedStatus}`;
@@ -111,7 +169,7 @@ export default function AdminReportsIndex({
 
                 {/* Filter Toolbar */}
                 <div className="rounded-2xl border border-border/80 bg-card p-3 shadow-sm sm:p-4">
-                    <form onSubmit={handleFilterSubmit} className="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap">
+                    <div className="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap">
                         <div className="flex min-w-0 flex-col gap-2">
                             <Label className="text-sm font-medium leading-none">Dari tanggal</Label>
                             <Input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="h-10 w-full min-w-0 rounded-xl text-sm" />
@@ -147,10 +205,10 @@ export default function AdminReportsIndex({
                             </Select>
                         </div>
 
-                        <Button type="submit" size="sm" className="col-span-2 h-10 w-full rounded-xl bg-primary text-sm text-primary-foreground hover:bg-primary/90 sm:col-span-1 sm:w-auto">
-                            Terapkan Filter
+                        <Button type="button" variant="outline" onClick={resetFilters} className="col-span-2 h-10 w-full rounded-xl sm:col-span-1 sm:w-auto">
+                            Reset Filter
                         </Button>
-                    </form>
+                    </div>
                 </div>
 
                 {/* Reports Table */}

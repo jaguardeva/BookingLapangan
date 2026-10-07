@@ -1,6 +1,8 @@
 import { Form, Head } from '@inertiajs/react';
+import { useState } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import PasswordRequirements from '@/components/password-requirements';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,12 +16,15 @@ type Props = {
 };
 
 export default function Register({ passwordRules }: Props) {
+    const [password, setPassword] = useState('');
+
     return (
         <>
             <Head title="Daftar" />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
+                onSuccess={() => setPassword('')}
                 disableWhileProcessing
                 className="flex flex-col gap-5"
             >
@@ -67,10 +72,13 @@ export default function Register({ passwordRules }: Props) {
                                     tabIndex={3}
                                     autoComplete="new-password"
                                     name="password"
+                                    value={password}
+                                    onChange={(event) => setPassword(event.target.value)}
                                     className="h-11 rounded-lg bg-background"
                                     placeholder="Buat kata sandi"
                                     passwordrules={passwordRules}
                                 />
+                                <PasswordRequirements password={password} />
                                 <InputError message={errors.password} />
                             </div>
 

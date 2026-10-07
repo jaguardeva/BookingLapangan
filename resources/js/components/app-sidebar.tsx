@@ -110,8 +110,8 @@ export function AppSidebar() {
     // Superadmin Special Controls
     const superAdminNavItems: NavItem[] = [
         {
-            title: 'Kelola Staf Admin',
-            href: '/admin/admins',
+            title: 'Kelola Pengguna',
+            href: '/admin/users',
             icon: Users,
         },
         {

@@ -1,6 +1,6 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
-import { PublicLayout } from '@/layouts/public-layout';
+import { Head, Link, useForm, usePage } from "@inertiajs/react";
+import { useMemo, useRef, useState } from "react";
+import { PublicLayout } from "@/layouts/public-layout";
 import {
     Clock,
     Star,
@@ -18,12 +18,12 @@ import {
     User,
     RotateCcw,
     ShoppingCart,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { store as storeBooking } from '@/routes/booking';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { store as storeBooking } from "@/routes/booking";
 import {
     Dialog,
     DialogContent,
@@ -31,10 +31,10 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from '@/components/ui/dialog';
-import type { Lapangan, Booking } from '@/types/booking';
-import type { User as AuthUser } from '@/types/auth';
-import { formatTimeIndonesia } from '@/lib/locale';
+} from "@/components/ui/dialog";
+import type { Lapangan, Booking } from "@/types/booking";
+import type { User as AuthUser } from "@/types/auth";
+import { formatTimeIndonesia } from "@/lib/locale";
 
 interface AllowedDate {
     date: string;
@@ -60,7 +60,7 @@ export default function LapanganShow({
     const availablePoints = currentUser?.available_points ?? 0;
 
     const [selectedDate, setSelectedDate] = useState<string>(
-        allowedDates[0]?.date || '',
+        allowedDates[0]?.date || "",
     );
     const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -68,45 +68,133 @@ export default function LapanganShow({
         () => lapangan.images?.filter((image) => image.length > 0) ?? [],
         [lapangan.images],
     );
-    const photos = galleryImages.length > 0
-        ? galleryImages
-        : ['https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80'];
+    const photos =
+        galleryImages.length > 0
+            ? galleryImages
+            : [
+                  "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80",
+              ];
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
     const currentPhotoIndex = Math.min(activePhotoIndex, photos.length - 1);
+    const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+    const hasDraggedRef = useRef(false);
 
     const showPreviousPhoto = () => {
-        setActivePhotoIndex((currentPhotoIndex - 1 + photos.length) % photos.length);
+        setActivePhotoIndex(
+            (currentPhotoIndex - 1 + photos.length) % photos.length,
+        );
     };
 
     const showNextPhoto = () => {
         setActivePhotoIndex((currentPhotoIndex + 1) % photos.length);
     };
 
+    const handleCarouselPointerDown = (
+        event: React.PointerEvent<HTMLDivElement>,
+    ) => {
+        if (event.pointerType === "mouse" && event.button !== 0) {
+            return;
+        }
+
+        dragStartRef.current = { x: event.clientX, y: event.clientY };
+        hasDraggedRef.current = false;
+        event.currentTarget.setPointerCapture(event.pointerId);
+    };
+
+    const handleCarouselPointerMove = (
+        event: React.PointerEvent<HTMLDivElement>,
+    ) => {
+        if (!dragStartRef.current) {
+            return;
+        }
+
+        const deltaX = event.clientX - dragStartRef.current.x;
+        const deltaY = event.clientY - dragStartRef.current.y;
+
+        if (!hasDraggedRef.current) {
+            const hasPassedDragThreshold = Math.abs(deltaX) >= 10;
+            const isHorizontalGesture = Math.abs(deltaX) > Math.abs(deltaY);
+
+            if (!hasPassedDragThreshold || !isHorizontalGesture) {
+                return;
+            }
+
+            hasDraggedRef.current = true;
+        }
+
+        event.preventDefault();
+    };
+
+    const handleCarouselPointerUp = (
+        event: React.PointerEvent<HTMLDivElement>,
+    ) => {
+        if (dragStartRef.current && hasDraggedRef.current) {
+            const deltaX = event.clientX - dragStartRef.current.x;
+
+            if (Math.abs(deltaX) >= 50) {
+                if (deltaX < 0) {
+                    showNextPhoto();
+                } else {
+                    showPreviousPhoto();
+                }
+            }
+        }
+
+        dragStartRef.current = null;
+
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+    };
+
+    const handleCarouselClickCapture = (
+        event: React.MouseEvent<HTMLDivElement>,
+    ) => {
+        if (!hasDraggedRef.current) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        hasDraggedRef.current = false;
+    };
+
+    const handleCarouselPointerCancel = (
+        event: React.PointerEvent<HTMLDivElement>,
+    ) => {
+        dragStartRef.current = null;
+        hasDraggedRef.current = false;
+
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+    };
+
     // Form for booking submission
     const { data, setData, post, processing, errors, reset } = useForm({
         lapangan_id: lapangan.id,
-        booking_date: allowedDates[0]?.date || '',
-        start_time: '',
+        booking_date: allowedDates[0]?.date || "",
+        start_time: "",
         duration_hours: 1,
-        payment_method: 'transfer' as 'cash' | 'transfer',
+        payment_method: "transfer" as "cash" | "transfer",
         use_points: false,
-        customer_name: currentUser?.name || '',
-        customer_phone: currentUser?.phone || '',
-        notes: '',
+        customer_name: currentUser?.name || "",
+        customer_phone: currentUser?.phone || "",
+        notes: "",
     });
 
     // Generate 1-hour hourly slots from operational_start to operational_end
     const hourlySlots = useMemo(() => {
         const slots: { start: string; end: string }[] = [];
         const startHour = parseInt(
-            lapangan.operational_start.split(':')[0],
+            lapangan.operational_start.split(":")[0],
             10,
         );
-        const endHour = parseInt(lapangan.operational_end.split(':')[0], 10);
+        const endHour = parseInt(lapangan.operational_end.split(":")[0], 10);
 
         for (let h = startHour; h < endHour; h++) {
-            const sHour = h.toString().padStart(2, '0') + ':00';
-            const eHour = (h + 1).toString().padStart(2, '0') + ':00';
+            const sHour = h.toString().padStart(2, "0") + ":00";
+            const eHour = (h + 1).toString().padStart(2, "0") + ":00";
             slots.push({ start: sHour, end: eHour });
         }
         return slots;
@@ -121,13 +209,13 @@ export default function LapanganShow({
     const isSlotBooked = (start: string, end: string) => {
         return existingBookings.some((b) => {
             const bDate =
-                typeof b.booking_date === 'string'
-                    ? b.booking_date.split('T')[0].split(' ')[0]
-                    : '';
+                typeof b.booking_date === "string"
+                    ? b.booking_date.split("T")[0].split(" ")[0]
+                    : "";
             if (bDate !== selectedDate) return false;
 
-            const bStart = b.start_time ? b.start_time.substring(0, 5) : '';
-            const bEnd = b.end_time ? b.end_time.substring(0, 5) : '';
+            const bStart = b.start_time ? b.start_time.substring(0, 5) : "";
+            const bEnd = b.end_time ? b.end_time.substring(0, 5) : "";
 
             // Overlap check
             return bStart < end && bEnd > start;
@@ -194,16 +282,16 @@ export default function LapanganShow({
     // Calculate booking summary
     const durationHours = selectedSlots.length;
     const sortedSlots = [...selectedSlots].sort();
-    const startTimeStr = sortedSlots[0] || '';
+    const startTimeStr = sortedSlots[0] || "";
     const endTimeStr =
         sortedSlots.length > 0
             ? hourlySlots.find(
                   (s) => s.start === sortedSlots[sortedSlots.length - 1],
-              )?.end || ''
-            : '';
+              )?.end || ""
+            : "";
     const totalPrice = durationHours * lapangan.price_per_hour;
     const pointsDiscount =
-        data.payment_method === 'transfer' && data.use_points
+        data.payment_method === "transfer" && data.use_points
             ? Math.min(availablePoints, totalPrice)
             : 0;
     const priceAfterPoints = totalPrice - pointsDiscount;
@@ -236,7 +324,7 @@ export default function LapanganShow({
 
             {/* Breadcrumbs strip */}
             <div className="border-border/60 bg-muted/20 text-muted-foreground border-b py-3 text-xs">
-                <div className="public-container max-w-[1240px] flex items-center gap-2">
+                <div className="public-container flex max-w-[1240px] items-center gap-2">
                     <Link href="/" className="hover:text-foreground">
                         Beranda
                     </Link>
@@ -256,44 +344,68 @@ export default function LapanganShow({
                     {/* Left Column: Photos & Details (2 Cols) */}
                     <div className="space-y-8 lg:col-span-2">
                         {/* Main Photo Gallery */}
-                        <div className="border-border/80 bg-card relative aspect-[16/9] overflow-hidden rounded-2xl border shadow-sm">
+                        <div
+                            className="group border-border/80 bg-card relative aspect-[16/9] touch-pan-y select-none overflow-hidden rounded-2xl border shadow-sm"
+                            onPointerDown={handleCarouselPointerDown}
+                            onPointerMove={handleCarouselPointerMove}
+                            onPointerUp={handleCarouselPointerUp}
+                            onPointerCancel={handleCarouselPointerCancel}
+                            onClickCapture={handleCarouselClickCapture}
+                        >
                             <img
                                 src={photos[currentPhotoIndex]}
                                 alt={`${lapangan.name} — foto ${currentPhotoIndex + 1}`}
+                                draggable={false}
                                 className="size-full object-cover"
                             />
                             {photos.length > 1 && (
                                 <>
                                     <button
                                         type="button"
+                                        onPointerDown={(event) =>
+                                            event.stopPropagation()
+                                        }
                                         onClick={showPreviousPhoto}
                                         aria-label="Lihat foto sebelumnya"
-                                        className="absolute left-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/45 text-white shadow-lg backdrop-blur transition hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                        className="absolute top-1/2 left-3 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/25 text-white/90 opacity-0 shadow-md backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 hover:bg-black/45 hover:text-white focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none max-sm:opacity-100"
                                     >
                                         <ChevronLeft className="size-5" />
                                     </button>
                                     <button
                                         type="button"
+                                        onPointerDown={(event) =>
+                                            event.stopPropagation()
+                                        }
                                         onClick={showNextPhoto}
                                         aria-label="Lihat foto berikutnya"
-                                        className="absolute right-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/45 text-white shadow-lg backdrop-blur transition hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                        className="absolute top-1/2 right-3 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/25 text-white/90 opacity-0 shadow-md backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 hover:bg-black/45 hover:text-white focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none max-sm:opacity-100"
                                     >
                                         <ChevronRight className="size-5" />
                                     </button>
-                                    <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/45 px-3 py-2 backdrop-blur">
+                                    <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/25 px-2.5 py-1.5 backdrop-blur-sm">
                                         {photos.map((_, index) => (
                                             <button
                                                 key={index}
                                                 type="button"
-                                                onClick={() => setActivePhotoIndex(index)}
+                                                onPointerDown={(event) =>
+                                                    event.stopPropagation()
+                                                }
+                                                onClick={() =>
+                                                    setActivePhotoIndex(index)
+                                                }
                                                 aria-label={`Lihat foto ${index + 1}`}
-                                                aria-current={currentPhotoIndex === index ? 'true' : undefined}
-                                                className={`size-2.5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${currentPhotoIndex === index ? 'bg-primary' : 'bg-white/70 hover:bg-white'}`}
+                                                aria-current={
+                                                    currentPhotoIndex === index
+                                                        ? "true"
+                                                        : undefined
+                                                }
+                                                className={`rounded-full transition-all duration-200 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none ${currentPhotoIndex === index ? "size-2 bg-white ring-2 ring-white/25" : "size-1.5 bg-white/40 hover:bg-white/70"}`}
                                             />
                                         ))}
                                     </div>
-                                    <span className="absolute bottom-4 right-4 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                                        {currentPhotoIndex + 1} / {photos.length}
+                                    <span className="absolute right-4 bottom-4 rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-sm">
+                                        {currentPhotoIndex + 1} /{" "}
+                                        {photos.length}
                                     </span>
                                 </>
                             )}
@@ -301,7 +413,7 @@ export default function LapanganShow({
                                 <Badge className="bg-background/90 text-foreground border-border/40 border font-semibold backdrop-blur-md">
                                     {lapangan.category?.name}
                                 </Badge>
-                                <Badge className="bg-primary font-semibold text-primary-foreground">
+                                <Badge className="bg-primary text-primary-foreground font-semibold">
                                     Aktif & Tersedia
                                 </Badge>
                             </div>
@@ -334,7 +446,7 @@ export default function LapanganShow({
                         {/* Facilities Checklist */}
                         <div className="bg-card border-border/70 space-y-4 rounded-2xl border p-6">
                             <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                                <ShieldCheck className="size-4 text-primary" />{' '}
+                                <ShieldCheck className="text-primary size-4" />{" "}
                                 Fasilitas Lapangan
                             </h3>
                             <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
@@ -343,7 +455,7 @@ export default function LapanganShow({
                                         key={f.id}
                                         className="text-foreground/90 flex items-center gap-2"
                                     >
-                                        <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                        <div className="bg-primary/10 text-primary flex size-5 shrink-0 items-center justify-center rounded-full">
                                             <Check className="size-3" />
                                         </div>
                                         <span>{f.name}</span>
@@ -355,7 +467,7 @@ export default function LapanganShow({
                         {/* Rules & Policy Box */}
                         <div className="bg-muted/30 border-border/60 space-y-2 rounded-2xl border p-5 text-xs">
                             <h4 className="text-foreground flex items-center gap-1.5 font-semibold">
-                                <Info className="size-4 text-sky-500" />{' '}
+                                <Info className="size-4 text-sky-500" />{" "}
                                 Kebijakan Booking & Pembatalan:
                             </h4>
                             <ul className="text-muted-foreground list-inside list-disc space-y-1">
@@ -382,7 +494,7 @@ export default function LapanganShow({
                         {/* Customer Reviews */}
                         <div className="border-border/60 space-y-4 border-t pt-4">
                             <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
-                                <MessageSquare className="size-5 text-primary" />{' '}
+                                <MessageSquare className="text-primary size-5" />{" "}
                                 Ulasan Pemain ({lapangan.reviews?.length ?? 0})
                             </h3>
 
@@ -395,10 +507,10 @@ export default function LapanganShow({
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
+                                                    <div className="bg-primary/10 text-primary flex size-7 items-center justify-center rounded-full font-bold">
                                                         {rev.user?.name
                                                             ? rev.user.name[0]
-                                                            : 'U'}
+                                                            : "U"}
                                                     </div>
                                                     <div>
                                                         <p className="text-foreground font-semibold">
@@ -439,25 +551,25 @@ export default function LapanganShow({
 
                     {/* Right Column: Interactive Slot Booking Picker (1 Col Sticky) */}
                     <div className="lg:col-span-1">
-                        <div className="border-border/70 bg-card sticky top-20 space-y-5 rounded-2xl border p-5 shadow-lg shadow-foreground/5 sm:p-6">
+                        <div className="border-border/70 bg-card shadow-foreground/5 sticky top-6 space-y-5 rounded-2xl border p-5 shadow-lg sm:p-6">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <span className="text-muted-foreground text-xs font-medium">
                                         Harga Sewa
                                     </span>
                                     <div className="mt-0.5 flex items-baseline gap-1">
-                                        <span className="text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">
-                                            Rp{' '}
+                                        <span className="text-primary text-2xl font-extrabold tracking-tight sm:text-3xl">
+                                            Rp{" "}
                                             {Number(
                                                 lapangan.price_per_hour,
-                                            ).toLocaleString('id-ID')}
+                                            ).toLocaleString("id-ID")}
                                         </span>
                                         <span className="text-muted-foreground text-xs">
                                             / jam
                                         </span>
                                     </div>
                                 </div>
-                                <div className="mt-1 flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                <div className="bg-primary/10 text-primary mt-1 flex size-10 shrink-0 items-center justify-center rounded-xl">
                                     <Calendar className="size-5" />
                                 </div>
                             </div>
@@ -482,16 +594,16 @@ export default function LapanganShow({
                                                 aria-pressed={isSelected}
                                                 className={`rounded-xl border px-2 py-3 text-center transition-colors ${
                                                     isSelected
-                                                        ? 'border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20'
-                                                        : 'border-border bg-muted/20 text-muted-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-foreground'
+                                                        ? "border-primary bg-primary text-primary-foreground shadow-primary/20 shadow-sm"
+                                                        : "border-border bg-muted/20 text-muted-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-foreground"
                                                 }`}
                                             >
                                                 <p className="text-[10px] font-semibold tracking-wider uppercase opacity-80">
                                                     {d.day_name}
                                                 </p>
                                                 <p className="mt-1 text-xs font-bold">
-                                                    {d.formatted.split(' ')[0]}{' '}
-                                                    {d.formatted.split(' ')[1]}
+                                                    {d.formatted.split(" ")[0]}{" "}
+                                                    {d.formatted.split(" ")[1]}
                                                 </p>
                                             </button>
                                         );
@@ -509,7 +621,7 @@ export default function LapanganShow({
                                         <button
                                             type="button"
                                             onClick={() => setSelectedSlots([])}
-                                            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                                            className="text-muted-foreground hover:bg-primary/10 hover:text-primary focus-visible:ring-primary inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                             aria-label="Reset pilihan jam"
                                         >
                                             <RotateCcw className="size-3" />
@@ -519,13 +631,13 @@ export default function LapanganShow({
                                 </div>
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="text-muted-foreground text-xs">
-                                        {lapangan.operational_start} -{' '}
+                                        {lapangan.operational_start} -{" "}
                                         {lapangan.operational_end} WIB
                                     </span>
                                     <span className="text-muted-foreground">
                                         {selectedSlots.length > 0
                                             ? `${selectedSlots.length} jam dipilih`
-                                            : 'Pilih jam berurutan'}
+                                            : "Pilih jam berurutan"}
                                     </span>
                                 </div>
 
@@ -558,10 +670,10 @@ export default function LapanganShow({
                                                 }
                                                 className={`flex min-h-11 items-center justify-between gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-semibold transition-colors ${
                                                     selected
-                                                        ? 'border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                                                        ? "border-primary bg-primary text-primary-foreground shadow-primary/20 shadow-sm"
                                                         : disabled
-                                                          ? 'border-border/40 bg-muted/40 text-muted-foreground/50 cursor-not-allowed'
-                                                          : 'border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary/5'
+                                                          ? "border-border/40 bg-muted/40 text-muted-foreground/50 cursor-not-allowed"
+                                                          : "border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary/5"
                                                 }`}
                                             >
                                                 <span>
@@ -586,7 +698,7 @@ export default function LapanganShow({
                                 {/* Slot Legend */}
                                 <div className="text-muted-foreground border-border/60 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-t pt-3 text-[11px]">
                                     <div className="flex items-center gap-1.5">
-                                        <div className="size-2.5 rounded bg-primary" />
+                                        <div className="bg-primary size-2.5 rounded" />
                                         <span>Terpilih</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
@@ -602,7 +714,7 @@ export default function LapanganShow({
 
                             {/* 3. Live Price & Duration Summary */}
                             {durationHours > 0 && (
-                                <div className="space-y-1.5 rounded-xl border border-primary/20 bg-primary/10 p-3.5 text-xs">
+                                <div className="border-primary/20 bg-primary/10 space-y-1.5 rounded-xl border p-3.5 text-xs">
                                     <div className="text-muted-foreground flex justify-between">
                                         <span>Waktu:</span>
                                         <span className="text-foreground font-semibold">
@@ -615,11 +727,11 @@ export default function LapanganShow({
                                             {durationHours} Jam
                                         </span>
                                     </div>
-                                    <div className="text-foreground flex justify-between border-t border-primary/20 pt-1.5 text-sm font-bold">
+                                    <div className="text-foreground border-primary/20 flex justify-between border-t pt-1.5 text-sm font-bold">
                                         <span>Total Biaya:</span>
                                         <span className="text-primary dark:text-primary">
-                                            Rp{' '}
-                                            {totalPrice.toLocaleString('id-ID')}
+                                            Rp{" "}
+                                            {totalPrice.toLocaleString("id-ID")}
                                         </span>
                                     </div>
                                 </div>
@@ -631,16 +743,16 @@ export default function LapanganShow({
                                     type="button"
                                     disabled={durationHours === 0}
                                     onClick={handleProceedToCheckout}
-                                    className="h-11 w-full rounded-xl bg-primary font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90"
+                                    className="bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90 h-11 w-full rounded-xl font-bold shadow-md"
                                 >
                                     {durationHours === 0
-                                        ? 'Pilih Jam Terlebih Dahulu'
-                                        : 'Lanjut ke Pembayaran →'}
+                                        ? "Pilih Jam Terlebih Dahulu"
+                                        : "Lanjut ke Pembayaran →"}
                                 </Button>
                             ) : (
                                 <Button
                                     asChild
-                                    className="h-11 w-full rounded-xl bg-primary font-bold text-primary-foreground hover:bg-primary/90"
+                                    className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 w-full rounded-xl font-bold"
                                 >
                                     <Link href="/login">
                                         Masuk Untuk Booking
@@ -654,10 +766,10 @@ export default function LapanganShow({
 
             {/* Checkout Confirmation Dialog */}
             <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
                     <DialogHeader>
                         <div className="flex items-start gap-3">
-                            <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                            <div className="bg-primary/10 text-primary mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl">
                                 <ShoppingCart className="size-5" />
                             </div>
                             <div className="flex flex-col gap-1">
@@ -665,8 +777,9 @@ export default function LapanganShow({
                                     Konfirmasi Booking Lapangan
                                 </DialogTitle>
                                 <DialogDescription className="text-xs">
-                                    Periksa kembali jadwal dan masukkan informasi kontak
-                                    Anda untuk konfirmasi pesanan.
+                                    Periksa kembali jadwal dan masukkan
+                                    informasi kontak Anda untuk konfirmasi
+                                    pesanan.
                                 </DialogDescription>
                             </div>
                         </div>
@@ -674,53 +787,11 @@ export default function LapanganShow({
 
                     <form
                         onSubmit={handleBookingSubmit}
-                        className="space-y-4 pt-2"
+                        className="space-y-5 pt-2"
                     >
-                        {/* Summary Pill */}
-                        <div className="bg-muted/40 border-border/70 space-y-1 rounded-xl border p-3.5 text-xs">
-                            <p className="text-foreground text-sm font-bold">
-                                {lapangan.name}
-                            </p>
-                            <p className="text-muted-foreground">
-                                Tanggal:{' '}
-                                <span className="text-foreground font-medium">
-                                    {selectedDate}
-                                </span>
-                            </p>
-                            <p className="text-muted-foreground">
-                                Jam:{' '}
-                                <span className="text-foreground font-medium">
-                                    {startTimeStr} - {endTimeStr} WIB (
-                                    {durationHours} Jam)
-                                </span>
-                            </p>
-                            <p className="text-muted-foreground">
-                                Total Harga Dasar:{' '}
-                                <span className="font-bold text-primary dark:text-primary">
-                                    Rp {totalPrice.toLocaleString('id-ID')}
-                                </span>
-                            </p>
-                            {pointsDiscount > 0 && (
-                                <p className="text-muted-foreground">
-                                    Diskon Poin:{' '}
-                                    <span className="font-bold text-primary dark:text-primary">
-                                        - Rp{' '}
-                                        {pointsDiscount.toLocaleString('id-ID')}
-                                    </span>
-                                </p>
-                            )}
-                            <p className="text-muted-foreground">
-                                Harga setelah poin:{' '}
-                                <span className="text-foreground font-bold">
-                                    Rp{' '}
-                                    {priceAfterPoints.toLocaleString('id-ID')}
-                                </span>
-                            </p>
-                        </div>
-
                         {/* Customer Information */}
-                        <div className="space-y-3 text-xs">
-                            <div className="space-y-1">
+                        <div className="space-y-4">
+                            <div className="space-y-2">
                                 <Label htmlFor="customer_name">
                                     Nama Lengkap Pemesan
                                 </Label>
@@ -728,7 +799,7 @@ export default function LapanganShow({
                                     id="customer_name"
                                     value={data.customer_name}
                                     onChange={(e) =>
-                                        setData('customer_name', e.target.value)
+                                        setData("customer_name", e.target.value)
                                     }
                                     placeholder="Nama pemesan"
                                     required
@@ -741,7 +812,7 @@ export default function LapanganShow({
                                 )}
                             </div>
 
-                            <div className="space-y-1">
+                            <div className="space-y-2">
                                 <Label htmlFor="customer_phone">
                                     Nomor WhatsApp / HP
                                 </Label>
@@ -750,7 +821,7 @@ export default function LapanganShow({
                                     value={data.customer_phone}
                                     onChange={(e) =>
                                         setData(
-                                            'customer_phone',
+                                            "customer_phone",
                                             e.target.value,
                                         )
                                     }
@@ -766,24 +837,26 @@ export default function LapanganShow({
                             </div>
 
                             {/* Payment Method Option */}
-                            <div className="space-y-1.5">
-                                <Label>Metode Pembayaran</Label>
+                            <div className="space-y-2">
+                                <Label className="text-sm">
+                                    Metode Pembayaran
+                                </Label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
                                         onClick={() =>
                                             setData(
-                                                'payment_method',
-                                                'transfer',
+                                                "payment_method",
+                                                "transfer",
                                             )
                                         }
                                         className={`flex flex-col justify-between rounded-xl border p-3 text-left transition-all ${
-                                            data.payment_method === 'transfer'
-                                                ? 'border-primary bg-primary/10 font-bold ring-1 ring-primary'
-                                                : 'border-border bg-card text-muted-foreground hover:border-border/80'
+                                            data.payment_method === "transfer"
+                                                ? "border-primary bg-primary/10 ring-primary font-bold ring-1"
+                                                : "border-border bg-card text-muted-foreground hover:border-border/80"
                                         }`}
                                     >
-                                        <CreditCard className="mb-1 size-4 text-primary" />
+                                        <CreditCard className="text-primary mb-1 size-4" />
                                         <div>
                                             <p className="text-foreground text-xs font-semibold">
                                                 Transfer Bank
@@ -799,17 +872,17 @@ export default function LapanganShow({
                                         onClick={() =>
                                             setData((previousData) => ({
                                                 ...previousData,
-                                                payment_method: 'cash',
+                                                payment_method: "cash",
                                                 use_points: false,
                                             }))
                                         }
                                         className={`flex flex-col justify-between rounded-xl border p-3 text-left transition-all ${
-                                            data.payment_method === 'cash'
-                                                ? 'border-primary bg-primary/10 font-bold ring-1 ring-primary'
-                                                : 'border-border bg-card text-muted-foreground hover:border-border/80'
+                                            data.payment_method === "cash"
+                                                ? "border-primary bg-primary/10 ring-primary font-bold ring-1"
+                                                : "border-border bg-card text-muted-foreground hover:border-border/80"
                                         }`}
                                     >
-                                        <Banknote className="mb-1 size-4 text-primary" />
+                                        <Banknote className="text-primary mb-1 size-4" />
                                         <div>
                                             <p className="text-foreground text-xs font-semibold">
                                                 Cash di Lokasi
@@ -822,18 +895,18 @@ export default function LapanganShow({
                                 </div>
                             </div>
 
-                            {data.payment_method === 'transfer' &&
+                            {data.payment_method === "transfer" &&
                                 availablePoints > 0 && (
-                                    <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/10 p-3">
+                                    <div className="border-primary/30 bg-primary/10 space-y-2 rounded-xl border p-3">
                                         <div>
                                             <Label>
                                                 Gunakan Poin Tersedia?
                                             </Label>
                                             <p className="text-muted-foreground text-xs">
-                                                Saldo yang dapat digunakan:{' '}
+                                                Saldo yang dapat digunakan:{" "}
                                                 {availablePoints.toLocaleString(
-                                                    'id-ID',
-                                                )}{' '}
+                                                    "id-ID",
+                                                )}{" "}
                                                 poin. Poin mengurangi harga
                                                 sewa, sedangkan kode unik tetap
                                                 ditambahkan ke transfer.
@@ -845,11 +918,11 @@ export default function LapanganShow({
                                                 size="sm"
                                                 variant={
                                                     data.use_points
-                                                        ? 'default'
-                                                        : 'outline'
+                                                        ? "default"
+                                                        : "outline"
                                                 }
                                                 onClick={() =>
-                                                    setData('use_points', true)
+                                                    setData("use_points", true)
                                                 }
                                             >
                                                 Ya, Gunakan Poin
@@ -859,11 +932,11 @@ export default function LapanganShow({
                                                 size="sm"
                                                 variant={
                                                     !data.use_points
-                                                        ? 'default'
-                                                        : 'outline'
+                                                        ? "default"
+                                                        : "outline"
                                                 }
                                                 onClick={() =>
-                                                    setData('use_points', false)
+                                                    setData("use_points", false)
                                                 }
                                             >
                                                 Tidak
@@ -872,7 +945,7 @@ export default function LapanganShow({
                                     </div>
                                 )}
 
-                            <div className="space-y-1">
+                            <div className="space-y-2">
                                 <Label htmlFor="notes">
                                     Catatan Tambahan (Opsional)
                                 </Label>
@@ -880,12 +953,57 @@ export default function LapanganShow({
                                     id="notes"
                                     value={data.notes}
                                     onChange={(e) =>
-                                        setData('notes', e.target.value)
+                                        setData("notes", e.target.value)
                                     }
                                     placeholder="Contoh: Sewa rompi atau bola tambahan"
                                     className="h-9 rounded-lg"
                                 />
                             </div>
+                        </div>
+
+                        {/* Booking Summary */}
+                        <div className="bg-muted/40 border-border/70 space-y-2 rounded-xl border p-4 text-sm">
+                            <p className="text-foreground font-semibold">
+                                Ringkasan Booking
+                            </p>
+                            <p className="text-foreground font-bold">
+                                {lapangan.name}
+                            </p>
+                            <p className="text-muted-foreground">
+                                Tanggal:{" "}
+                                <span className="text-foreground font-medium">
+                                    {selectedDate}
+                                </span>
+                            </p>
+                            <p className="text-muted-foreground">
+                                Jam:{" "}
+                                <span className="text-foreground font-medium">
+                                    {startTimeStr} - {endTimeStr} WIB (
+                                    {durationHours} Jam)
+                                </span>
+                            </p>
+                            <p className="text-muted-foreground">
+                                Total Harga Dasar:{" "}
+                                <span className="text-primary dark:text-primary font-bold">
+                                    Rp {totalPrice.toLocaleString("id-ID")}
+                                </span>
+                            </p>
+                            {pointsDiscount > 0 && (
+                                <p className="text-muted-foreground">
+                                    Diskon Poin:{" "}
+                                    <span className="text-primary dark:text-primary font-bold">
+                                        - Rp{" "}
+                                        {pointsDiscount.toLocaleString("id-ID")}
+                                    </span>
+                                </p>
+                            )}
+                            <p className="text-muted-foreground">
+                                Harga setelah poin:{" "}
+                                <span className="text-foreground font-bold">
+                                    Rp{" "}
+                                    {priceAfterPoints.toLocaleString("id-ID")}
+                                </span>
+                            </p>
                         </div>
 
                         {errors.start_time && (
@@ -934,11 +1052,11 @@ export default function LapanganShow({
                                 <Button
                                     type="submit"
                                     disabled={processing}
-                                    className="h-10 flex-1 rounded-xl bg-primary font-bold text-primary-foreground hover:bg-primary/90"
+                                    className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 flex-1 rounded-xl font-bold"
                                 >
                                     {processing
-                                        ? 'Memproses...'
-                                        : 'Konfirmasi & Buat Invoice'}
+                                        ? "Memproses..."
+                                        : "Konfirmasi & Buat Invoice"}
                                 </Button>
                             )}
                         </div>

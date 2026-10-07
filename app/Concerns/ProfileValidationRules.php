@@ -18,6 +18,13 @@ trait ProfileValidationRules
         return [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($userId),
+            'phone' => ['nullable', 'regex:/^08[0-9]{8,13}$/'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'date_of_birth' => ['nullable', 'date', 'before:today'],
+            'gender' => ['nullable', Rule::in(['male', 'female', 'other'])],
+            'favorite_sports' => ['nullable', 'array', 'max:10'],
+            'favorite_sports.*' => ['string', 'max:50'],
+            'preferred_playing_time' => ['nullable', Rule::in(['morning', 'afternoon', 'evening', 'night'])],
         ];
     }
 

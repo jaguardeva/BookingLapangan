@@ -1,5 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PublicLayout } from "@/layouts/public-layout";
 import { Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { LapanganCard } from "@/components/lapangan-card";
-import type { Category, Facility, Lapangan } from "@/types/booking";
+import type { Category, Lapangan } from "@/types/booking";
+import { index as catalogIndex } from "@/routes/lapangan/index";
 
 interface Props {
     lapangans?: {
@@ -22,11 +23,9 @@ interface Props {
         total: number;
     };
     categories?: Category[];
-    facilities?: Facility[];
     filters?: {
         search?: string;
         category?: string;
-        facility?: string;
         sort?: string;
     };
 }
@@ -34,7 +33,6 @@ interface Props {
 export default function LapanganIndex({
     lapangans = { data: [], links: [], total: 0 },
     categories = [],
-    facilities = [],
     filters = {},
 }: Props) {
     const [search, setSearch] = useState(
@@ -45,110 +43,95 @@ export default function LapanganIndex({
             ? filters.category
             : "all",
     );
-    const [selectedFacility, setSelectedFacility] = useState(
-        typeof filters?.facility === "string" && filters.facility
-            ? filters.facility
-            : "all",
-    );
     const [sort, setSort] = useState(
         typeof filters?.sort === "string" && filters.sort
             ? filters.sort
             : "latest",
     );
 
-    const applyFilters = (newFilters: Record<string, string>) => {
-        const query: Record<string, string> = {
-            search,
-            category: selectedCategory !== "all" ? selectedCategory : "",
-            facility: selectedFacility !== "all" ? selectedFacility : "",
-            sort,
-            ...newFilters,
-        };
+    const filterKey = JSON.stringify([
+        search,
+        selectedCategory,
+        sort,
+    ]);
+    const lastAppliedFilterKey = useRef(filterKey);
 
-        // Remove empty values
-        Object.keys(query).forEach((key) => {
-            if (!query[key]) delete query[key];
-        });
+    useEffect(() => {
+        if (lastAppliedFilterKey.current === filterKey) {
+            return;
+        }
 
-        router.get("/lapangan", query, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
+        const timeoutId = window.setTimeout(() => {
+            lastAppliedFilterKey.current = filterKey;
+            const query: Record<string, string> = {
+                search,
+                category: selectedCategory !== "all" ? selectedCategory : "",
+                sort: sort !== "latest" ? sort : "",
+            };
+            const activeFilters = Object.fromEntries(
+                Object.entries(query).filter(([, value]) => value !== ""),
+            );
 
-    const handleSearchSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        applyFilters({ search });
-    };
+            router.get(catalogIndex.url(), activeFilters, {
+                preserveState: true,
+                preserveScroll: true,
+            });
+        }, 300);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [filterKey, search, selectedCategory, sort]);
 
     const resetFilters = () => {
-        setSearch("");
         setSelectedCategory("all");
-        setSelectedFacility("all");
         setSort("latest");
-        router.get("/lapangan");
+    };
+
+    const resetCatalog = () => {
+        setSearch("");
+        resetFilters();
     };
 
     return (
         <PublicLayout>
             <Head title="Cari & Sewa Lapangan Olahraga" />
 
-            <div className="bg-muted/30 border-b border-border/50 py-8">
+            <div className="bg-muted/30 border-border/50 border-b py-8">
                 <div className="public-container max-w-[1240px]">
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                    <h1 className="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
                         Katalog Lapangan Olahraga
                     </h1>
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
                         Ditemukan {lapangans.total} lapangan olahraga dengan
                         ketersediaan real-time.
                     </p>
                 </div>
             </div>
 
-            <div className="public-container max-w-[1240px] grid gap-6 py-8 sm:py-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
-                <aside className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm lg:sticky lg:top-24">
+            <div className="public-container grid max-w-[1240px] gap-6 py-8 sm:py-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
+                <aside className="border-border/80 bg-card rounded-2xl border p-4 shadow-sm lg:sticky lg:top-6">
                     <div className="mb-5 flex items-center justify-between">
                         <div>
-                            <p className="text-sm font-semibold text-foreground">
+                            <p className="text-foreground text-sm font-semibold">
                                 Filter katalog
                             </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="text-muted-foreground mt-1 text-xs">
                                 Temukan lapangan yang sesuai.
                             </p>
                         </div>
                     </div>
 
                     <div className="flex flex-col gap-4">
-                        <form
-                            onSubmit={handleSearchSubmit}
-                            className="relative"
-                        >
-                            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                type="text"
-                                placeholder="Cari lapangan..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="h-10 rounded-xl bg-background pl-9 text-sm"
-                            />
-                        </form>
-
                         <div className="flex flex-col gap-2">
                             <label
                                 htmlFor="catalog-category"
-                                className="text-xs font-medium text-foreground"
+                                className="text-foreground text-xs font-medium"
                             >
                                 Kategori
                             </label>
                             <SearchableSelect
                                 id="catalog-category"
                                 value={selectedCategory}
-                                onValueChange={(value) => {
-                                    setSelectedCategory(value);
-                                    applyFilters({
-                                        category: value !== "all" ? value : "",
-                                    });
-                                }}
+                                onValueChange={setSelectedCategory}
                                 placeholder="Semua kategori"
                                 searchPlaceholder="Cari kategori..."
                                 options={[
@@ -163,46 +146,12 @@ export default function LapanganIndex({
 
                         <div className="flex flex-col gap-2">
                             <label
-                                htmlFor="catalog-facility"
-                                className="text-xs font-medium text-foreground"
-                            >
-                                Fasilitas
-                            </label>
-                            <SearchableSelect
-                                id="catalog-facility"
-                                value={selectedFacility}
-                                onValueChange={(value) => {
-                                    setSelectedFacility(value);
-                                    applyFilters({
-                                        facility: value !== "all" ? value : "",
-                                    });
-                                }}
-                                placeholder="Semua fasilitas"
-                                searchPlaceholder="Cari fasilitas..."
-                                options={[
-                                    { value: "all", label: "Semua fasilitas" },
-                                    ...facilities.map((facility) => ({
-                                        value: String(facility.id),
-                                        label: facility.name,
-                                    })),
-                                ]}
-                            />
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                            <label
                                 htmlFor="catalog-sort"
-                                className="text-xs font-medium text-foreground"
+                                className="text-foreground text-xs font-medium"
                             >
                                 Urutkan
                             </label>
-                            <Select
-                                value={sort}
-                                onValueChange={(value) => {
-                                    setSort(value);
-                                    applyFilters({ sort: value });
-                                }}
-                            >
+                            <Select value={sort} onValueChange={setSort}>
                                 <SelectTrigger
                                     id="catalog-sort"
                                     className="h-10 w-full rounded-xl text-sm"
@@ -226,16 +175,13 @@ export default function LapanganIndex({
                             </Select>
                         </div>
 
-                        {(search ||
-                            selectedCategory !== "all" ||
-                            selectedFacility !== "all" ||
-                            sort !== "latest") && (
+                        {(selectedCategory !== "all" || sort !== "latest") && (
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
                                 onClick={resetFilters}
-                                className="h-8 w-full rounded-lg bg-primary px-3 text-xs text-primary-foreground shadow-none hover:bg-primary/90  hover:text-primary-foreground cursor-pointer"
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground h-8 w-full cursor-pointer rounded-lg px-3 text-xs shadow-none"
                             >
                                 Reset
                             </Button>
@@ -244,36 +190,48 @@ export default function LapanganIndex({
                 </aside>
 
                 <main className="min-w-0">
+                    <div className="relative mb-4">
+                        <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                        <Input
+                            type="search"
+                            aria-label="Cari lapangan"
+                            placeholder="Cari lapangan..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="bg-background h-11 rounded-xl pl-9 text-sm"
+                        />
+                    </div>
+
                     <div className="mb-4 flex items-center justify-between gap-3">
-                        <p className="text-sm text-muted-foreground">
-                            <span className="font-semibold text-foreground">
+                        <p className="text-muted-foreground text-sm">
+                            <span className="text-foreground font-semibold">
                                 {lapangans.total}
                             </span>{" "}
                             lapangan ditemukan
                         </p>
-                        <div className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
+                        <div className="text-muted-foreground hidden items-center gap-2 text-xs sm:flex">
                             <Filter className="size-3.5" /> Filter aktif
                             diterapkan otomatis
                         </div>
                     </div>
 
                     {lapangans.data.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center sm:p-16">
-                            <Filter className="mx-auto mb-3 size-10 text-muted-foreground/40" />
-                            <h3 className="text-base font-bold text-foreground">
+                        <div className="border-border bg-card rounded-2xl border border-dashed p-12 text-center sm:p-16">
+                            <Filter className="text-muted-foreground/40 mx-auto mb-3 size-10" />
+                            <h3 className="text-foreground text-base font-bold">
                                 Tidak Ada Lapangan Ditemukan
                             </h3>
-                            <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
-                                Coba ubah kata kunci atau reset filter untuk
+                            <p className="text-muted-foreground mx-auto mt-1 max-w-sm text-xs">
+                                Coba ubah pencarian atau reset filter untuk
                                 menemukan lapangan yang Anda cari.
                             </p>
                             <Button
-                                onClick={resetFilters}
+                                onClick={resetCatalog}
                                 variant="outline"
                                 size="sm"
                                 className="mt-4 rounded-xl"
                             >
-                                Reset Filter
+                                Hapus Pencarian & Reset Filter
                             </Button>
                         </div>
                     ) : (
@@ -286,18 +244,18 @@ export default function LapanganIndex({
 
                     {/* Pagination */}
                     {lapangans.links && lapangans.links.length > 3 && (
-                        <div className="flex justify-center items-center gap-1.5 mt-10">
+                        <div className="mt-10 flex items-center justify-center gap-1.5">
                             {lapangans.links.map((link, idx) => (
                                 <Link
                                     key={idx}
                                     href={link.url || "#"}
                                     preserveScroll
-                                    className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                                    className={`rounded-lg border px-3 py-1.5 text-xs transition-colors ${
                                         link.active
                                             ? "bg-primary text-primary-foreground border-primary"
                                             : link.url
                                               ? "bg-card text-foreground hover:bg-muted border-border"
-                                              : "text-muted-foreground/50 border-transparent cursor-not-allowed pointer-events-none"
+                                              : "text-muted-foreground/50 pointer-events-none cursor-not-allowed border-transparent"
                                     }`}
                                     dangerouslySetInnerHTML={{
                                         __html: link.label,

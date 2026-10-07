@@ -1,9 +1,8 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import {
     Search,
-    Filter,
     CheckCircle2,
     XCircle,
     Clock,
@@ -32,7 +31,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import ConfirmDialog from '@/components/confirm-dialog';
 import type { Booking, Lapangan } from '@/types/booking';
-import { manual as manualBooking } from '@/routes/admin/bookings/index';
+import { index as bookingsIndex, manual as manualBooking } from '@/routes/admin/bookings/index';
 import { slots as lapanganSlots } from '@/routes/lapangan/index';
 
 const getLocalDateString = (date: Date = new Date()): string => {
@@ -68,6 +67,34 @@ export default function AdminBookingsIndex({
     const [selectedStatus, setSelectedStatus] = useState(typeof filters?.status === 'string' && filters.status ? filters.status : 'all');
     const [selectedLapangan, setSelectedLapangan] = useState(typeof filters?.lapangan_id === 'string' && filters.lapangan_id ? filters.lapangan_id : 'all');
     const [selectedDate, setSelectedDate] = useState(typeof filters?.date === 'string' ? filters.date : '');
+    const filterKey = JSON.stringify([search, selectedStatus, selectedLapangan, selectedDate]);
+    const lastAppliedFilterKey = useRef(filterKey);
+
+    useEffect(() => {
+        if (lastAppliedFilterKey.current === filterKey) {
+            return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            lastAppliedFilterKey.current = filterKey;
+            const query: Record<string, string> = {
+                search: search.trim(),
+                status: selectedStatus !== 'all' ? selectedStatus : '',
+                lapangan_id: selectedLapangan !== 'all' ? selectedLapangan : '',
+                date: selectedDate,
+            };
+            const activeFilters = Object.fromEntries(
+                Object.entries(query).filter(([, value]) => value !== ''),
+            );
+
+            router.get(bookingsIndex.url(), activeFilters, {
+                preserveState: true,
+                preserveScroll: true,
+            });
+        }, 300);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [filterKey, search, selectedStatus, selectedLapangan, selectedDate]);
 
     // State for Confirm Approval Modal
     const [approveBooking, setApproveBooking] = useState<Booking | null>(null);
@@ -179,25 +206,11 @@ export default function AdminBookingsIndex({
         syncManualSelection(hasGap ? [start] : contiguousSelection.slice(0, 6).map((slot) => slot.start));
     };
 
-    const applyFilters = (newFilters: Record<string, string>) => {
-        const query: Record<string, string> = {
-            search,
-            status: selectedStatus !== 'all' ? selectedStatus : '',
-            lapangan_id: selectedLapangan !== 'all' ? selectedLapangan : '',
-            date: selectedDate,
-            ...newFilters,
-        };
-
-        Object.keys(query).forEach((k) => {
-            if (!query[k]) delete query[k];
-        });
-
-        router.get('/admin/bookings', query, { preserveState: true, preserveScroll: true });
-    };
-
-    const handleSearchSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        applyFilters({ search });
+    const resetFilters = () => {
+        setSearch('');
+        setSelectedStatus('all');
+        setSelectedLapangan('all');
+        setSelectedDate('');
     };
 
     const handleApproveClick = (booking: Booking) => {
@@ -273,7 +286,7 @@ export default function AdminBookingsIndex({
 
                 {/* Filter Toolbar */}
                 <div className="rounded-2xl border border-border/80 bg-card p-3 shadow-sm sm:p-4">
-                    <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3 md:flex-row md:items-end">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-end">
                         <div className="relative w-full min-w-0 flex-1">
                             <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                             <Input
@@ -286,10 +299,7 @@ export default function AdminBookingsIndex({
 
                         <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end md:w-auto">
                             {/* Status Filter */}
-                            <Select value={selectedStatus} onValueChange={(value) => {
-                                setSelectedStatus(value);
-                                applyFilters({ status: value !== 'all' ? value : '' });
-                            }}>
+                            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                                 <SelectTrigger className="h-10 w-full min-w-0 rounded-xl text-sm sm:w-auto"><SelectValue placeholder="Semua status" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Semua status</SelectItem>
@@ -302,10 +312,7 @@ export default function AdminBookingsIndex({
                             </Select>
 
                             {/* Lapangan Filter */}
-                            <Select value={selectedLapangan} onValueChange={(value) => {
-                                setSelectedLapangan(value);
-                                applyFilters({ lapangan_id: value !== 'all' ? value : '' });
-                            }}>
+                            <Select value={selectedLapangan} onValueChange={setSelectedLapangan}>
                                 <SelectTrigger className="h-10 w-full min-w-0 rounded-xl text-sm sm:w-auto"><SelectValue placeholder="Semua lapangan" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Semua lapangan</SelectItem>
@@ -317,18 +324,17 @@ export default function AdminBookingsIndex({
                             <Input
                                 type="date"
                                 value={selectedDate}
-                                onChange={(event) => {
-                                    setSelectedDate(event.target.value);
-                                    applyFilters({ date: event.target.value });
-                                }}
+                                onChange={(event) => setSelectedDate(event.target.value)}
                                 className="h-10 w-full min-w-0 rounded-xl text-sm sm:w-36"
                             />
 
-                            <Button type="submit" size="sm" className="col-span-2 h-10 w-full rounded-xl bg-primary text-sm text-primary-foreground hover:bg-primary/90 sm:col-span-1 sm:w-auto">
-                                Filter
-                            </Button>
+                            {(search || selectedStatus !== 'all' || selectedLapangan !== 'all' || selectedDate) && (
+                                <Button type="button" variant="outline" onClick={resetFilters} className="col-span-2 h-10 w-full rounded-xl sm:col-span-1 sm:w-auto">
+                                    Reset Filter
+                                </Button>
+                            )}
                         </div>
-                    </form>
+                    </div>
                 </div>
 
                 {/* Bookings Table */}

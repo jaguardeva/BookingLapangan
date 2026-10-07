@@ -17,6 +17,8 @@ class PasswordUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        abort_unless($this->user()?->hasLocalPassword(), 422, 'Akun ini harus membuat password melalui link email terlebih dahulu.');
+
         return [
             'current_password' => $this->currentPasswordRules(),
             'password' => $this->passwordRules(),

@@ -9,7 +9,9 @@ use App\Models\Lapangan;
 use App\Models\PointTransaction;
 use App\Models\User;
 use App\Notifications\ManualBookingCreatedNotification;
+use App\Notifications\PaymentApprovedDatabaseNotification;
 use App\Notifications\PaymentApprovedNotification;
+use App\Notifications\PaymentRejectedDatabaseNotification;
 use App\Notifications\PaymentRejectedNotification;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -142,9 +144,9 @@ class BookingManagementController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('booking_code', 'ilike', "%{$search}%")
-                    ->orWhere('customer_name', 'ilike', "%{$search}%")
-                    ->orWhere('customer_phone', 'ilike', "%{$search}%");
+                $q->whereLike('booking_code', "%{$search}%")
+                    ->orWhereLike('customer_name', "%{$search}%")
+                    ->orWhereLike('customer_phone', "%{$search}%");
             });
         }
 
@@ -260,6 +262,7 @@ class BookingManagementController extends Controller
 
         // Send Notification to customer
         if ($approvedBooking->user) {
+            $approvedBooking->user->notify(new PaymentApprovedDatabaseNotification($approvedBooking));
             $approvedBooking->user->notify(new PaymentApprovedNotification($approvedBooking));
         }
 
@@ -292,6 +295,7 @@ class BookingManagementController extends Controller
 
         // Send notification to customer
         if ($booking->user) {
+            $booking->user->notify(new PaymentRejectedDatabaseNotification($booking, $validated['reason']));
             $booking->user->notify(new PaymentRejectedNotification($booking, $validated['reason']));
         }
 

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
-use App\Models\Facility;
 use App\Models\Lapangan;
 use App\Models\Review;
 use Inertia\Inertia;
@@ -25,25 +24,35 @@ class HomeController extends Controller
             ->take(6)
             ->get();
 
-        $facilities = Facility::all();
-
-        $testimonials = Review::with(['user', 'lapangan'])
+        $testimonials = Review::query()
+            ->with([
+                'user:id,name',
+                'lapangan:id,name,slug',
+            ])
+            ->whereHas('lapangan', fn ($query) => $query->where('is_active', true))
             ->where('rating', '>=', 4)
+            ->whereNotNull('comment')
+            ->where('comment', '!=', '')
             ->latest()
-            ->take(4)
+            ->take(6)
             ->get();
+
+        $activeReviews = Review::query()
+            ->whereHas('lapangan', fn ($query) => $query->where('is_active', true));
+        $totalReviews = (clone $activeReviews)->count();
+        $averageRating = (float) ((clone $activeReviews)->avg('rating') ?? 0);
 
         return Inertia::render('home', [
             'categories' => $categories,
             'featuredLapangans' => $featuredLapangans,
-            'facilities' => $facilities,
             'testimonials' => $testimonials,
             'stats' => [
                 'total_lapangan' => Lapangan::where('is_active', true)
                     ->whereHas('category', fn ($query) => $query->where('is_active', true))
                     ->count(),
                 'total_categories' => $categories->count(),
-                'satisfaction_rate' => 99,
+                'total_reviews' => $totalReviews,
+                'average_rating' => round($averageRating, 1),
             ],
         ]);
     }

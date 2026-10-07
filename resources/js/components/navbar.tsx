@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotificationCenter } from '@/components/notification-center';
+import ThemeToggleButton from '@/components/theme-toggle-button';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import {
     DropdownMenu,
@@ -27,7 +28,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
 import { edit as editSecurity } from '@/routes/security';
-import { home, login } from '@/routes';
+import { home, login, register } from '@/routes';
 import { history as bookingHistory } from '@/routes/booking';
 import { index as lapanganIndex } from '@/routes/lapangan';
 import { index as notificationsIndex } from '@/routes/notification';
@@ -45,6 +46,10 @@ export function Navbar() {
     );
     const getInitials = useInitials();
     const { currentUrl, isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
+    const isLanding = isCurrentUrl(home.url());
+    const navLinkClass = isLanding
+        ? 'text-brand-foreground/75 hover:text-brand-foreground transition-colors'
+        : 'text-muted-foreground hover:text-primary transition-colors';
 
     useEffect(() => {
         setUnreadNotificationsCount(user?.unread_notifications_count ?? 0);
@@ -112,7 +117,7 @@ export function Navbar() {
 
     return (
         <>
-            <header className="border-border/60 bg-background/80 sticky top-0 z-40 w-full border-b backdrop-blur-md transition-all print:hidden">
+            <header className={`sticky top-0 z-40 w-full border-b backdrop-blur-md transition-all print:hidden ${isLanding ? 'border-brand-soft/20 bg-brand-deep/95 text-brand-foreground' : 'border-border/60 bg-background/80'}`}>
                 {user && user.is_verified === false && !isStaff && (
                     <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 border-b border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-center text-xs text-amber-700 sm:px-4 dark:bg-amber-500/15 dark:text-amber-300">
                         <span>
@@ -130,40 +135,40 @@ export function Navbar() {
                     {/* Brand Logo */}
                     <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-8">
                         <Link
-                            href="/"
+                            href={home()}
                             className="group flex min-w-0 items-center gap-2 sm:gap-2.5"
                         >
-                            <div className="bg-primary text-primary-foreground shadow-primary/20 group-hover:bg-primary/90 flex size-8 shrink-0 items-center justify-center rounded-xl shadow-md transition-colors sm:size-9">
+                            <div className={`${isLanding ? 'bg-brand-soft text-brand-deep shadow-black/20 group-hover:bg-brand-soft/90' : 'bg-primary text-primary-foreground shadow-primary/20 group-hover:bg-primary/90'} flex size-8 shrink-0 items-center justify-center rounded-xl shadow-md transition-colors sm:size-9`}>
                                 <Trophy className="size-4 sm:size-5" />
                             </div>
                             <div className="flex min-w-0 flex-col">
-                                <span className="text-foreground flex items-center gap-1 text-sm font-bold tracking-tight sm:gap-1.5 sm:text-base">
-                                    <span className="text-primary">{appName}</span>
+                                <span className={`flex items-center gap-1 text-sm font-bold tracking-tight sm:gap-1.5 sm:text-base ${isLanding ? 'text-brand-foreground' : 'text-foreground'}`}>
+                                    <span className={isLanding ? 'text-brand-soft' : 'text-primary'}>{appName}</span>
                                 </span>
-                                <span className="text-muted-foreground -mt-1 hidden text-[10px] font-medium tracking-wider uppercase sm:block sm:text-xs">
+                                <span className={`-mt-1 hidden text-[10px] font-medium tracking-wider uppercase sm:block sm:text-xs ${isLanding ? 'text-brand-foreground/55' : 'text-muted-foreground'}`}>
                                     Arena Sports Hub
                                 </span>
                             </div>
                         </Link>
 
                         {/* Desktop Navigation Links */}
-                        <nav className="text-muted-foreground hidden items-center gap-6 text-sm font-medium md:flex">
+                        <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
                             <Link
-                                href="/"
-                                className="hover:text-foreground hover:text-primary dark:hover:text-primary transition-colors"
+                                href={home()}
+                                className={navLinkClass}
                             >
                                 Beranda
                             </Link>
                             <Link
-                                href="/lapangan"
-                                className="hover:text-foreground hover:text-primary dark:hover:text-primary transition-colors"
+                                href={lapanganIndex()}
+                                className={navLinkClass}
                             >
                                 Cari Lapangan
                             </Link>
                             {user && (
                                 <Link
-                                    href="/my-bookings"
-                                    className="hover:text-foreground hover:text-primary dark:hover:text-primary flex items-center gap-1.5 transition-colors"
+                                    href={bookingHistory()}
+                                    className={`${navLinkClass} flex items-center gap-1.5`}
                                 >
                                     <CalendarCheck className="size-4" />
                                     Riwayat Booking
@@ -172,7 +177,7 @@ export function Navbar() {
                             {isStaff && (
                                 <Link
                                     href="/admin"
-                                    className="bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary border-primary/20 hover:bg-primary/20 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all"
+                                    className={`${isLanding ? 'border-brand-soft/30 bg-brand-soft/10 text-brand-soft hover:bg-brand-soft/20' : 'border-primary/20 bg-primary/10 text-primary hover:bg-primary/20'} inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all`}
                                 >
                                     <Shield className="size-3.5" />
                                     Admin Panel
@@ -183,6 +188,7 @@ export function Navbar() {
 
                     {/* Right Actions */}
                     <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+                        <ThemeToggleButton />
                         {user ? (
                             <>
                                 <div className="hidden md:block">
@@ -197,11 +203,11 @@ export function Navbar() {
                                     <DropdownMenuTrigger asChild>
                                         <Button
                                             variant="ghost"
-                                            className="relative size-9 rounded-full p-0"
+                                            className={`relative size-9 rounded-full p-0 ${isLanding ? 'hover:bg-brand-foreground/10' : ''}`}
                                         >
-                                            <Avatar className="border-border size-9 border">
+                                            <Avatar className={`size-9 border ${isLanding ? 'border-brand-foreground/30' : 'border-border'}`}>
                                                 <AvatarImage
-                                                    src={user.avatar}
+                                                    src={user.avatar ?? undefined}
                                                     alt={user.name}
                                                 />
                                                 <AvatarFallback className="bg-primary/10 text-primary dark:text-primary text-xs font-semibold">
@@ -283,17 +289,17 @@ export function Navbar() {
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="px-2 sm:px-3"
+                                    className={`px-2 sm:px-3 ${isLanding ? 'text-brand-foreground hover:bg-brand-foreground/10 hover:text-brand-foreground' : ''}`}
                                     asChild
                                 >
-                                    <Link href="/login">Masuk</Link>
+                                    <Link href={login()}>Masuk</Link>
                                 </Button>
                                 <Button
                                     size="sm"
-                                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-2.5 shadow-sm sm:px-3"
+                                    className={`${isLanding ? 'bg-brand-soft text-brand-deep hover:bg-brand-soft/90' : 'bg-primary text-primary-foreground hover:bg-primary/90'} px-2.5 shadow-sm sm:px-3`}
                                     asChild
                                 >
-                                    <Link href="/register">
+                                    <Link href={register()}>
                                         <span className="sm:hidden">
                                             Daftar
                                         </span>

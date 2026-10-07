@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\User;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 
@@ -12,10 +14,6 @@ test('security page is displayed', function () {
         'confirm' => true,
         'confirmPassword' => true,
     ]);
-    Features::passkeys([
-        'confirmPassword' => true,
-    ]);
-
     $user = User::factory()->create();
 
     $this->actingAs($user)
@@ -23,8 +21,6 @@ test('security page is displayed', function () {
         ->get(route('security.edit'))
         ->assertInertia(fn (Assert $page) => $page
             ->component('security')
-            ->where('canManagePasskeys', true)
-            ->where('passkeys', [])
             ->where('canManageTwoFactor', true)
             ->where('twoFactorEnabled', false),
         );
@@ -62,6 +58,20 @@ test('security page requires password confirmation when enabled', function () {
     $response->assertRedirect(route('password.confirm'));
 });
 
+test('google only users can open security settings without a password confirmation', function () {
+    $user = User::factory()->create([
+        'password_set_at' => null,
+        'google_id' => 'google-only',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('security.edit'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('hasLocalPassword', false)
+            ->where('passwordResetEmail', $user->email),
+        );
+});
+
 test('security page renders without two factor when feature is disabled', function () {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 
@@ -75,8 +85,6 @@ test('security page renders without two factor when feature is disabled', functi
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('security')
-            ->where('canManagePasskeys', false)
-            ->where('passkeys', [])
             ->where('canManageTwoFactor', false)
             ->missing('twoFactorEnabled')
             ->missing('requiresConfirmation'),
@@ -91,15 +99,15 @@ test('password can be updated', function () {
         ->from(route('security.edit'))
         ->put(route('user-password.update'), [
             'current_password' => 'password',
-            'password' => 'new-password',
-            'password_confirmation' => 'new-password',
+            'password' => 'NewPassword1!',
+            'password_confirmation' => 'NewPassword1!',
         ]);
 
     $response
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('security.edit'));
 
-    expect(Hash::check('new-password', $user->refresh()->password))->toBeTrue();
+    expect(Hash::check('NewPassword1!', $user->refresh()->password))->toBeTrue();
 });
 
 test('correct password must be provided to update password', function () {
@@ -110,11 +118,36 @@ test('correct password must be provided to update password', function () {
         ->from(route('security.edit'))
         ->put(route('user-password.update'), [
             'current_password' => 'wrong-password',
-            'password' => 'new-password',
-            'password_confirmation' => 'new-password',
+            'password' => 'NewPassword1!',
+            'password_confirmation' => 'NewPassword1!',
         ]);
 
     $response
         ->assertSessionHasErrors('current_password')
         ->assertRedirect(route('security.edit'));
+});
+
+test('google only users can request a local password reset link', function () {
+    Notification::fake();
+    $user = User::factory()->create(['password_set_at' => null, 'google_id' => 'google-only']);
+
+    $this->actingAs($user)
+        ->from(route('security.edit'))
+        ->post(route('user-password.request'))
+        ->assertSessionHas('success')
+        ->assertRedirect(route('security.edit'));
+
+    Notification::assertSentTo($user, ResetPasswordNotification::class);
+});
+
+test('google only users cannot update a local password directly', function () {
+    $user = User::factory()->create(['password_set_at' => null, 'google_id' => 'google-only']);
+
+    $this->actingAs($user)
+        ->put(route('user-password.update'), [
+            'current_password' => 'anything',
+            'password' => 'NewPassword1!',
+            'password_confirmation' => 'NewPassword1!',
+        ])
+        ->assertStatus(422);
 });

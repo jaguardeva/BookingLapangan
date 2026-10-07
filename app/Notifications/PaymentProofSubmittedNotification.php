@@ -3,13 +3,10 @@
 namespace App\Notifications;
 
 use App\Models\Booking;
-use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
 class PaymentProofSubmittedNotification extends Notification
 {
-    use Queueable;
-
     public function __construct(public Booking $booking) {}
 
     /**

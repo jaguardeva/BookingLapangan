@@ -10,7 +10,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
-import PasskeyVerify from '@/components/passkey-verify';
+import { redirect as googleRedirect } from '@/routes/auth/google';
 
 type Props = {
     status?: string;
@@ -31,7 +31,12 @@ export default function Login({ status, canResetPassword }: Props) {
                 </div>
             )}
 
-            <PasskeyVerify />
+            <a href={googleRedirect.url()} className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background text-sm font-medium transition-colors hover:bg-muted">
+                <span className="grid size-5 place-items-center rounded-full bg-white text-xs font-bold text-blue-600 shadow-sm">G</span>
+                Lanjutkan dengan Google
+            </a>
+
+            <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" /><span>atau</span><span className="h-px flex-1 bg-border" /></div>
 
             <Form
                 {...store.form()}

@@ -11,9 +11,14 @@ import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/profile';
 import type { Auth } from '@/types';
 import { send } from '@/routes/verification';
+import { ProfileAvatarUploader } from '@/components/profile-avatar-uploader';
+import { ProfileCompletionReminder } from '@/components/profile-completion-reminder';
+import type { ProfileCompletion, UserProfile } from '@/types';
 
 type PageProps = {
     auth: Auth;
+    profile?: UserProfile | null;
+    profile_completion?: ProfileCompletion | null;
 };
 
 export default function Profile({
@@ -23,7 +28,7 @@ export default function Profile({
     mustVerifyEmail: boolean;
     status?: string;
 }) {
-    const { auth } = usePage<PageProps>().props;
+    const { auth, profile, profile_completion } = usePage<PageProps>().props;
     const pointsBalance = auth.user.points_balance ?? 0;
     const availablePoints = auth.user.available_points ?? pointsBalance;
 
@@ -39,6 +44,13 @@ export default function Profile({
                     title="Profil"
                     description="Perbarui nama dan alamat email Anda"
                 />
+
+                <ProfileCompletionReminder completion={profile_completion} />
+
+                <div className="rounded-xl border border-border/70 bg-card p-4">
+                    <h2 className="mb-3 font-semibold">Foto profil</h2>
+                    <ProfileAvatarUploader name={auth.user.name} avatar={auth.user.avatar} />
+                </div>
 
                 <div className="rounded-xl border border-primary/30 bg-primary/10 p-4 dark:bg-primary/5">
                     <div className="flex items-start gap-3">
@@ -106,6 +118,16 @@ export default function Profile({
                                     className="mt-2"
                                     message={errors.name}
                                 />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="phone">Nomor WhatsApp/telepon</Label>
+                                <Input id="phone" name="phone" type="tel" inputMode="numeric" pattern="08[0-9]{8,13}" defaultValue={profile?.phone ?? ''} onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(/\D/g, ''); }} placeholder="08xxxxxxxxxx" />
+                                <InputError message={errors.phone} />
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                                <div className="grid gap-2"><Label htmlFor="city">Kota domisili</Label><Input id="city" name="city" defaultValue={profile?.city ?? ''} /></div>
+                                <div className="grid gap-2"><Label htmlFor="date_of_birth">Tanggal lahir</Label><Input id="date_of_birth" name="date_of_birth" type="date" defaultValue={profile?.date_of_birth ?? ''} /></div>
                             </div>
 
                             <div className="grid gap-2">

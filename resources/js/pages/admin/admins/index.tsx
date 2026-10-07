@@ -244,10 +244,13 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
 
                         <div className="space-y-1">
                             <Label htmlFor="admin_phone">Nomor Telepon / WhatsApp</Label>
-                            <Input
-                                id="admin_phone"
-                                value={data.phone}
-                                onChange={(e) => setData('phone', e.target.value)}
+                                <Input
+                                    id="admin_phone"
+                                    type="tel"
+                                    inputMode="numeric"
+                                    pattern="08[0-9]{8,13}"
+                                    value={data.phone}
+                                onChange={(e) => setData('phone', e.target.value.replace(/\D/g, ''))}
                                 placeholder="081234567890"
                                 className="h-9 rounded-lg"
                             />

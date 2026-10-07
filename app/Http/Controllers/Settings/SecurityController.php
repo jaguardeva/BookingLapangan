@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\PasswordUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,24 +22,9 @@ class SecurityController extends Controller
     {
         $props = [
             'canManageTwoFactor' => Features::canManageTwoFactorAuthentication(),
-            'canManagePasskeys' => Features::canManagePasskeys(),
-            'passkeys' => Features::canManagePasskeys()
-                ? $request->user()
-                    ->passkeys()
-                    ->select(['id', 'name', 'credential', 'created_at', 'last_used_at'])
-                    ->latest()
-                    ->get()
-                    ->map(fn ($passkey) => [
-                        'id' => $passkey->id,
-                        'name' => $passkey->name,
-                        'authenticator' => $passkey->authenticator,
-                        'created_at_diff' => $passkey->created_at->diffForHumans(),
-                        'last_used_at_diff' => $passkey->last_used_at?->diffForHumans(),
-                    ])
-                    ->values()
-                    ->all()
-                : [],
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'hasLocalPassword' => $request->user()->hasLocalPassword(),
+            'passwordResetEmail' => $request->user()->email,
         ];
 
         if (Features::canManageTwoFactorAuthentication()) {
@@ -61,10 +48,20 @@ class SecurityController extends Controller
     {
         $request->user()->update([
             'password' => $request->password,
+            'password_set_at' => now(),
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Password updated.')]);
 
         return back();
+    }
+
+    public function requestPasswordReset(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->hasLocalPassword() === false, 422, 'Password lokal akun ini sudah tersedia.');
+
+        PasswordBroker::sendResetLink(['email' => $request->user()->email]);
+
+        return back()->with('success', 'Tautan untuk membuat password lokal telah dikirim ke email Anda.');
     }
 }

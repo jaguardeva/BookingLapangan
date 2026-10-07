@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Features;
 
@@ -47,6 +48,8 @@ test('reset password screen can be rendered', function () {
     $this->post(route('password.email'), ['email' => $user->email]);
 
     Notification::assertSentTo($user, ResetPasswordNotification::class, function ($notification) {
+        expect($notification)->not->toBeInstanceOf(ShouldQueue::class);
+
         $response = $this->get(route('password.reset', $notification->token));
 
         $response->assertOk();
@@ -66,8 +69,8 @@ test('password can be reset with valid token', function () {
         $response = $this->post(route('password.update'), [
             'token' => $notification->token,
             'email' => $user->email,
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'ResetPassword1!',
+            'password_confirmation' => 'ResetPassword1!',
         ]);
 
         $response

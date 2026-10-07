@@ -1,5 +1,6 @@
 import { Link, router } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -11,12 +12,15 @@ import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
+import { ProfileCompletionReminder } from '@/components/profile-completion-reminder';
+import type { ProfileCompletion } from '@/types';
 
 type Props = {
     user: User;
 };
 
 export function UserMenuContent({ user }: Props) {
+    const { profile_completion } = usePage<{ profile_completion?: ProfileCompletion | null }>().props;
     const cleanup = useMobileNavigation();
 
     const handleLogout = () => {
@@ -31,6 +35,8 @@ export function UserMenuContent({ user }: Props) {
                     <UserInfo user={user} showEmail={true} />
                 </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1"><ProfileCompletionReminder completion={profile_completion} /></div>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>

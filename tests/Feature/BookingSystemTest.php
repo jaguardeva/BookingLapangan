@@ -4,8 +4,12 @@ use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Lapangan;
 use App\Models\User;
+use App\Notifications\BookingCreatedDatabaseNotification;
 use App\Notifications\BookingCreatedNotification;
+use App\Notifications\CashBookingCreatedNotification;
+use App\Notifications\PaymentApprovedDatabaseNotification;
 use App\Notifications\PaymentApprovedNotification;
+use App\Notifications\PaymentRejectedDatabaseNotification;
 use App\Notifications\PaymentRejectedNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Notification;
@@ -138,6 +142,7 @@ test('user cannot book more than 2 days in advance (PRD Rule)', function () {
 });
 
 test('user can book valid slot with 3-digit validation code generated', function () {
+    Notification::fake();
     $this->actingAs($this->user);
 
     $tomorrow = Carbon::tomorrow()->format('Y-m-d');
@@ -165,6 +170,35 @@ test('user can book valid slot with 3-digit validation code generated', function
         ->and($booking->payment_status)->toBe('pending');
 
     $response->assertRedirect(route('booking.show', $booking->booking_code));
+    Notification::assertSentTo($this->user, BookingCreatedDatabaseNotification::class);
+});
+
+test('cash booking notifies assigned admins and superadmins', function () {
+    Notification::fake();
+
+    $unassignedAdmin = User::factory()->create(['role' => 'admin']);
+    $this->actingAs($this->user);
+
+    $response = $this->post(route('booking.store'), [
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '14:00',
+        'duration_hours' => 1,
+        'payment_method' => 'cash',
+        'use_points' => false,
+        'customer_name' => 'Customer Test',
+        'customer_phone' => '081234567890',
+    ]);
+
+    $booking = Booking::query()->where('customer_phone', '081234567890')->latest()->firstOrFail();
+
+    $response->assertRedirect(route('booking.show', $booking->booking_code));
+    $this->assertModelExists($booking);
+    Notification::assertSentTo($this->admin, CashBookingCreatedNotification::class, function (CashBookingCreatedNotification $notification) use ($booking): bool {
+        return $notification->toArray($this->admin)['url'] === "/admin/bookings?search={$booking->booking_code}";
+    });
+    Notification::assertSentTo($this->superadmin, CashBookingCreatedNotification::class);
+    Notification::assertNotSentTo($unassignedAdmin, CashBookingCreatedNotification::class);
 });
 
 test('user cannot double book overlapping slots', function () {
@@ -281,6 +315,7 @@ test('admin can approve payment and notification is dispatched', function () {
     $this->assertDatabaseCount('point_transactions', 1);
 
     Notification::assertSentTo($this->user, PaymentApprovedNotification::class);
+    Notification::assertSentTo($this->user, PaymentApprovedDatabaseNotification::class);
 });
 
 test('admin can reject payment with reason and notification is dispatched', function () {
@@ -318,6 +353,7 @@ test('admin can reject payment with reason and notification is dispatched', func
         ->and($booking->rejection_reason)->toBe($reason);
 
     Notification::assertSentTo($this->user, PaymentRejectedNotification::class);
+    Notification::assertSentTo($this->user, PaymentRejectedDatabaseNotification::class);
 });
 
 test('transfer booking reserves available points and applies them only after approval', function () {
@@ -455,8 +491,19 @@ test('public user can view lapangan catalog page and receives structured filters
         ->component('lapangan/index')
         ->has('lapangans.data')
         ->has('categories')
-        ->has('facilities')
+        ->missing('facilities')
         ->where('filters.sort', 'latest')
+    );
+});
+
+test('public catalog ignores the removed facility filter', function () {
+    $response = $this->get(route('lapangan.index', ['facility' => '999999']));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('lapangan/index')
+        ->where('filters.sort', 'latest')
+        ->missing('filters.facility')
     );
 });
 
@@ -508,4 +555,50 @@ test('admin can create an approved manual walk-in booking for an assigned lapang
         ->and($booking->payment_status)->toBe('approved')
         ->and($booking->customer_email)->toBe('pelanggan@example.com')
         ->and($booking->validated_by)->toBe($this->admin->id);
+});
+
+test('admin booking search matches code, customer name, and phone case-insensitively', function () {
+    $booking = Booking::create([
+        'booking_code' => 'BKG-SEARCH-001',
+        'user_id' => $this->user->id,
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '10:00',
+        'end_time' => '11:00',
+        'duration_hours' => 1,
+        'base_price' => 100000,
+        'validation_code' => 123,
+        'total_price' => 100123,
+        'payment_method' => 'transfer',
+        'payment_status' => 'pending',
+        'customer_name' => 'Searchable Customer',
+        'customer_phone' => '081234567899',
+        'payment_deadline' => now()->addHours(2),
+    ]);
+
+    $this->actingAs($this->superadmin);
+
+    foreach (['bkg-search-001', 'SEARCHABLE CUSTOMER', '081234567899'] as $search) {
+        $this->get(route('admin.bookings.index', ['search' => $search]))
+            ->assertInertia(fn ($page) => $page
+                ->component('admin/bookings/index')
+                ->has('bookings.data', 1)
+                ->where('bookings.data.0.booking_code', $booking->booking_code)
+            );
+    }
+});
+
+test('public lapangan search matches name and description case-insensitively', function () {
+    $this->lapangan->update([
+        'description' => 'Indoor turf arena for evening games.',
+    ]);
+
+    foreach (['lapangan test pro', 'TURF ARENA'] as $search) {
+        $this->get(route('lapangan.index', ['search' => $search]))
+            ->assertInertia(fn ($page) => $page
+                ->component('lapangan/index')
+                ->has('lapangans.data', 1)
+                ->where('lapangans.data.0.id', $this->lapangan->id)
+            );
+    }
 });

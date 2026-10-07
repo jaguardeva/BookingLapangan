@@ -24,6 +24,13 @@ class ProfileUpdateRequest extends FormRequest
         return [
             'name' => $this->nameRules(),
             'email' => ['prohibited'],
+            'phone' => ['nullable', 'regex:/^08[0-9]{8,13}$/'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'date_of_birth' => ['nullable', 'date', 'before:today'],
+            'gender' => ['nullable', 'in:male,female,other'],
+            'favorite_sports' => ['nullable', 'array', 'max:10'],
+            'favorite_sports.*' => ['string', 'max:50'],
+            'preferred_playing_time' => ['nullable', 'in:morning,afternoon,evening,night'],
         ];
     }
 
@@ -36,6 +43,7 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'email.prohibited' => 'Alamat email tidak dapat diubah sendiri. Silakan hubungi admin atau dukungan.',
+            'phone.regex' => 'Nomor telepon harus berupa angka 10–15 digit dan diawali 08.',
         ];
     }
 }

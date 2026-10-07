@@ -1,24 +1,22 @@
 import { Form, Head } from '@inertiajs/react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import PasswordRequirements from '@/components/password-requirements';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/security';
-import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys';
-import ManagePasskeys from '@/components/manage-passkeys';
+import { request as requestPasswordReset } from '@/routes/user-password';
 import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
 import ManageTwoFactor from '@/components/manage-two-factor';
 
 // oxfmt-ignore
-type Props = {
-    passwordRules: string;
-} & ManagePasskeysProps &
-    ManageTwoFactorProps;
+type Props = { passwordRules: string; hasLocalPassword: boolean; passwordResetEmail: string } & ManageTwoFactorProps;
 
 export default function Security(props: Props) {
+    const [password, setPassword] = useState('');
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
 
@@ -35,7 +33,7 @@ export default function Security(props: Props) {
                     description="Gunakan kata sandi panjang dan acak untuk menjaga keamanan akun"
                 />
 
-                <Form
+                {props.hasLocalPassword ? <Form
                     {...SecurityController.update.form()}
                     options={{
                         preserveScroll: true,
@@ -47,6 +45,8 @@ export default function Security(props: Props) {
                     ]}
                     resetOnSuccess
                     onError={(errors) => {
+                        setPassword('');
+
                         if (errors.password) {
                             passwordInput.current?.focus();
                         }
@@ -83,11 +83,14 @@ export default function Security(props: Props) {
                                     id="password"
                                     ref={passwordInput}
                                     name="password"
+                                    value={password}
+                                    onChange={(event) => setPassword(event.target.value)}
                                     className="mt-1 block w-full"
                                     autoComplete="new-password"
                                     placeholder="Kata sandi baru"
                                     passwordrules={props.passwordRules}
                                 />
+                                <PasswordRequirements password={password} />
 
                                 <InputError message={errors.password} />
                             </div>
@@ -121,7 +124,16 @@ export default function Security(props: Props) {
                             </div>
                         </>
                     )}
-                </Form>
+                </Form> : <Form {...requestPasswordReset.form()} options={{ preserveScroll: true }} className="space-y-4">
+                    {({ processing, errors }) => <>
+                        <p className="text-muted-foreground text-sm">Akun Anda menggunakan Google. Kirim tautan ke email terverifikasi untuk membuat password lokal.</p>
+                        <p className="text-muted-foreground text-sm">Email tujuan: {props.passwordResetEmail}</p>
+                        <InputError message={errors.request} />
+                        <Button disabled={processing} data-test="request-local-password-button">
+                            {processing ? 'Mengirim tautan...' : 'Buat password lokal melalui email'}
+                        </Button>
+                    </>}
+                </Form>}
             </div>
 
             <ManageTwoFactor
@@ -130,10 +142,6 @@ export default function Security(props: Props) {
                 twoFactorEnabled={props.twoFactorEnabled}
             />
 
-            <ManagePasskeys
-                canManagePasskeys={props.canManagePasskeys}
-                passkeys={props.passkeys}
-            />
         </>
     );
 }

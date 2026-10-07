@@ -18,7 +18,7 @@ class AdminManagementController extends Controller
     public function index(): Response
     {
         $admins = User::where('role', 'admin')
-            ->with('assignedLapangans')
+            ->with(['assignedLapangans', 'profile'])
             ->latest()
             ->paginate(10);
 
@@ -35,7 +35,7 @@ class AdminManagementController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'regex:/^08[0-9]{8,13}$/'],
             'password' => ['required', Password::defaults()],
             'lapangan_ids' => ['nullable', 'array'],
             'lapangan_ids.*' => ['exists:lapangans,id'],
@@ -44,11 +44,12 @@ class AdminManagementController extends Controller
         $admin = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'phone' => $validated['phone'] ?? null,
             'password' => Hash::make($validated['password']),
+            'password_set_at' => now(),
             'role' => 'admin',
             'email_verified_at' => now(),
         ]);
+        $admin->profile()->create(['phone' => $validated['phone'] ?? null]);
 
         if (! empty($validated['lapangan_ids'])) {
             $admin->assignedLapangans()->sync($validated['lapangan_ids']);
@@ -70,7 +71,7 @@ class AdminManagementController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email,'.$user->id],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'regex:/^08[0-9]{8,13}$/'],
             'password' => ['nullable', Password::defaults()],
             'lapangan_ids' => ['nullable', 'array'],
             'lapangan_ids.*' => ['exists:lapangans,id'],
@@ -79,14 +80,15 @@ class AdminManagementController extends Controller
         $updateData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'phone' => $validated['phone'] ?? null,
         ];
 
         if (! empty($validated['password'])) {
             $updateData['password'] = Hash::make($validated['password']);
+            $updateData['password_set_at'] = now();
         }
 
         $user->update($updateData);
+        $user->profile()->updateOrCreate([], ['phone' => $validated['phone'] ?? null]);
 
         if (isset($validated['lapangan_ids'])) {
             $user->assignedLapangans()->sync($validated['lapangan_ids']);

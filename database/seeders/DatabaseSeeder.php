@@ -29,10 +29,10 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Budi Hartono (Owner)',
                 'password' => Hash::make('password'),
                 'role' => 'superadmin',
-                'phone' => '081234567890',
                 'email_verified_at' => now(),
             ]
         );
+        $superadmin->profile()->updateOrCreate([], ['phone' => '081234567890']);
 
         // Also update existing dev users if any to superadmin so the developer can access all roles
         User::whereIn('email', ['jaguardeva@gmail.com', 'jaguardeva54@gmail.com'])->update([
@@ -46,10 +46,10 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Rian Pratama (Kasir Futsal)',
                 'password' => Hash::make('password'),
                 'role' => 'admin',
-                'phone' => '081234567891',
                 'email_verified_at' => now(),
             ]
         );
+        $adminFutsal->profile()->updateOrCreate([], ['phone' => '081234567891']);
 
         $adminBadminton = User::firstOrCreate(
             ['email' => 'admin.badminton@gmail.com'],
@@ -57,10 +57,10 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Siti Rahma (Kasir Badminton)',
                 'password' => Hash::make('password'),
                 'role' => 'admin',
-                'phone' => '081234567892',
                 'email_verified_at' => now(),
             ]
         );
+        $adminBadminton->profile()->updateOrCreate([], ['phone' => '081234567892']);
 
         // 3. Regular Customer User
         $customer = User::firstOrCreate(
@@ -69,10 +69,10 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Dimas Anggara',
                 'password' => Hash::make('password'),
                 'role' => 'user',
-                'phone' => '081234567893',
                 'email_verified_at' => now(),
             ]
         );
+        $customer->profile()->updateOrCreate([], ['phone' => '081234567893']);
 
         // 4. Categories
         $categoriesData = [

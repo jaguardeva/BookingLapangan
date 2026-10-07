@@ -3,9 +3,11 @@ import { usePage } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/navbar';
 import { WhatsappWidget } from '@/components/whatsapp-widget';
+import { useAppearance } from '@/hooks/use-appearance';
 import { Trophy, Phone, Mail, MapPin, Heart } from 'lucide-react';
 
 export function PublicLayout({ children }: PropsWithChildren) {
+    const { appearance, resolvedAppearance, updateAppearance } = useAppearance();
     const page = usePage<{
         name?: string;
         site?: {
@@ -20,6 +22,12 @@ export function PublicLayout({ children }: PropsWithChildren) {
     const flash = page.props.flash;
     const appName = page.props.name ?? 'SportBooking';
     const contact = page.props.site?.contact;
+
+    useEffect(() => {
+        if (appearance === 'system') {
+            updateAppearance(resolvedAppearance);
+        }
+    }, [appearance, resolvedAppearance, updateAppearance]);
 
     useEffect(() => {
         if (flash?.success) {

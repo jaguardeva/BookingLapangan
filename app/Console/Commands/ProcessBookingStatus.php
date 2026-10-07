@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Booking;
+use App\Notifications\BookingReminderDatabaseNotification;
 use App\Notifications\BookingReminderNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -54,6 +55,7 @@ class ProcessBookingStatus extends Command
         foreach ($upcoming24h as $booking) {
             if ($booking->user) {
                 // Avoid spamming if already notified recently
+                $booking->user->notify(new BookingReminderDatabaseNotification($booking, '24h'));
                 $booking->user->notify(new BookingReminderNotification($booking, '24h'));
             }
         }

@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Admin\ActivityLogController;
-use App\Http\Controllers\Admin\AdminManagementController;
 use App\Http\Controllers\Admin\BankAccountController;
 use App\Http\Controllers\Admin\BookingManagementController;
 use App\Http\Controllers\Admin\CatalogManagementController;
@@ -10,8 +9,11 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\FacilityManagementController;
 use App\Http\Controllers\Admin\LapanganManagementController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\WhatsappContactController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LapanganController;
 use App\Http\Controllers\NotificationController;
@@ -21,6 +23,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // --- Public Routes ---
+Route::middleware('guest')->group(function () {
+    Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+});
+
 Route::middleware(['admin.workspace'])->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
 });
@@ -32,6 +39,14 @@ Route::middleware(['public.catalog'])->group(function () {
 
 // --- Customer / Authenticated Routes ---
 Route::middleware(['auth', 'admin.workspace'])->group(function () {
+    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+    Route::post('/email/verify', [EmailVerificationController::class, 'verify'])
+        ->middleware('throttle:6,1')
+        ->name('verification.verify');
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+
     // Smart dashboard redirection based on role & email verification status
     Route::get('/dashboard', function (Request $request) {
         $user = auth()->user();
@@ -110,11 +125,14 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'role:superadmin,admin
         Route::post('/lapangans/{lapangan}/toggle', [LapanganManagementController::class, 'toggleStatus'])->name('lapangans.toggle');
         Route::delete('/lapangans/{lapangan}', [LapanganManagementController::class, 'destroy'])->name('lapangans.destroy');
 
-        // Admin Management
-        Route::get('/admins', [AdminManagementController::class, 'index'])->name('admins.index');
-        Route::post('/admins', [AdminManagementController::class, 'store'])->name('admins.store');
-        Route::put('/admins/{user}', [AdminManagementController::class, 'update'])->name('admins.update');
-        Route::delete('/admins/{user}', [AdminManagementController::class, 'destroy'])->name('admins.destroy');
+        // User Management
+        Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('users.show');
+        Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
+        Route::patch('/users/{user}/verification', [UserManagementController::class, 'toggleVerification'])->name('users.verification');
+        Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
+        Route::redirect('/admins', '/admin/users')->name('admins.index');
 
         // Bank Accounts Management
         Route::get('/banks', [BankAccountController::class, 'index'])->name('banks.index');

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RequirePasswordUnlessGoogleOnly;
 use App\Http\Middleware\RestrictAdminCatalog;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Application;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'public.catalog' => RestrictAdminCatalog::class,
             'admin.workspace' => RestrictAdminCatalog::class,
+            'password.confirm.optional-google' => RequirePasswordUnlessGoogleOnly::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

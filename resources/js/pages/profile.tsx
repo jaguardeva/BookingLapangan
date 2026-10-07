@@ -9,13 +9,16 @@ import { Label } from '@/components/ui/label';
 import { PublicLayout } from '@/layouts/public-layout';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
+import { ProfileAvatarUploader } from '@/components/profile-avatar-uploader';
+import { ProfileCompletionReminder } from '@/components/profile-completion-reminder';
+import type { ProfileCompletion, UserProfile } from '@/types';
 import type { Auth } from '@/types';
 
-type PageProps = { auth: Auth };
+type PageProps = { auth: Auth; profile?: UserProfile | null; profile_completion?: ProfileCompletion | null };
 type ProfileProps = { mustVerifyEmail: boolean; status?: string };
 
 export default function Profile({ mustVerifyEmail, status }: ProfileProps) {
-    const { auth } = usePage<PageProps>().props;
+    const { auth, profile, profile_completion } = usePage<PageProps>().props;
     const pointsBalance = auth.user.points_balance ?? 0;
     const availablePoints = auth.user.available_points ?? pointsBalance;
 
@@ -36,6 +39,11 @@ export default function Profile({ mustVerifyEmail, status }: ProfileProps) {
                 </div>
 
                 <div className="space-y-8">
+                    <ProfileCompletionReminder completion={profile_completion} />
+                    <section className="border-border/70 bg-card rounded-2xl border p-5 shadow-sm sm:p-6">
+                        <h2 className="mb-4 text-lg font-bold">Foto profil</h2>
+                        <ProfileAvatarUploader name={auth.user.name} avatar={auth.user.avatar} />
+                    </section>
                     <section className="rounded-2xl border border-primary/30 bg-primary/10 p-5 dark:bg-primary/5">
                         <div className="flex items-start gap-4">
                             <div className="rounded-xl bg-primary p-3 text-primary-foreground shadow-sm">
@@ -150,6 +158,15 @@ export default function Profile({ mustVerifyEmail, status }: ProfileProps) {
                                                 )}
                                             </div>
                                         )}
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="phone">Nomor WhatsApp/telepon</Label>
+                                        <Input id="phone" name="phone" type="tel" inputMode="numeric" pattern="08[0-9]{8,13}" defaultValue={profile?.phone ?? ''} onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(/\D/g, ''); }} placeholder="08xxxxxxxxxx" />
+                                        <InputError message={errors.phone} />
+                                    </div>
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        <div className="grid gap-2"><Label htmlFor="city">Kota domisili</Label><Input id="city" name="city" defaultValue={profile?.city ?? ''} /></div>
+                                        <div className="grid gap-2"><Label htmlFor="date_of_birth">Tanggal lahir</Label><Input id="date_of_birth" name="date_of_birth" type="date" defaultValue={profile?.date_of_birth ?? ''} /></div>
+                                    </div>
                                     <Button disabled={processing}>
                                         {processing
                                             ? 'Menyimpan...'

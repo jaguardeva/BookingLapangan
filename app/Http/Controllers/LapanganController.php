@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Category;
-use App\Models\Facility;
 use App\Models\Lapangan;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -31,15 +30,8 @@ class LapanganController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                    ->orWhere('description', 'ilike', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('facility')) {
-            $facilityId = $request->facility;
-            $query->whereHas('facilities', function ($q) use ($facilityId) {
-                $q->where('facilities.id', $facilityId);
+                $q->whereLike('name', "%{$search}%")
+                    ->orWhereLike('description', "%{$search}%");
             });
         }
 
@@ -56,16 +48,13 @@ class LapanganController extends Controller
 
         $lapangans = $query->paginate(9)->withQueryString();
         $categories = Category::where('is_active', true)->get();
-        $facilities = Facility::all();
 
         return Inertia::render('lapangan/index', [
             'lapangans' => $lapangans,
             'categories' => $categories,
-            'facilities' => $facilities,
             'filters' => [
                 'search' => $request->query('search', ''),
                 'category' => $request->query('category', ''),
-                'facility' => $request->query('facility', ''),
                 'sort' => $request->query('sort', 'latest'),
             ],
         ]);
