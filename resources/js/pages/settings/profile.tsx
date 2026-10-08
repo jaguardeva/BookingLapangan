@@ -1,6 +1,8 @@
-import { Form, Head, usePage } from '@inertiajs/react';
-import { Link } from '@inertiajs/react';
+import { Form, Head, router, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import { Coins } from 'lucide-react';
+import { toast } from 'sonner';
+import { useCooldown } from '@/hooks/use-cooldown';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
@@ -32,6 +34,36 @@ export default function Profile({
     const pointsBalance = auth.user.points_balance ?? 0;
     const availablePoints = auth.user.available_points ?? pointsBalance;
 
+    const [isResending, setIsResending] = useState(false);
+    const userKey = auth?.user?.id
+        ? `cooldown_verify_email_${auth.user.id}`
+        : 'cooldown_verify_email';
+    const { cooldown, startCooldown } = useCooldown(userKey, 0, 60);
+
+    const handleResendEmail = () => {
+        if (isResending || cooldown > 0) return;
+        setIsResending(true);
+        router.post(
+            send.url(),
+            {},
+            {
+                onSuccess: () => {
+                    setIsResending(false);
+                    toast.success('Email verifikasi baru berhasil dikirim!');
+                    startCooldown(60);
+                },
+                onError: (errors) => {
+                    setIsResending(false);
+                    const errorMessage =
+                        errors && typeof errors === 'object' && 'code' in errors
+                            ? (errors.code as string)
+                            : 'Gagal mengirim email verifikasi. Coba beberapa saat lagi.';
+                    toast.error(errorMessage);
+                },
+            },
+        );
+    };
+
     return (
         <>
             <Head title="Pengaturan Profil" />
@@ -47,14 +79,17 @@ export default function Profile({
 
                 <ProfileCompletionReminder completion={profile_completion} />
 
-                <div className="rounded-xl border border-border/70 bg-card p-4">
+                <div className="border-border/70 bg-card rounded-xl border p-4">
                     <h2 className="mb-3 font-semibold">Foto profil</h2>
-                    <ProfileAvatarUploader name={auth.user.name} avatar={auth.user.avatar} />
+                    <ProfileAvatarUploader
+                        name={auth.user.name}
+                        avatar={auth.user.avatar}
+                    />
                 </div>
 
-                <div className="rounded-xl border border-primary/30 bg-primary/10 p-4 dark:bg-primary/5">
+                <div className="border-primary/30 bg-primary/10 dark:bg-primary/5 rounded-xl border p-4">
                     <div className="flex items-start gap-3">
-                        <div className="rounded-lg bg-primary p-2 text-primary-foreground">
+                        <div className="bg-primary text-primary-foreground rounded-lg p-2">
                             <Coins className="size-5" />
                         </div>
                         <div className="min-w-0 flex-1 space-y-2">
@@ -73,7 +108,7 @@ export default function Profile({
                                     <p className="text-muted-foreground text-xs">
                                         Total Poin Terkumpul
                                     </p>
-                                    <p className="text-xl font-bold text-primary dark:text-primary">
+                                    <p className="text-primary dark:text-primary text-xl font-bold">
                                         {pointsBalance.toLocaleString('id-ID')}
                                     </p>
                                 </div>
@@ -121,13 +156,49 @@ export default function Profile({
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="phone">Nomor WhatsApp/telepon</Label>
-                                <Input id="phone" name="phone" type="tel" inputMode="numeric" pattern="08[0-9]{8,13}" defaultValue={profile?.phone ?? ''} onInput={(event) => { event.currentTarget.value = event.currentTarget.value.replace(/\D/g, ''); }} placeholder="08xxxxxxxxxx" />
+                                <Label htmlFor="phone">
+                                    Nomor WhatsApp/telepon
+                                </Label>
+                                <Input
+                                    id="phone"
+                                    name="phone"
+                                    type="tel"
+                                    inputMode="numeric"
+                                    pattern="08[0-9]{8,13}"
+                                    defaultValue={profile?.phone ?? ''}
+                                    onInput={(event) => {
+                                        event.currentTarget.value =
+                                            event.currentTarget.value.replace(
+                                                /\D/g,
+                                                '',
+                                            );
+                                    }}
+                                    placeholder="08xxxxxxxxxx"
+                                />
                                 <InputError message={errors.phone} />
                             </div>
                             <div className="grid gap-2 sm:grid-cols-2">
-                                <div className="grid gap-2"><Label htmlFor="city">Kota domisili</Label><Input id="city" name="city" defaultValue={profile?.city ?? ''} /></div>
-                                <div className="grid gap-2"><Label htmlFor="date_of_birth">Tanggal lahir</Label><Input id="date_of_birth" name="date_of_birth" type="date" defaultValue={profile?.date_of_birth ?? ''} /></div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="city">Kota domisili</Label>
+                                    <Input
+                                        id="city"
+                                        name="city"
+                                        defaultValue={profile?.city ?? ''}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="date_of_birth">
+                                        Tanggal lahir
+                                    </Label>
+                                    <Input
+                                        id="date_of_birth"
+                                        name="date_of_birth"
+                                        type="date"
+                                        defaultValue={
+                                            profile?.date_of_birth ?? ''
+                                        }
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid gap-2">
@@ -154,21 +225,29 @@ export default function Profile({
                                 auth.user.email_verified_at === null && (
                                     <div>
                                         <p className="text-muted-foreground -mt-4 text-sm">
-                                            Alamat email Anda belum diverifikasi.{' '}
-                                            <Link
-                                                href={send()}
-                                                as="button"
-                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                            Alamat email Anda belum
+                                            diverifikasi.{' '}
+                                            <button
+                                                type="button"
+                                                onClick={handleResendEmail}
+                                                disabled={
+                                                    isResending || cooldown > 0
+                                                }
+                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-all duration-300 ease-out hover:decoration-current! disabled:cursor-not-allowed disabled:opacity-60 dark:decoration-neutral-500"
                                             >
-                                                Klik di sini untuk mengirim ulang
-                                                email verifikasi.
-                                            </Link>
+                                                {isResending
+                                                    ? 'Mengirim...'
+                                                    : cooldown > 0
+                                                      ? `Kirim ulang email verifikasi (${cooldown}s)`
+                                                      : 'Klik di sini untuk mengirim ulang email verifikasi.'}
+                                            </button>
                                         </p>
 
-                                        {status ===
-                                            'verification-link-sent' && (
+                                        {(status === 'verification-link-sent' ||
+                                            status ===
+                                                'verification-otp-sent') && (
                                             <div className="mt-2 text-sm font-medium text-green-600">
-                                                Tautan verifikasi baru telah
+                                                Email verifikasi baru telah
                                                 dikirim ke alamat email Anda.
                                             </div>
                                         )}

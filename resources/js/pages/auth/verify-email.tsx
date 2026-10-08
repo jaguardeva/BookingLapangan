@@ -3,30 +3,45 @@ import { useState } from 'react';
 import { ArrowLeft, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useCooldown } from '@/hooks/use-cooldown';
 import { logout } from '@/routes';
 import { send, verify } from '@/routes/verification';
 
 interface Props {
     status?: string;
+    resendCooldown?: number;
 }
 
-export default function VerifyEmail({ status }: Props) {
-    const { auth } = usePage<{ auth: { user: { email?: string; name?: string } | null } }>().props;
+export default function VerifyEmail({ status, resendCooldown = 0 }: Props) {
+    const { auth } = usePage<{
+        auth: { user: { id?: number; email?: string; name?: string } | null };
+    }>().props;
     const userEmail = auth?.user?.email;
+    const userKey = auth?.user?.id
+        ? `cooldown_verify_email_${auth.user.id}`
+        : 'cooldown_verify_email';
 
     const [isResending, setIsResending] = useState(false);
     const [code, setCode] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
-    const [cooldown, setCooldown] = useState(0);
+    const { cooldown, startCooldown } = useCooldown(
+        userKey,
+        resendCooldown,
+        60,
+    );
 
     const handleVerify = (e: React.FormEvent) => {
         e.preventDefault();
         if (isVerifying || code.length !== 6) return;
 
         setIsVerifying(true);
-        router.post(verify.url(), { code }, {
-            onFinish: () => setIsVerifying(false),
-        });
+        router.post(
+            verify.url(),
+            { code },
+            {
+                onFinish: () => setIsVerifying(false),
+            },
+        );
     };
 
     const handleResend = (e: React.FormEvent) => {
@@ -40,23 +55,20 @@ export default function VerifyEmail({ status }: Props) {
             {
                 onSuccess: () => {
                     setIsResending(false);
-                    toast.success('Kode OTP baru berhasil dikirim ke email Anda!');
-                    setCooldown(60);
-                    const timer = setInterval(() => {
-                        setCooldown((prev) => {
-                            if (prev <= 1) {
-                                clearInterval(timer);
-                                return 0;
-                            }
-                            return prev - 1;
-                        });
-                    }, 1000);
+                    toast.success(
+                        'Kode OTP baru berhasil dikirim ke email Anda!',
+                    );
+                    startCooldown(60);
                 },
-                onError: () => {
+                onError: (errors) => {
                     setIsResending(false);
-                    toast.error('Gagal mengirim kode OTP. Coba beberapa saat lagi.');
+                    const errorMessage =
+                        errors && typeof errors === 'object' && 'code' in errors
+                            ? (errors.code as string)
+                            : 'Gagal mengirim kode OTP. Coba beberapa saat lagi.';
+                    toast.error(errorMessage);
                 },
-            }
+            },
         );
     };
 
@@ -72,27 +84,33 @@ export default function VerifyEmail({ status }: Props) {
                 {status === 'verification-otp-sent' && (
                     <div
                         role="status"
-                        className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm"
+                        className="border-primary/20 bg-primary/5 rounded-md border px-3 py-2 text-sm"
                     >
                         Kode OTP baru telah dikirim ke email Anda.
                     </div>
                 )}
 
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                    Masukkan kode OTP 6 digit yang dikirim ke email Anda. Kode berlaku selama 10 menit.
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                    Masukkan kode OTP 6 digit yang dikirim ke email Anda. Kode
+                    berlaku selama 10 menit.
                 </p>
 
                 {userEmail && (
-                    <div className="grid gap-1 rounded-md bg-muted px-3 py-2 text-sm">
-                        <span className="text-xs text-muted-foreground">Email</span>
-                        <span className="break-all font-medium text-foreground">
+                    <div className="bg-muted grid gap-1 rounded-md px-3 py-2 text-sm">
+                        <span className="text-muted-foreground text-xs">
+                            Email
+                        </span>
+                        <span className="text-foreground font-medium break-all">
                             {userEmail}
                         </span>
                     </div>
                 )}
 
                 <form onSubmit={handleVerify} className="space-y-3">
-                    <label htmlFor="verification-code" className="text-sm font-medium text-foreground">
+                    <label
+                        htmlFor="verification-code"
+                        className="text-foreground text-sm font-medium"
+                    >
                         Kode OTP
                     </label>
                     <input
@@ -104,12 +122,21 @@ export default function VerifyEmail({ status }: Props) {
                         pattern="[0-9]{6}"
                         maxLength={6}
                         value={code}
-                        onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                        onChange={(event) =>
+                            setCode(
+                                event.target.value
+                                    .replace(/\D/g, '')
+                                    .slice(0, 6),
+                            )
+                        }
                         placeholder="000000"
-                        className="h-12 w-full rounded-lg border border-input bg-background px-4 text-center text-xl font-semibold tracking-[0.45em] text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        className="border-input bg-background text-foreground focus:border-primary focus:ring-primary/20 h-12 w-full rounded-lg border px-4 text-center text-xl font-semibold tracking-[0.45em] transition outline-none focus:ring-2"
                         aria-describedby="verification-code-help"
                     />
-                    <p id="verification-code-help" className="text-xs text-muted-foreground">
+                    <p
+                        id="verification-code-help"
+                        className="text-muted-foreground text-xs"
+                    >
                         Kode hanya dapat digunakan satu kali.
                     </p>
                     <Button
@@ -135,10 +162,10 @@ export default function VerifyEmail({ status }: Props) {
                     </Button>
                 </form>
 
-                <div className="flex items-center justify-between border-t border-border pt-4 text-sm">
+                <div className="border-border flex items-center justify-between border-t pt-4 text-sm">
                     <Link
                         href="/"
-                        className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
                     >
                         <ArrowLeft className="size-4" /> Ke beranda
                     </Link>

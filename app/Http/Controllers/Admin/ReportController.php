@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Lapangan;
+use App\Support\Pagination;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -42,7 +43,9 @@ class ReportController extends Controller
         $approvedBookings = (clone $query)->where('payment_status', 'approved')->count();
         $cancelledBookings = (clone $query)->where('payment_status', 'cancelled')->count();
 
-        $bookings = $query->latest('booking_date')->paginate(20)->withQueryString();
+        $bookings = $query->latest('booking_date')
+            ->paginate(Pagination::perPage($request, 10))
+            ->withQueryString();
 
         $lapangans = $isSuperAdmin
             ? Lapangan::where('is_active', true)->get(['id', 'name'])

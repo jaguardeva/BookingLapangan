@@ -1,15 +1,29 @@
 // Components
 import { Form, Head } from '@inertiajs/react';
+import { useEffect } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCooldown } from '@/hooks/use-cooldown';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
 
 export default function ForgotPassword({ status }: { status?: string }) {
+    const { cooldown, startCooldown } = useCooldown(
+        'cooldown_forgot_password',
+        0,
+        60,
+    );
+
+    useEffect(() => {
+        if (status) {
+            startCooldown(60);
+        }
+    }, [status, startCooldown]);
+
     return (
         <>
             <Head title="Lupa Kata Sandi" />
@@ -24,7 +38,11 @@ export default function ForgotPassword({ status }: { status?: string }) {
             )}
 
             <div className="space-y-5">
-                <Form {...email.form()} className="space-y-5">
+                <Form
+                    {...email.form()}
+                    onSuccess={() => startCooldown(60)}
+                    className="space-y-5"
+                >
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
@@ -36,7 +54,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     autoComplete="email"
                                     autoFocus
                                     placeholder="nama@email.com"
-                                    className="h-11 rounded-lg bg-background"
+                                    className="bg-background h-11 rounded-lg"
                                 />
 
                                 <InputError message={errors.email} />
@@ -44,13 +62,16 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
                             <Button
                                 className="h-11 w-full rounded-lg font-medium"
-                                disabled={processing}
+                                disabled={processing || cooldown > 0}
                                 data-test="email-password-reset-link-button"
                             >
-                                {processing && (
+                                {processing ? (
                                     <LoaderCircle className="h-4 w-4 animate-spin" />
+                                ) : cooldown > 0 ? (
+                                    `Kirim tautan reset (${cooldown}s)`
+                                ) : (
+                                    'Kirim tautan reset kata sandi'
                                 )}
-                                Kirim tautan reset kata sandi
                             </Button>
                         </>
                     )}

@@ -172,7 +172,7 @@ export function LapanganForm({ mode, categories, facilities, lapangan }: Lapanga
 
             <div className="flex flex-col-reverse gap-3 border-t border-border/70 pt-5 sm:flex-row sm:justify-end">
                 <Button type="button" variant="outline" asChild><Link href="/admin/lapangans">Batal</Link></Button>
-                <Button type="submit" disabled={form.processing}><ImagePlus className="mr-2 size-4" />{form.processing ? 'Menyimpan...' : mode === 'edit' ? 'Simpan Perubahan' : 'Tambah Lapangan'}</Button>
+                <Button type="submit" disabled={form.processing}><ImagePlus className="size-4" />{form.processing ? 'Menyimpan...' : mode === 'edit' ? 'Simpan Perubahan' : 'Tambah Lapangan'}</Button>
             </div>
         </form>
     );

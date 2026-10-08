@@ -155,7 +155,7 @@ export default function BookingInvoice({
                         className="text-xs"
                     >
                         <Link href="/my-bookings">
-                            <ArrowLeft className="mr-1 size-3.5" /> Riwayat
+                            <ArrowLeft className="size-3.5" /> Riwayat
                             Booking
                         </Link>
                     </Button>
@@ -167,7 +167,7 @@ export default function BookingInvoice({
                             onClick={() => window.print()}
                             className="rounded-xl text-xs"
                         >
-                            <Printer className="mr-1.5 size-3.5" /> Cetak /
+                            <Printer className="size-3.5" /> Cetak /
                             Simpan PDF
                         </Button>
                     </div>

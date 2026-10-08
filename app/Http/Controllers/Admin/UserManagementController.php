@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Lapangan;
 use App\Models\User;
+use App\Support\Pagination;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -88,7 +89,7 @@ class UserManagementController extends Controller
             ->when($verification === 'unverified', fn ($query) => $query->whereNull('email_verified_at'))
             ->orderBy($sortColumns[$sort], $direction)
             ->orderBy('id')
-            ->paginate(10)
+            ->paginate(Pagination::perPage($request, 10))
             ->withQueryString();
 
         $users->getCollection()->transform(function (User $user): User {

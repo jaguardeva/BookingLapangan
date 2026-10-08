@@ -382,7 +382,7 @@ export default function AdminDashboard({
 
                                 <Button variant="ghost" size="sm" asChild className="self-start px-0 text-xs sm:self-auto sm:px-3">
                                     <Link href="/admin/bookings">
-                                        Buka Semua <ArrowRight className="size-3.5 ml-1" />
+                                        Buka Semua <ArrowRight className="size-3.5" />
                                     </Link>
                                 </Button>
                             </div>

@@ -106,7 +106,7 @@ export default function AdminBanksIndex({ banks = [] }: Props) {
                     </div>
 
                     <Button onClick={openCreateModal} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs h-9">
-                        <Plus className="size-4 mr-1.5" /> Tambah Rekening Baru
+                        <Plus className="size-4" /> Tambah Rekening Baru
                     </Button>
                 </div>
 

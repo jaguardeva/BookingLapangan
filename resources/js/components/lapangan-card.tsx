@@ -92,7 +92,7 @@ export function LapanganCard({ item }: LapanganCardProps) {
                         className="h-8 w-full rounded-lg bg-primary px-3 text-xs text-primary-foreground shadow-none hover:bg-primary/90 sm:w-auto"
                     >
                         <Link href={`/lapangan/${item.slug}`}>
-                            Cek Jadwal <ArrowRight className="size-3 ml-1" />
+                            Cek Jadwal <ArrowRight className="size-3" />
                         </Link>
                     </Button>
                 </div>

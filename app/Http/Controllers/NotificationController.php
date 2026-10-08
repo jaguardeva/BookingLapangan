@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,8 @@ class NotificationController extends Controller
     {
         $notifications = auth()->user()
             ->notifications()
-            ->paginate(15);
+            ->paginate(Pagination::perPage($request, 10))
+            ->withQueryString();
 
         return Inertia::render('notifications/index', [
             'notifications' => $notifications,

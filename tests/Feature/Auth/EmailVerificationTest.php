@@ -76,3 +76,29 @@ test('verified users are redirected to the configured destination after verifica
     $this->actingAs($user)->get(route('dashboard', ['verified' => 1]))
         ->assertRedirect(url('/welcome-back'));
 });
+
+test('email verification screen includes resend cooldown prop', function () {
+    $user = User::factory()->unverified()->create();
+
+    $response = $this->actingAs($user)->get(route('verification.notice'));
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('auth/verify-email')
+        ->has('resendCooldown')
+        ->where('resendCooldown', 0)
+    );
+
+    EmailVerificationOtp::create([
+        'user_id' => $user->id,
+        'code_hash' => Hash::make('123456'),
+        'expires_at' => now()->addMinutes(10),
+    ]);
+
+    $this->travel(20)->seconds();
+
+    $responseAfterOtp = $this->actingAs($user)->get(route('verification.notice'));
+    $responseAfterOtp->assertInertia(fn ($page) => $page
+        ->component('auth/verify-email')
+        ->where('resendCooldown', 40)
+    );
+});

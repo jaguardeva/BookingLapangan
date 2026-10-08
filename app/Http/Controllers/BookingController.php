@@ -11,6 +11,7 @@ use App\Notifications\BookingCreatedDatabaseNotification;
 use App\Notifications\BookingCreatedNotification;
 use App\Notifications\CashBookingCreatedNotification;
 use App\Notifications\PaymentProofSubmittedNotification;
+use App\Support\Pagination;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -293,7 +294,7 @@ class BookingController extends Controller
             $query->where('payment_status', $request->status);
         }
 
-        $bookings = $query->paginate(10)->withQueryString();
+        $bookings = $query->paginate(Pagination::perPage($request, 10))->withQueryString();
 
         return Inertia::render('booking/history', [
             'bookings' => $bookings,

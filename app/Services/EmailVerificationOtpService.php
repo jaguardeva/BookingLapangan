@@ -10,7 +10,25 @@ use Illuminate\Validation\ValidationException;
 
 class EmailVerificationOtpService
 {
+    public const int COOLDOWN_SECONDS = 60;
+
     private const int MAX_ATTEMPTS = 5;
+
+    public function getResendCooldownRemainingSeconds(User $user): int
+    {
+        $lastOtp = EmailVerificationOtp::query()
+            ->where('user_id', $user->id)
+            ->latest()
+            ->first();
+
+        if (! $lastOtp || ! $lastOtp->created_at) {
+            return 0;
+        }
+
+        $elapsed = (int) $lastOtp->created_at->diffInSeconds(now(), absolute: true);
+
+        return max(0, self::COOLDOWN_SECONDS - $elapsed);
+    }
 
     public function issueAndNotify(User $user): void
     {
@@ -19,9 +37,9 @@ class EmailVerificationOtpService
             ->latest()
             ->first();
 
-        if ($lastOtp?->created_at?->greaterThan(now()->subSeconds(60))) {
+        if ($lastOtp?->created_at?->greaterThan(now()->subSeconds(self::COOLDOWN_SECONDS))) {
             throw ValidationException::withMessages([
-                'code' => 'Kode OTP baru dapat dikirim setelah 60 detik.',
+                'code' => 'Kode OTP baru dapat dikirim setelah '.self::COOLDOWN_SECONDS.' detik.',
             ]);
         }
 

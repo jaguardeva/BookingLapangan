@@ -13,6 +13,7 @@ use App\Notifications\PaymentApprovedDatabaseNotification;
 use App\Notifications\PaymentApprovedNotification;
 use App\Notifications\PaymentRejectedDatabaseNotification;
 use App\Notifications\PaymentRejectedNotification;
+use App\Support\Pagination;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -178,7 +179,7 @@ class BookingManagementController extends Controller
             $query->where('booking_date', $request->date);
         }
 
-        $bookings = $query->paginate(15)->withQueryString();
+        $bookings = $query->paginate(Pagination::perPage($request, 10))->withQueryString();
 
         $lapanganColumns = ['id', 'name', 'operational_start', 'operational_end', 'price_per_hour'];
         $lapangans = $isSuperAdmin

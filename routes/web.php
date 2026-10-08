@@ -69,7 +69,7 @@ Route::middleware(['auth', 'admin.workspace'])->group(function () {
             return redirect()->to(InternalRedirect::path(
                 config('auth.redirects.after_verification'),
                 route('booking.history', absolute: false),
-            ))->with('success', 'Email Anda berhasil diverifikasi! Selamat datang di '.config('app.name').'.');
+            ))->with('success', session('success', 'Email Anda berhasil diverifikasi! Selamat datang di '.config('app.name').'.'));
         }
 
         // 4. Regular verified user redirected to intended page or booking history

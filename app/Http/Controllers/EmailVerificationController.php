@@ -21,6 +21,7 @@ class EmailVerificationController extends Controller
 
         return Inertia::render('auth/verify-email', [
             'status' => $request->session()->get('status'),
+            'resendCooldown' => $this->otpService->getResendCooldownRemainingSeconds($request->user()),
         ]);
     }
 
@@ -56,6 +57,6 @@ class EmailVerificationController extends Controller
         }
 
         return redirect()->route('dashboard', ['verified' => 1])
-            ->with('success', 'Email berhasil diverifikasi! Selamat datang di '.config('app.name').'.');
+            ->with('success', 'Email Anda berhasil diverifikasi! Selamat datang di '.config('app.name').'.');
     }
 }

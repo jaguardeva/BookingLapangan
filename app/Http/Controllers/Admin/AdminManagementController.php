@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Lapangan;
 use App\Models\User;
+use App\Support\Pagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,12 +16,13 @@ use Inertia\Response;
 
 class AdminManagementController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $admins = User::where('role', 'admin')
             ->with(['assignedLapangans', 'profile'])
             ->latest()
-            ->paginate(10);
+            ->paginate(Pagination::perPage($request, 10))
+            ->withQueryString();
 
         $lapangans = Lapangan::where('is_active', true)->get(['id', 'name']);
 

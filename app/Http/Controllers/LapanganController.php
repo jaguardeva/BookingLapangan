@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Lapangan;
+use App\Support\Pagination;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,7 +47,7 @@ class LapanganController extends Controller
             $query->latest();
         }
 
-        $lapangans = $query->paginate(9)->withQueryString();
+        $lapangans = $query->paginate(Pagination::perPage($request, 10))->withQueryString();
         $categories = Category::where('is_active', true)->get();
 
         return Inertia::render('lapangan/index', [

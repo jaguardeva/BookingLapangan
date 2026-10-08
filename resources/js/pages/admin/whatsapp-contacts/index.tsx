@@ -89,7 +89,7 @@ export default function WhatsappContactsIndex({ contacts }: Props) {
                         <p className="mt-1 text-xs text-muted-foreground">Kelola nomor yang bisa dihubungi user melalui widget bantuan.</p>
                     </div>
                     <Button onClick={openCreate} className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90">
-                        <Plus className="mr-1.5 size-4" /> Tambah Kontak
+                        <Plus className="size-4" /> Tambah Kontak
                     </Button>
                 </div>
 
@@ -141,7 +141,7 @@ export default function WhatsappContactsIndex({ contacts }: Props) {
                             </div>
                             <p className="mt-4 min-h-10 text-xs text-muted-foreground">{contact.description || 'Tanpa keterangan'}</p>
                             <div className="mt-4 flex justify-end gap-1 border-t border-border/60 pt-3">
-                                <Button size="sm" variant="ghost" onClick={() => openEdit(contact)}><Edit2 className="mr-1.5 size-3.5" /> Edit</Button>
+                                <Button size="sm" variant="ghost" onClick={() => openEdit(contact)}><Edit2 className="size-3.5" /> Edit</Button>
                                 <Button size="sm" variant="ghost" onClick={() => router.post(`/admin/whatsapp-contacts/${contact.id}/toggle`)}>{contact.is_active ? 'Nonaktifkan' : 'Aktifkan'}</Button>
                                 <Button size="sm" variant="ghost" className="text-red-600" onClick={() => setDeletingContact(contact)}><Trash2 className="size-3.5" /></Button>
                             </div>

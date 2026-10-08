@@ -116,7 +116,7 @@ export default function CatalogIndex({ categories, facilities }: Props) {
                         onClick={() => activeTab === 'categories' ? openCategoryDialog() : openFacilityDialog()}
                         className="rounded-xl"
                     >
-                        <Plus className="mr-2 size-4" />
+                        <Plus className="size-4" />
                         Tambah {activeTab === 'categories' ? 'Kategori' : 'Fasilitas'}
                     </Button>
                 </div>

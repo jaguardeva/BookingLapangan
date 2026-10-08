@@ -617,7 +617,7 @@ export default function LapanganShow({
                                     </span>
                                 </div>
 
-                                <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto pr-1">
+                                <div className="grid grid-cols-2 gap-2 pr-1">
                                     {hourlySlots.map((slot) => {
                                         const booked = isSlotBooked(
                                             slot.start,

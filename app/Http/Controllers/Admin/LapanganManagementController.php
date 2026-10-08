@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Facility;
 use App\Models\Lapangan;
+use App\Support\Pagination;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,12 +37,13 @@ class LapanganManagementController extends Controller
         ]);
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $lapangans = Lapangan::with(['category', 'facilities'])
             ->withCount('bookings')
             ->latest()
-            ->paginate(10);
+            ->paginate(Pagination::perPage($request, 10))
+            ->withQueryString();
 
         $categories = Category::all();
         $facilities = Facility::all();

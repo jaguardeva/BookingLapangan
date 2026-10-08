@@ -45,7 +45,7 @@ export function SearchableSelect({
                 <span className={selectedOption ? 'truncate' : 'truncate text-muted-foreground'}>
                     {selectedOption?.label ?? placeholder}
                 </span>
-                <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
             </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
@@ -58,7 +58,7 @@ export function SearchableSelect({
                                 onValueChange(option.value);
                                 setOpen(false);
                             }}>
-                                <Check className={`mr-2 size-4 ${option.value === value ? 'opacity-100' : 'opacity-0'}`} />
+                                <Check className={`size-4 ${option.value === value ? 'opacity-100' : 'opacity-0'}`} />
                                 {option.label}
                             </CommandItem>
                         ))}

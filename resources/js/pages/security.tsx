@@ -1,5 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import { useRef } from 'react';
+import { useCooldown } from '@/hooks/use-cooldown';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import ManageTwoFactor, {
     type Props as ManageTwoFactorProps,
@@ -12,18 +13,27 @@ import { PublicLayout } from '@/layouts/public-layout';
 import { edit } from '@/routes/security';
 import { request as requestPasswordReset } from '@/routes/user-password';
 
-type Props = { passwordRules: string; hasLocalPassword: boolean; passwordResetEmail: string } & ManageTwoFactorProps;
+type Props = {
+    passwordRules: string;
+    hasLocalPassword: boolean;
+    passwordResetEmail: string;
+} & ManageTwoFactorProps;
 
 export default function Security(props: Props) {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
+
+    const storageKey = props.passwordResetEmail
+        ? `cooldown_local_pwd_${props.passwordResetEmail}`
+        : 'cooldown_local_pwd';
+    const { cooldown, startCooldown } = useCooldown(storageKey, 0, 60);
 
     return (
         <PublicLayout>
             <Head title="Keamanan Akun" />
             <main className="public-container max-w-3xl py-10">
                 <div className="mb-8 space-y-2">
-                    <p className="text-sm font-semibold text-primary dark:text-primary">
+                    <p className="text-primary dark:text-primary text-sm font-semibold">
                         Area Anggota
                     </p>
                     <h1 className="text-foreground text-3xl font-black tracking-tight">
@@ -41,87 +51,131 @@ export default function Security(props: Props) {
                                 Perbarui Kata Sandi
                             </h2>
                             <p className="text-muted-foreground text-sm">
-                                Gunakan kata sandi panjang dan acak untuk menjaga keamanan akun.
+                                Gunakan kata sandi panjang dan acak untuk
+                                menjaga keamanan akun.
                             </p>
                         </div>
 
-                        {props.hasLocalPassword ? <Form
-                            {...SecurityController.update.form()}
-                            options={{ preserveScroll: true }}
-                            resetOnError={[
-                                'password',
-                                'password_confirmation',
-                                'current_password',
-                            ]}
-                            resetOnSuccess
-                            onError={(errors) => {
-                                if (errors.password) {
-                                    passwordInput.current?.focus();
-                                }
+                        {props.hasLocalPassword ? (
+                            <Form
+                                {...SecurityController.update.form()}
+                                options={{ preserveScroll: true }}
+                                resetOnError={[
+                                    'password',
+                                    'password_confirmation',
+                                    'current_password',
+                                ]}
+                                resetOnSuccess
+                                onError={(errors) => {
+                                    if (errors.password) {
+                                        passwordInput.current?.focus();
+                                    }
 
-                                if (errors.current_password) {
-                                    currentPasswordInput.current?.focus();
-                                }
-                            }}
-                            className="space-y-6"
-                        >
-                            {({ errors, processing }) => (
-                                <>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="current_password">
-                                            Kata sandi saat ini
-                                        </Label>
-                                        <PasswordInput
-                                            id="current_password"
-                                            ref={currentPasswordInput}
-                                            name="current_password"
-                                            autoComplete="current-password"
-                                            placeholder="Kata sandi saat ini"
-                                        />
-                                        <InputError message={errors.current_password} />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="password">
-                                            Kata sandi baru
-                                        </Label>
-                                        <PasswordInput
-                                            id="password"
-                                            ref={passwordInput}
-                                            name="password"
-                                            autoComplete="new-password"
-                                            placeholder="Kata sandi baru"
-                                            passwordrules={props.passwordRules}
-                                        />
-                                        <InputError message={errors.password} />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="password_confirmation">
-                                            Konfirmasi kata sandi
-                                        </Label>
-                                        <PasswordInput
-                                            id="password_confirmation"
-                                            name="password_confirmation"
-                                            autoComplete="new-password"
-                                            placeholder="Konfirmasi kata sandi"
-                                            passwordrules={props.passwordRules}
-                                        />
-                                        <InputError message={errors.password_confirmation} />
-                                    </div>
-                                    <Button disabled={processing}>
-                                        {processing ? 'Menyimpan...' : 'Simpan kata sandi'}
-                                    </Button>
-                                </>
-                            )}
-                        </Form> : <Form {...requestPasswordReset.form()} options={{ preserveScroll: true }} className="space-y-4">
-                            {({ processing, errors }) => <>
-                                <p className="text-muted-foreground text-sm">Akun Anda menggunakan Google. Kirim tautan ke email terverifikasi untuk membuat password lokal.</p>
-                                <p className="text-muted-foreground text-sm">Email tujuan: {props.passwordResetEmail}</p>
-                                <InputError message={errors.request} />
-                                <Button disabled={processing} data-test="request-local-password-button">
-                                    {processing ? 'Mengirim tautan...' : 'Buat password lokal melalui email'}
-                                </Button>
-                            </>}
-                        </Form>}
+                                    if (errors.current_password) {
+                                        currentPasswordInput.current?.focus();
+                                    }
+                                }}
+                                className="space-y-6"
+                            >
+                                {({ errors, processing }) => (
+                                    <>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="current_password">
+                                                Kata sandi saat ini
+                                            </Label>
+                                            <PasswordInput
+                                                id="current_password"
+                                                ref={currentPasswordInput}
+                                                name="current_password"
+                                                autoComplete="current-password"
+                                                placeholder="Kata sandi saat ini"
+                                            />
+                                            <InputError
+                                                message={
+                                                    errors.current_password
+                                                }
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="password">
+                                                Kata sandi baru
+                                            </Label>
+                                            <PasswordInput
+                                                id="password"
+                                                ref={passwordInput}
+                                                name="password"
+                                                autoComplete="new-password"
+                                                placeholder="Kata sandi baru"
+                                                passwordrules={
+                                                    props.passwordRules
+                                                }
+                                            />
+                                            <InputError
+                                                message={errors.password}
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="password_confirmation">
+                                                Konfirmasi kata sandi
+                                            </Label>
+                                            <PasswordInput
+                                                id="password_confirmation"
+                                                name="password_confirmation"
+                                                autoComplete="new-password"
+                                                placeholder="Konfirmasi kata sandi"
+                                                passwordrules={
+                                                    props.passwordRules
+                                                }
+                                            />
+                                            <InputError
+                                                message={
+                                                    errors.password_confirmation
+                                                }
+                                            />
+                                        </div>
+                                        <Button disabled={processing}>
+                                            {processing
+                                                ? 'Menyimpan...'
+                                                : 'Simpan kata sandi'}
+                                        </Button>
+                                    </>
+                                )}
+                            </Form>
+                        ) : (
+                            <Form
+                                {...requestPasswordReset.form()}
+                                options={{ preserveScroll: true }}
+                                onSuccess={() => startCooldown(60)}
+                                className="space-y-4"
+                            >
+                                {({ processing, errors }) => (
+                                    <>
+                                        <p className="text-muted-foreground text-sm">
+                                            Akun Anda menggunakan Google. Kirim
+                                            tautan ke email terverifikasi untuk
+                                            membuat password lokal.
+                                        </p>
+                                        <p className="text-muted-foreground text-sm">
+                                            Email tujuan:{' '}
+                                            {props.passwordResetEmail}
+                                        </p>
+                                        <InputError message={errors.request} />
+                                        <Button
+                                            disabled={
+                                                processing || cooldown > 0
+                                            }
+                                            data-test="request-local-password-button"
+                                        >
+                                            {processing
+                                                ? 'Mengirim tautan...'
+                                                : cooldown > 0
+                                                  ? `Kirim ulang tautan (${cooldown}s)`
+                                                  : 'Buat password lokal melalui email'}
+                                        </Button>
+                                    </>
+                                )}
+                            </Form>
+                        )}
                     </section>
 
                     <ManageTwoFactor

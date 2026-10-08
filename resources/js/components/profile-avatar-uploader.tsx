@@ -62,8 +62,8 @@ export function ProfileAvatarUploader({ name, avatar }: { name: string; avatar?:
             )}
             <div className="flex flex-wrap gap-2">
                 <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) upload(file); }} />
-                <Button type="button" variant="outline" disabled={processing} onClick={() => inputRef.current?.click()}><Camera className="mr-2 size-4" />{processing ? 'Mengunggah...' : 'Ganti foto'}</Button>
-                {avatar && <Button type="button" variant="ghost" onClick={() => router.delete(destroyAvatar.url(), { preserveScroll: true })}><Trash2 className="mr-2 size-4" />Hapus</Button>}
+                <Button type="button" variant="outline" disabled={processing} onClick={() => inputRef.current?.click()}><Camera className="size-4" />{processing ? 'Mengunggah...' : 'Ganti foto'}</Button>
+                {avatar && <Button type="button" variant="ghost" onClick={() => router.delete(destroyAvatar.url(), { preserveScroll: true })}><Trash2 className="size-4" />Hapus</Button>}
                 {error && <p className="basis-full text-xs text-rose-500">{error}</p>}
             </div>
         </div>
