@@ -1,13 +1,13 @@
-import { PropsWithChildren, useEffect, useRef } from 'react';
-import { Link, usePage } from '@inertiajs/react';
-import { toast } from 'sonner';
-import { Navbar } from '@/components/navbar';
-import { WhatsappWidget } from '@/components/whatsapp-widget';
-import { useAppearance } from '@/hooks/use-appearance';
-import { useCurrentUrl } from '@/hooks/use-current-url';
-import { home } from '@/routes';
-import { index as lapanganIndex } from '@/routes/lapangan';
-import { Trophy, Phone, Mail, MapPin, Heart } from 'lucide-react';
+import { PropsWithChildren, useEffect, useRef } from "react";
+import { Link, usePage } from "@inertiajs/react";
+import { toast } from "sonner";
+import { Navbar } from "@/components/navbar";
+import { useAppearance } from "@/hooks/use-appearance";
+import { useCurrentUrl } from "@/hooks/use-current-url";
+import { home } from "@/routes";
+import { index as lapanganIndex } from "@/routes/lapangan";
+import { Trophy, Phone, Mail, MapPin, Heart } from "lucide-react";
+import { TawkToWidget } from '@/components/tawk-to-widget';
 
 export function PublicLayout({ children }: PropsWithChildren) {
     const { appearance, resolvedAppearance, updateAppearance } =
@@ -24,7 +24,7 @@ export function PublicLayout({ children }: PropsWithChildren) {
         flash?: { success?: string; error?: string; info?: string };
     }>();
     const flash = page.props.flash;
-    const appName = page.props.name ?? 'SportBooking';
+    const appName = page.props.name ?? "SportBooking";
     const contact = page.props.site?.contact;
     const { isCurrentUrl } = useCurrentUrl();
     const isLanding = isCurrentUrl(home.url());
@@ -34,7 +34,7 @@ export function PublicLayout({ children }: PropsWithChildren) {
     const lastInfoRef = useRef<string | null>(null);
 
     useEffect(() => {
-        if (appearance === 'system') {
+        if (appearance === "system") {
             updateAppearance(resolvedAppearance);
         }
     }, [appearance, resolvedAppearance, updateAppearance]);
@@ -65,20 +65,17 @@ export function PublicLayout({ children }: PropsWithChildren) {
     }, [flash?.success, flash?.error, flash?.info]);
 
     return (
-        <div className="public-shell bg-background text-foreground selection:bg-primary selection:text-primary-foreground flex min-h-screen flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 print:min-h-0 print:bg-white print:p-0 print:text-black">
+        <div className="public-shell bg-background text-foreground selection:bg-primary selection:text-primary-foreground flex min-h-screen flex-col print:min-h-0 print:bg-white print:p-0 print:text-black">
             <div className="print:hidden">
                 <Navbar />
             </div>
 
             <main
-                className={`flex-1 ${isLanding ? '' : 'pt-14 sm:pt-16'} print:flex-initial print:p-0`}
+                className={`flex-1 ${isLanding ? "" : "pt-14 sm:pt-16"} print:flex-initial print:p-0`}
             >
                 {children}
+                <TawkToWidget />
             </main>
-
-            <div className="print:hidden">
-                <WhatsappWidget />
-            </div>
 
             {/* Modern Sports Footer */}
             <footer className="border-border/60 bg-muted/30 border-t pt-12 pb-8 print:hidden">
@@ -176,8 +173,8 @@ export function PublicLayout({ children }: PropsWithChildren) {
                             reserved.
                         </p>
                         <p className="flex items-center gap-1">
-                            Dirancang dengan{' '}
-                            <Heart className="size-3 fill-rose-500 text-rose-500" />{' '}
+                            Dirancang dengan{" "}
+                            <Heart className="size-3 fill-rose-500 text-rose-500" />{" "}
                             untuk pecinta olahraga.
                         </p>
                     </div>

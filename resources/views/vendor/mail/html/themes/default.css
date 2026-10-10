@@ -10,8 +10,8 @@ body *:not(html):not(style):not(br):not(tr):not(code) {
 
 body {
     -webkit-text-size-adjust: none;
-    background-color: #f6f8f7;
-    color: #25332f;
+    background-color: #fafaf9;
+    color: #292524;
     height: 100%;
     line-height: 1.4;
     margin: 0;
@@ -28,7 +28,7 @@ blockquote {
 }
 
 a {
-    color: #087f5b;
+    color: #006b2a;
 }
 
 a img {
@@ -80,7 +80,7 @@ img {
     -premailer-cellpadding: 0;
     -premailer-cellspacing: 0;
     -premailer-width: 100%;
-    background-color: #f6f8f7;
+    background-color: #fafaf9;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -103,7 +103,7 @@ img {
 }
 
 .header a {
-    color: #173b31;
+    color: #153b25;
     font-size: 18px;
     font-weight: bold;
     text-decoration: none;
@@ -138,9 +138,9 @@ img {
     -premailer-cellpadding: 0;
     -premailer-cellspacing: 0;
     -premailer-width: 100%;
-    background-color: #f6f8f7;
-    border-bottom: 1px solid #f6f8f7;
-    border-top: 1px solid #f6f8f7;
+    background-color: #fafaf9;
+    border-bottom: 1px solid #fafaf9;
+    border-top: 1px solid #fafaf9;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -151,10 +151,10 @@ img {
     -premailer-cellspacing: 0;
     -premailer-width: 570px;
     background-color: #ffffff;
-    border-color: #dce8e3;
+    border-color: #e7e5e4;
     border-radius: 14px;
     border-width: 1px;
-    box-shadow: 0 8px 24px rgba(23, 59, 49, 0.07);
+    box-shadow: 0 8px 24px rgba(21, 59, 37, 0.07);
     margin: 0 auto;
     padding: 0;
     width: 570px;
@@ -252,11 +252,12 @@ img {
 
 .button-blue,
 .button-primary {
-    background-color: #087f5b;
-    border-bottom: 10px solid #087f5b;
-    border-left: 22px solid #087f5b;
-    border-right: 22px solid #087f5b;
-    border-top: 10px solid #087f5b;
+    background-color: #008b52;
+    border-bottom: 10px solid #008b52;
+    border-left: 22px solid #008b52;
+    border-right: 22px solid #008b52;
+    border-top: 10px solid #008b52;
+    color: #ffffff;
 }
 
 .button-green,
@@ -280,13 +281,13 @@ img {
 /* Panels */
 
 .panel {
-    border-left: #8bc9ad solid 4px;
+    border-left: #008b52 solid 4px;
     margin: 21px 0;
 }
 
 .panel-content {
-    background-color: #f0f8f4;
-    color: #25332f;
+    background-color: #f0fdf4;
+    color: #153b25;
     padding: 16px;
 }
 
