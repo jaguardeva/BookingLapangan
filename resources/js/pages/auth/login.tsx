@@ -59,7 +59,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                     tabIndex={1}
                                     autoComplete="email"
                                     className="h-11 rounded-lg bg-background"
-                                    placeholder="nama@email.com"
+                                    placeholder="Masukkan alamat email"
                                 />
                                 <InputError message={errors.email} />
                             </div>

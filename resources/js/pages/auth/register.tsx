@@ -42,7 +42,7 @@ export default function Register({ passwordRules }: Props) {
                                     autoComplete="name"
                                     name="name"
                                     className="h-11 rounded-lg bg-background"
-                                    placeholder="Nama lengkap Anda"
+                                    placeholder="Nama lengkap"
                                 />
                                 <InputError
                                     message={errors.name}
@@ -59,7 +59,7 @@ export default function Register({ passwordRules }: Props) {
                                     autoComplete="email"
                                     name="email"
                                     className="h-11 rounded-lg bg-background"
-                                    placeholder="anda@contoh.com"
+                                    placeholder="Masukkan alamat email"
                                 />
                                 <InputError message={errors.email} />
                             </div>
@@ -75,7 +75,7 @@ export default function Register({ passwordRules }: Props) {
                                     value={password}
                                     onChange={(event) => setPassword(event.target.value)}
                                     className="h-11 rounded-lg bg-background"
-                                    placeholder="Buat kata sandi"
+                                    placeholder="Buat kata sandi yang kuat"
                                     passwordrules={passwordRules}
                                 />
                                 <PasswordRequirements password={password} />
