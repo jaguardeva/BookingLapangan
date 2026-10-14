@@ -1,6 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import {
     Plus,
     Edit2,
@@ -127,7 +127,7 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Kelola Admin Kasir - Superadmin" />
 
             <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
@@ -465,6 +465,6 @@ export default function AdminAdminsIndex({ admins, lapangans = [] }: Props) {
                 icon={Trash2}
                 onConfirm={confirmDelete}
             />
-        </AppLayout>
+        </AdminLayout>
     );
 }

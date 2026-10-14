@@ -11,11 +11,13 @@ use App\Notifications\BookingCreatedDatabaseNotification;
 use App\Notifications\BookingCreatedNotification;
 use App\Notifications\CashBookingCreatedNotification;
 use App\Notifications\PaymentProofSubmittedNotification;
+use App\Services\CouponService;
 use App\Support\Pagination;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -52,7 +54,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, CouponService $couponService): RedirectResponse
     {
         $validated = $request->validate([
             'lapangan_id' => ['required', 'exists:lapangans,id'],
@@ -72,6 +74,7 @@ class BookingController extends Controller
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:20'],
             'notes' => ['nullable', 'string', 'max:500'],
+            'coupon_code' => ['nullable', 'string', 'max:50'],
         ]);
 
         $bookingDate = Carbon::parse($validated['booking_date'])->startOfDay();
@@ -121,7 +124,9 @@ class BookingController extends Controller
         }
 
         // Concurrency-safe Booking Creation inside DB Transaction
-        $booking = DB::transaction(function () use ($lapangan, $validated, $bookingDate, $startTimeStr, $endTimeStr, $durationHours, $startCarbon) {
+        $booking = DB::transaction(function () use ($lapangan, $validated, $bookingDate, $startTimeStr, $endTimeStr, $durationHours, $startCarbon, $couponService) {
+            Lapangan::query()->whereKey($lapangan->id)->lockForUpdate()->firstOrFail();
+
             // 3. Collision check: lock and check overlapping slots
             $conflict = Booking::where('lapangan_id', $lapangan->id)
                 ->whereDate('booking_date', $bookingDate->format('Y-m-d'))
@@ -131,26 +136,29 @@ class BookingController extends Controller
                         ->where('end_time', '>', $startTimeStr);
                 })
                 ->lockForUpdate()
-                ->exists();
+                ->first(['membership_id', 'booking_source']);
 
-            if ($conflict) {
+            if ($conflict !== null) {
                 throw ValidationException::withMessages([
-                    'start_time' => 'Slot waktu yang Anda pilih sudah terisi atau baru saja dibooking pengguna lain. Silakan pilih jam lain.',
+                    'start_time' => $conflict->membership_id !== null || $conflict->booking_source === 'membership'
+                        ? 'Slot ini sedang dicadangkan untuk jadwal membership. Silakan pilih jam lain.'
+                        : 'Slot waktu yang Anda pilih sudah terisi atau baru saja dibooking pengguna lain. Silakan pilih jam lain.',
                 ]);
             }
 
             $basePrice = $lapangan->price_per_hour * $durationHours;
+            $user = User::query()->lockForUpdate()->findOrFail(auth()->id());
+            $couponData = $couponService->resolve($validated['coupon_code'] ?? null, $user, $basePrice);
             $validationCode = 0;
-            $totalPrice = $basePrice;
+            $totalPrice = $basePrice - $couponData['discount'];
             $pointsRedeemed = 0;
 
             if ($validated['payment_method'] === 'transfer') {
                 $validationCode = Booking::generateValidationCode();
-                $user = User::query()->lockForUpdate()->findOrFail(auth()->id());
                 $pointsRedeemed = $validated['use_points']
-                    ? min($user->availablePoints(), $basePrice)
+                    ? min($user->availablePoints(), $totalPrice)
                     : 0;
-                $totalPrice = $basePrice - $pointsRedeemed + $validationCode;
+                $totalPrice = $totalPrice - $pointsRedeemed + $validationCode;
             }
 
             // Payment deadline: 2 hours from now or at start of match if match is within 2 hours
@@ -159,7 +167,7 @@ class BookingController extends Controller
                 $deadline = $startCarbon;
             }
 
-            return Booking::create([
+            $booking = Booking::create([
                 'booking_code' => Booking::generateBookingCode(),
                 'user_id' => auth()->id(),
                 'lapangan_id' => $lapangan->id,
@@ -168,6 +176,8 @@ class BookingController extends Controller
                 'end_time' => $endTimeStr,
                 'duration_hours' => $durationHours,
                 'base_price' => $basePrice,
+                'coupon_id' => $couponData['coupon']?->id,
+                'discount_amount' => $couponData['discount'],
                 'validation_code' => $validationCode,
                 'total_price' => $totalPrice,
                 'points_redeemed' => $pointsRedeemed,
@@ -178,6 +188,12 @@ class BookingController extends Controller
                 'notes' => $validated['notes'] ?? null,
                 'payment_deadline' => $deadline,
             ]);
+
+            if ($couponData['coupon'] !== null) {
+                $couponService->reserve($couponData['coupon'], $user, $booking, $couponData['discount']);
+            }
+
+            return $booking;
         });
 
         // Send notification to customer
@@ -207,7 +223,15 @@ class BookingController extends Controller
 
     public function show(string $booking_code): Response
     {
-        $booking = Booking::where('booking_code', $booking_code)
+        $query = Booking::query();
+
+        if (Str::isUuid($booking_code)) {
+            $query->where('id', $booking_code);
+        } else {
+            $query->where('booking_code', $booking_code);
+        }
+
+        $booking = $query
             ->with(['lapangan.category', 'lapangan.facilities', 'user', 'validator'])
             ->firstOrFail();
 
@@ -229,9 +253,15 @@ class BookingController extends Controller
 
     public function submitPayment(Request $request, string $booking_code): RedirectResponse
     {
-        $booking = Booking::where('booking_code', $booking_code)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
+        $query = Booking::where('user_id', auth()->id());
+
+        if (Str::isUuid($booking_code)) {
+            $query->where('id', $booking_code);
+        } else {
+            $query->where('booking_code', $booking_code);
+        }
+
+        $booking = $query->firstOrFail();
 
         if ($booking->payment_status !== 'pending') {
             return back()->with('error', 'Status pembayaran booking ini tidak dalam status menunggu pembayaran.');
@@ -262,9 +292,15 @@ class BookingController extends Controller
 
     public function cancel(Request $request, string $booking_code): RedirectResponse
     {
-        $booking = Booking::where('booking_code', $booking_code)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
+        $query = Booking::where('user_id', auth()->id());
+
+        if (Str::isUuid($booking_code)) {
+            $query->where('id', $booking_code);
+        } else {
+            $query->where('booking_code', $booking_code);
+        }
+
+        $booking = $query->firstOrFail();
 
         // Check if user is allowed to cancel (must be >= 24h before play)
         if (! $booking->canBeCancelledByUser()) {
@@ -277,6 +313,8 @@ class BookingController extends Controller
             'rejection_reason' => 'Dibatalkan oleh pengguna.',
         ]);
 
+        app(CouponService::class)->releaseForBooking($booking);
+
         ActivityLog::log('booking_cancelled', "Booking #{$booking->booking_code} dibatalkan oleh pengguna", [
             'booking_id' => $booking->id,
         ]);
@@ -286,12 +324,45 @@ class BookingController extends Controller
 
     public function history(Request $request): Response
     {
-        $query = Booking::where('user_id', auth()->id())
-            ->with(['lapangan.category', 'review'])
+        $userId = auth()->id();
+        $driver = DB::connection()->getDriverName();
+        $minIdExpr = $driver === 'pgsql' ? 'MIN(id::text)::uuid' : 'MIN(id)';
+
+        $query = Booking::where('user_id', $userId)
+            ->where(function ($q) use ($userId, $minIdExpr, $request) {
+                $q->whereNull('membership_id')
+                    ->orWhereIn('id', function ($sub) use ($userId, $minIdExpr, $request) {
+                        $sub->selectRaw($minIdExpr)
+                            ->from('bookings')
+                            ->where('user_id', $userId)
+                            ->whereNotNull('membership_id');
+
+                        if ($request->filled('status') && $request->status !== 'all') {
+                            $sub->where('payment_status', $request->status);
+                        }
+
+                        $sub->groupBy('membership_id');
+                    });
+            })
+            ->with([
+                'lapangan.category',
+                'review',
+                'membership.reservations.lapangan.category',
+                'membership.bookings.lapangan.category',
+                'membership.bookings.review',
+            ])
             ->latest();
 
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('payment_status', $request->status);
+        }
+
+        if ($request->filled('type') && $request->type !== 'all') {
+            if ($request->type === 'membership') {
+                $query->whereNotNull('membership_id');
+            } elseif ($request->type === 'regular') {
+                $query->whereNull('membership_id');
+            }
         }
 
         $bookings = $query->paginate(Pagination::perPage($request, 10))->withQueryString();
@@ -299,6 +370,7 @@ class BookingController extends Controller
         return Inertia::render('booking/history', [
             'bookings' => $bookings,
             'currentStatus' => $request->query('status', 'all'),
+            'currentType' => $request->query('type', 'all'),
         ]);
     }
 }

@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { checkout as bookingCheckout } from '@/routes/booking';
+import MembershipController from '@/actions/App/Http/Controllers/MembershipController';
 import type { Lapangan, Booking } from '@/types/booking';
 import type { User as AuthUser } from '@/types/auth';
 import { formatTimeIndonesia } from '@/lib/locale';
@@ -185,9 +186,8 @@ export default function LapanganShow({
         return () => window.clearInterval(interval);
     }, []);
 
-    // Check if slot is booked in database
-    const isSlotBooked = (start: string, end: string) => {
-        return existingBookings.some((b) => {
+    const findBookingForSlot = (start: string, end: string) => {
+        return existingBookings.find((b) => {
             const bDate =
                 typeof b.booking_date === 'string'
                     ? b.booking_date.split('T')[0].split(' ')[0]
@@ -197,10 +197,13 @@ export default function LapanganShow({
             const bStart = b.start_time ? b.start_time.substring(0, 5) : '';
             const bEnd = b.end_time ? b.end_time.substring(0, 5) : '';
 
-            // Overlap check
             return bStart < end && bEnd > start;
         });
     };
+
+    // Check if slot is booked in database
+    const isSlotBooked = (start: string, end: string) =>
+        findBookingForSlot(start, end) !== undefined;
 
     // Check if slot is in past today
     const isSlotPast = (start: string) => {
@@ -597,11 +600,11 @@ export default function LapanganShow({
                                         <button
                                             type="button"
                                             onClick={() => setSelectedSlots([])}
-                                            className="text-muted-foreground hover:bg-primary/10 hover:text-primary focus-visible:ring-primary inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                                            className="border-border bg-background text-foreground hover:border-primary hover:bg-primary/10 hover:text-primary focus-visible:ring-primary inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                             aria-label="Reset pilihan jam"
                                         >
                                             <RotateCcw className="size-3" />
-                                            Reset jam
+                                            Reset waktu
                                         </button>
                                     )}
                                 </div>
@@ -619,10 +622,12 @@ export default function LapanganShow({
 
                                 <div className="grid grid-cols-2 gap-2 pr-1">
                                     {hourlySlots.map((slot) => {
-                                        const booked = isSlotBooked(
+                                        const booking = findBookingForSlot(
                                             slot.start,
                                             slot.end,
                                         );
+                                        const booked = booking !== undefined;
+                                        const memberReserved = booking?.is_membership === true;
                                         const past = isSlotPast(slot.start);
                                         if (past) return null;
                                         const selected = selectedSlots.includes(
@@ -667,7 +672,7 @@ export default function LapanganShow({
                                                     <Check className="size-3.5 stroke-[3]" />
                                                 ) : booked ? (
                                                     <span className="text-xs font-bold tracking-tight text-rose-500 uppercase">
-                                                        Terisi
+                                                        {memberReserved ? 'Jadwal member' : 'Terisi'}
                                                     </span>
                                                 ) : past ? (
                                                     <span className="text-muted-foreground text-xs font-bold tracking-tight uppercase">
@@ -678,6 +683,10 @@ export default function LapanganShow({
                                         );
                                     })}
                                 </div>
+
+                                <p className="text-muted-foreground text-[11px]">
+                                    Slot bertanda Jadwal member dicadangkan untuk jadwal rutin member dan tidak dapat dibooking harian.
+                                </p>
 
                                 {/* Slot Legend */}
                                 <div className="text-muted-foreground border-border/60 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-t pt-3 text-[11px]">
@@ -692,6 +701,10 @@ export default function LapanganShow({
                                     <div className="flex items-center gap-1.5">
                                         <div className="bg-muted/80 size-2.5 rounded" />
                                         <span>Terisi / Lewat</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="bg-rose-100 size-2.5 rounded dark:bg-rose-950" />
+                                        <span>Jadwal member</span>
                                     </div>
                                 </div>
                             </div>
@@ -722,6 +735,35 @@ export default function LapanganShow({
                             )}
 
                             {/* Action Button */}
+                            <div className="border-primary/20 bg-primary/5 rounded-xl border p-3.5">
+                                <p className="text-foreground text-sm font-bold">
+                                    Ingin jadwal rutin?
+                                </p>
+                                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                                    Daftar membership untuk mengunci jadwal bermain selama 30 hari.
+                                </p>
+                                {currentUser ? (
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        className="border-primary/40 text-primary hover:bg-primary/10 mt-3 h-10 w-full rounded-xl font-bold"
+                                    >
+                                        <Link href={MembershipController.checkout.url(lapangan.slug)}>
+                                            Daftar Membership
+                                            <ArrowRight className="size-4" aria-hidden="true" />
+                                        </Link>
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        className="border-primary/40 text-primary hover:bg-primary/10 mt-3 h-10 w-full rounded-xl font-bold"
+                                    >
+                                        <Link href="/login">Masuk untuk Membership</Link>
+                                    </Button>
+                                )}
+                            </div>
+
                             {currentUser ? (
                                 <Button
                                     type="button"

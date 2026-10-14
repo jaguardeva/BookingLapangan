@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import {
     CalendarCheck,
     DollarSign,
@@ -72,7 +72,7 @@ export default function AdminDashboard({
     const totalPaymentsCount = (paymentDistribution.transfer + paymentDistribution.cash) || 1;
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard Analytics" />
 
             <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
@@ -88,13 +88,13 @@ export default function AdminDashboard({
                         </p>
                     </div>
 
-                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                        <Button asChild size="sm" className="h-9 w-full rounded-xl bg-primary text-xs text-primary-foreground shadow-sm hover:bg-primary/90 sm:w-auto">
+                    <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                        <Button asChild size="default" className="h-11 w-full min-w-52 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 sm:w-auto">
                             <Link href="/admin/bookings">
                                 Validasi Pembayaran ({stats.pending_validation})
                             </Link>
                         </Button>
-                        <Button asChild size="sm" variant="outline" className="h-9 w-full rounded-xl text-xs sm:w-auto">
+                        <Button asChild size="default" variant="outline" className="h-11 w-full min-w-40 rounded-xl px-5 text-sm font-semibold sm:w-auto">
                             <Link href="/admin/bookings?manual=1">
                                 Booking Manual
                             </Link>
@@ -455,6 +455,6 @@ export default function AdminDashboard({
                     </div>
                 </div>
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }

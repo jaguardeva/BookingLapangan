@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import { Search, CheckCircle2, XCircle, Eye, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ResetFilterButton } from '@/components/reset-filter-button';
@@ -121,8 +121,15 @@ export default function AdminBookingsIndex({
             <Badge className="bg-sky-600 text-white">Menunggu Bayar</Badge>
         );
 
+    const isMembershipBooking = (booking: Booking) =>
+        Boolean(
+            booking.is_membership ||
+                booking.membership_id ||
+                booking.booking_source === 'membership',
+        );
+
     return (
-        <AppLayout
+        <AdminLayout
             breadcrumbs={[
                 { title: 'Admin Workspace', href: '/admin' },
                 { title: 'Validasi & Booking', href: '/admin/bookings' },
@@ -236,6 +243,7 @@ export default function AdminBookingsIndex({
                             <tr>
                                 {[
                                     'Kode Booking',
+                                    'Sumber',
                                     'Lapangan',
                                     'Pemesan',
                                     'Jadwal Main',
@@ -253,7 +261,7 @@ export default function AdminBookingsIndex({
                             {bookings.data.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={7}
+                                        colSpan={8}
                                         className="text-muted-foreground py-12 text-center"
                                     >
                                         Tidak ada data booking.
@@ -276,6 +284,13 @@ export default function AdminBookingsIndex({
                                             <span className="text-muted-foreground block uppercase">
                                                 {booking.payment_method}
                                             </span>
+                                        </td>
+                                        <td className="px-4 py-3.5">
+                                            {isMembershipBooking(booking) ? (
+                                                <Badge variant="secondary">Membership</Badge>
+                                            ) : (
+                                                <Badge variant="outline">Booking harian</Badge>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3.5">
                                             <p className="font-semibold">
@@ -330,7 +345,11 @@ export default function AdminBookingsIndex({
                                                         <Eye className="size-4" />
                                                     </Link>
                                                 </Button>
-                                                {(booking.payment_status ===
+                                                {isMembershipBooking(booking) ? (
+                                                    <span className="text-muted-foreground max-w-28 text-center text-[11px] leading-tight">
+                                                        Kelola di Membership
+                                                    </span>
+                                                ) : (booking.payment_status ===
                                                     'pending' ||
                                                     booking.payment_status ===
                                                         'pending_validation') && (
@@ -426,6 +445,6 @@ export default function AdminBookingsIndex({
                     </form>
                 </DialogContent>
             </Dialog>
-        </AppLayout>
+        </AdminLayout>
     );
 }

@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import { Pagination } from '@/components/pagination';
 import { History, Shield, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -53,7 +53,7 @@ export default function AdminLogsIndex({ logs }: Props) {
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Audit Log Aktivitas - Superadmin" />
 
             <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
@@ -159,6 +159,6 @@ export default function AdminLogsIndex({ logs }: Props) {
                     className="mt-2"
                 />
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }

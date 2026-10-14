@@ -4,8 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\ActivityLog;
 use App\Models\BankAccount;
+use App\Models\Banner;
 use App\Models\Booking;
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\Facility;
 use App\Models\Lapangan;
 use App\Models\Review;
@@ -244,6 +246,30 @@ class DatabaseSeeder extends Seeder
                 'account_name' => 'PT ARENA OLAHRAGA INDONESIA',
                 'is_active' => true,
             ]
+        );
+
+        // 8. Membership and marketing defaults
+        Coupon::firstOrCreate(
+            ['code' => 'SPORTIFY10'],
+            [
+                'discount_type' => 'percentage',
+                'discount_value' => 10,
+                'minimum_order_amount' => 100000,
+                'maximum_discount_amount' => 50000,
+                'is_active' => true,
+            ],
+        );
+
+        Banner::firstOrCreate(
+            ['title' => 'Booking Lapangan Lebih Mudah'],
+            [
+                'body' => 'Pilih lapangan, tentukan waktu, dan ajak tim Anda bermain bersama Sportify.',
+                'image_path' => 'https://images.unsplash.com/photo-1518604666860-9ed391f76460?auto=format&fit=crop&w=1400&q=85',
+                'alt_text' => 'Lapangan olahraga Sportify',
+                'placement' => 'home',
+                'sort_order' => 1,
+                'is_active' => true,
+            ],
         );
 
         BankAccount::firstOrCreate(

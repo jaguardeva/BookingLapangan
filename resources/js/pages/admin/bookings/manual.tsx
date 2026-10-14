@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import {
     CalendarPlus,
     Check,
@@ -263,7 +263,7 @@ export default function AdminManualBooking({ lapangans }: Props) {
     };
 
     return (
-        <AppLayout
+        <AdminLayout
             breadcrumbs={[
                 { title: 'Admin Workspace', href: '/admin' },
                 { title: 'Validasi & Booking', href: bookingsIndex.url() },
@@ -752,6 +752,6 @@ export default function AdminManualBooking({ lapangans }: Props) {
                     </div>
                 </form>
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }

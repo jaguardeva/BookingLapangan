@@ -13,6 +13,7 @@ use App\Notifications\PaymentApprovedDatabaseNotification;
 use App\Notifications\PaymentApprovedNotification;
 use App\Notifications\PaymentRejectedDatabaseNotification;
 use App\Notifications\PaymentRejectedNotification;
+use App\Services\CouponService;
 use App\Support\Pagination;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -208,6 +209,12 @@ class BookingManagementController extends Controller
             abort(403, 'Anda tidak memiliki hak akses untuk memvalidasi lapangan ini.');
         }
 
+        if ($booking->membership_id !== null || $booking->booking_source === 'membership') {
+            throw ValidationException::withMessages([
+                'booking' => 'Booking membership dikelola melalui halaman Membership.',
+            ]);
+        }
+
         $approvedBooking = DB::transaction(function () use ($booking, $user): ?Booking {
             $lockedBooking = Booking::query()
                 ->lockForUpdate()
@@ -270,6 +277,13 @@ class BookingManagementController extends Controller
                 'rejection_reason' => null,
             ]);
 
+            if ($lockedBooking->coupon_id !== null) {
+                $redemption = $lockedBooking->load('coupon')->coupon?->redemptions()->whereBelongsTo($lockedBooking)->first();
+                if ($redemption !== null) {
+                    app(CouponService::class)->consume($redemption);
+                }
+            }
+
             return $lockedBooking;
         });
 
@@ -299,6 +313,12 @@ class BookingManagementController extends Controller
             abort(403, 'Anda tidak memiliki hak akses untuk memvalidasi lapangan ini.');
         }
 
+        if ($booking->membership_id !== null || $booking->booking_source === 'membership') {
+            throw ValidationException::withMessages([
+                'booking' => 'Booking membership dikelola melalui halaman Membership.',
+            ]);
+        }
+
         $validated = $request->validate([
             'reason' => ['required', 'string', 'max:500'],
         ]);
@@ -309,6 +329,8 @@ class BookingManagementController extends Controller
             'validated_by' => $user->id,
             'validated_at' => now(),
         ]);
+
+        app(CouponService::class)->releaseForBooking($booking);
 
         // Send notification to customer
         if ($booking->user) {

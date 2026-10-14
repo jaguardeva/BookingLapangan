@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, Mail, MapPin, Phone, Wallet, XCircle } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ export default function UserShow({ user, summary, latestReview, avatarUrl }: { u
     const initials = useInitials();
     const avatar = avatarUrl ?? undefined;
     const [previewOpen, setPreviewOpen] = useState(false);
-    return <AppLayout breadcrumbs={[{ title: 'Kelola Pengguna', href: usersIndex() }, { title: user.name, href: '#' }]}> 
+    return <AdminLayout breadcrumbs={[{ title: 'Kelola Pengguna', href: usersIndex() }, { title: user.name, href: '#' }]}>
         <Head title={`Detail ${user.name}`} />
         <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3"><div><Link href={usersIndex()} className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> Kembali</Link><h1 className="text-2xl font-bold">Detail Pengguna</h1></div><Button asChild variant="outline"><Link href={usersIndex()}>Kelola akun</Link></Button></div>
@@ -33,7 +33,7 @@ export default function UserShow({ user, summary, latestReview, avatarUrl }: { u
             {user.role === 'admin' && <section className="rounded-2xl border border-border/80 bg-card p-5"><h2 className="mb-3 text-lg font-bold">Lapangan ditugaskan</h2><p className="text-sm text-muted-foreground">{user.assigned_lapangans?.map((lapangan) => lapangan.name).join(', ') || 'Belum ada lapangan ditugaskan.'}</p></section>}
         </div>
         <ProfileAvatarPreview open={previewOpen} imageUrl={avatarUrl ?? null} name={user.name} onOpenChange={setPreviewOpen} />
-    </AppLayout>;
+    </AdminLayout>;
 }
 
 function Info({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string | null }) { return <div className="flex items-center gap-3"><span className="text-muted-foreground">{icon}</span><span className="w-32 text-muted-foreground">{label}</span><span>{value || '-'}</span></div>; }

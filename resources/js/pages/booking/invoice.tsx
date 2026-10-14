@@ -345,6 +345,16 @@ export default function BookingInvoice({
                                 </div>
                             )}
 
+                            {booking.discount_amount > 0 && (
+                                <div className="flex justify-between font-medium text-primary dark:text-primary">
+                                    <span>Diskon Kupon</span>
+                                    <span>
+                                        - Rp{' '}
+                                        {Number(booking.discount_amount).toLocaleString('id-ID')}
+                                    </span>
+                                </div>
+                            )}
+
                             {booking.points_redeemed > 0 && (
                                 <div className="flex justify-between font-medium text-primary dark:text-primary">
                                     <span>Poin Digunakan</span>

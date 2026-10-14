@@ -1,6 +1,5 @@
-import { PropsWithChildren, useEffect, useRef } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import { Link, usePage } from "@inertiajs/react";
-import { toast } from "sonner";
 import { Navbar } from "@/components/navbar";
 import { useAppearance } from "@/hooks/use-appearance";
 import { useCurrentUrl } from "@/hooks/use-current-url";
@@ -23,46 +22,16 @@ export function PublicLayout({ children }: PropsWithChildren) {
         };
         flash?: { success?: string; error?: string; info?: string };
     }>();
-    const flash = page.props.flash;
     const appName = page.props.name ?? "SportBooking";
     const contact = page.props.site?.contact;
     const { isCurrentUrl } = useCurrentUrl();
     const isLanding = isCurrentUrl(home.url());
-
-    const lastSuccessRef = useRef<string | null>(null);
-    const lastErrorRef = useRef<string | null>(null);
-    const lastInfoRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (appearance === "system") {
             updateAppearance(resolvedAppearance);
         }
     }, [appearance, resolvedAppearance, updateAppearance]);
-
-    useEffect(() => {
-        if (flash?.success && lastSuccessRef.current !== flash.success) {
-            lastSuccessRef.current = flash.success;
-            toast.success(flash.success, {
-                id: `flash-success-${flash.success}`,
-            });
-        } else if (!flash?.success) {
-            lastSuccessRef.current = null;
-        }
-
-        if (flash?.error && lastErrorRef.current !== flash.error) {
-            lastErrorRef.current = flash.error;
-            toast.error(flash.error, { id: `flash-error-${flash.error}` });
-        } else if (!flash?.error) {
-            lastErrorRef.current = null;
-        }
-
-        if (flash?.info && lastInfoRef.current !== flash.info) {
-            lastInfoRef.current = flash.info;
-            toast.info(flash.info, { id: `flash-info-${flash.info}` });
-        } else if (!flash?.info) {
-            lastInfoRef.current = null;
-        }
-    }, [flash?.success, flash?.error, flash?.info]);
 
     return (
         <div className="public-shell bg-background text-foreground selection:bg-primary selection:text-primary-foreground flex min-h-screen flex-col print:min-h-0 print:bg-white print:p-0 print:text-black">

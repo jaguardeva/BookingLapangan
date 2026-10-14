@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Booking;
 use App\Notifications\BookingReminderDatabaseNotification;
 use App\Notifications\BookingReminderNotification;
+use App\Services\CouponService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -42,6 +43,7 @@ class ProcessBookingStatus extends Command
                 'cancelled_at' => $now,
                 'rejection_reason' => 'Otomatis dibatalkan sistem karena melewati batas waktu pembayaran.',
             ]);
+            app(CouponService::class)->releaseForBooking($booking);
             $this->info("Booking #{$booking->booking_code} otomatis dibatalkan (expired deadline).");
         }
 

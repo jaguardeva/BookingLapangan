@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\InternalRedirect;
 use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -39,7 +40,7 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function markAsRead(string $id): RedirectResponse
+    public function markAsRead(Request $request, string $id): RedirectResponse
     {
         $notification = auth()->user()
             ->notifications()
@@ -48,7 +49,12 @@ class NotificationController extends Controller
 
         $notification->markAsRead();
 
-        return back();
+        $redirectPath = InternalRedirect::path(
+            $request->input('redirect'),
+            route('notification.index', absolute: false),
+        );
+
+        return redirect()->to($redirectPath);
     }
 
     public function markAllAsRead(): RedirectResponse

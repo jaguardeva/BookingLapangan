@@ -45,6 +45,42 @@ export type BankAccount = {
     is_active: boolean;
 };
 
+export type Banner = {
+    id: string;
+    title: string;
+    body?: string | null;
+    image_url: string;
+    alt_text?: string | null;
+    link_url?: string | null;
+};
+
+export type Membership = {
+    id: string;
+    amount: number;
+    subtotal?: number;
+    reservation_month?: string | null;
+    reservation_start_date?: string | null;
+    discount_value?: number;
+    discount_amount?: number;
+    status: 'pending' | 'active' | 'expired' | 'rejected' | 'cancelled';
+    payment_status: 'pending' | 'pending_validation' | 'approved' | 'rejected' | 'cancelled';
+    validation_code: number;
+    payment_deadline?: string | null;
+    payment_method?: 'transfer' | string;
+    user_submitted_code?: number | null;
+    starts_at?: string | null;
+    ends_at?: string | null;
+    renewal_notified_at?: string | null;
+    rejection_reason?: string | null;
+    created_at?: string;
+    updated_at?: string;
+    user?: User;
+    validator?: User;
+    reservations?: Array<{ id: string; weekday: number; start_time: string; end_time: string; duration_hours: number; price_per_occurrence: number; occurrence_count?: number; lapangan?: Lapangan }>;
+    bookings_count?: number;
+    bookings?: Booking[];
+};
+
 export type BookingStatus =
     | 'pending'
     | 'pending_validation'
@@ -62,6 +98,7 @@ export type Booking = {
     end_time: string;
     duration_hours: number;
     base_price: number;
+    discount_amount: number;
     validation_code: number;
     total_price: number;
     points_redeemed: number;
@@ -76,6 +113,9 @@ export type Booking = {
     validated_by?: number | null;
     validated_at?: string | null;
     payment_deadline: string;
+    booking_source?: 'daily' | 'membership' | string | null;
+    membership_id?: string | null;
+    is_membership?: boolean;
     cancelled_at?: string | null;
     created_at: string;
     updated_at: string;
@@ -83,6 +123,7 @@ export type Booking = {
     user?: User;
     validator?: User;
     review?: Review;
+    membership?: Membership;
 };
 
 export type Review = {

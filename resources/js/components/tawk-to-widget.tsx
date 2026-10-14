@@ -6,13 +6,24 @@ const tawkWidgetId = import.meta.env.VITE_TAWKTO_WIDGET_ID;
 const isTawkEnabled = import.meta.env.VITE_TAWKTO_ENABLED === 'true';
 
 let tawkLoadPromise: Promise<void> | null = null;
+let activePublicLayoutCount = 0;
+
+function setTawkWidgetVisibility(isVisible: boolean): void {
+    const visibilityMethod = isVisible
+        ? window.Tawk_API?.showWidget
+        : window.Tawk_API?.hideWidget;
+
+    if (typeof visibilityMethod === 'function') {
+        visibilityMethod.call(window.Tawk_API);
+    }
+}
 
 function loadTawkTo(): Promise<void> {
     if (!isTawkEnabled || !tawkPropertyId || !tawkWidgetId) {
         return Promise.resolve();
     }
 
-    if (window.Tawk_API) {
+    if (typeof window.Tawk_API?.showWidget === 'function') {
         return Promise.resolve();
     }
 
@@ -52,14 +63,34 @@ function loadTawkTo(): Promise<void> {
 
 export function TawkToWidget() {
     useEffect(() => {
+        activePublicLayoutCount += 1;
+
         if (!isTawkEnabled || !tawkPropertyId || !tawkWidgetId) {
-            return;
+            return () => {
+                activePublicLayoutCount = Math.max(0, activePublicLayoutCount - 1);
+            };
         }
 
-        void loadTawkTo().catch(() => {
-            tawkLoadPromise = null;
-            console.error('Unable to load the Tawk.to chat widget.');
-        });
+        if (typeof window.Tawk_API?.showWidget === 'function') {
+            setTawkWidgetVisibility(true);
+        } else {
+            void loadTawkTo()
+                .then(() => {
+                    setTawkWidgetVisibility(activePublicLayoutCount > 0);
+                })
+                .catch(() => {
+                    tawkLoadPromise = null;
+                    console.error('Unable to load the Tawk.to chat widget.');
+                });
+        }
+
+        return () => {
+            activePublicLayoutCount = Math.max(0, activePublicLayoutCount - 1);
+
+            if (activePublicLayoutCount === 0) {
+                setTawkWidgetVisibility(false);
+            }
+        };
     }, []);
 
     return null;

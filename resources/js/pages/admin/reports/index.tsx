@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import {
     Download,
     Calendar,
@@ -166,7 +166,7 @@ export default function AdminReportsIndex({
     const exportUrl = `/admin/reports/export?start_date=${startDate}&end_date=${endDate}&lapangan_id=${selectedLapangan}&status=${selectedStatus}`;
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Laporan & Ekspor Data - Admin" />
 
             <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
@@ -456,6 +456,6 @@ export default function AdminReportsIndex({
                     className="mt-2"
                 />
             </div>
-        </AppLayout>
+        </AdminLayout>
     );
 }

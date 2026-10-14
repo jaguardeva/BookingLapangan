@@ -14,7 +14,7 @@ import {
     UserPlus,
     X,
 } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import { Pagination } from '@/components/pagination';
 import { ProfileAvatarPreview } from '@/components/profile-avatar-preview';
 import ConfirmDialog from '@/components/confirm-dialog';
@@ -242,7 +242,7 @@ export default function AdminUsersIndex({
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Kelola Pengguna - Superadmin" />
 
             <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
@@ -713,7 +713,7 @@ export default function AdminUsersIndex({
                 icon={Trash2}
                 onConfirm={confirmDelete}
             />
-        </AppLayout>
+        </AdminLayout>
     );
 }
 

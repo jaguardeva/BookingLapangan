@@ -98,7 +98,19 @@ class LapanganController extends Controller
         $bookings = Booking::where('lapangan_id', $lapangan->id)
             ->whereIn('booking_date', [$today->format('Y-m-d'), $tomorrow->format('Y-m-d'), $dayAfter->format('Y-m-d')])
             ->whereIn('payment_status', ['pending', 'pending_validation', 'approved'])
-            ->get(['booking_date', 'start_time', 'end_time', 'duration_hours']);
+            ->get(['id', 'booking_date', 'start_time', 'end_time', 'duration_hours', 'membership_id', 'booking_source'])
+            ->map(function (Booking $booking): array {
+                return [
+                    'id' => $booking->id,
+                    'booking_date' => $booking->booking_date?->format('Y-m-d'),
+                    'start_time' => $booking->start_time,
+                    'end_time' => $booking->end_time,
+                    'duration_hours' => $booking->duration_hours,
+                    'membership_id' => $booking->membership_id,
+                    'booking_source' => $booking->booking_source,
+                    'is_membership' => $booking->membership_id !== null || $booking->booking_source === 'membership',
+                ];
+            });
 
         // Related lapangans in same category
         $relatedLapangans = Lapangan::where('category_id', $lapangan->category_id)
@@ -124,7 +136,16 @@ class LapanganController extends Controller
         $bookings = Booking::where('lapangan_id', $lapangan->id)
             ->where('booking_date', $date)
             ->whereIn('payment_status', ['pending', 'pending_validation', 'approved'])
-            ->get(['start_time', 'end_time', 'duration_hours']);
+            ->get(['id', 'start_time', 'end_time', 'duration_hours', 'membership_id', 'booking_source'])
+            ->map(fn (Booking $booking): array => [
+                'id' => $booking->id,
+                'start_time' => $booking->start_time,
+                'end_time' => $booking->end_time,
+                'duration_hours' => $booking->duration_hours,
+                'membership_id' => $booking->membership_id,
+                'booking_source' => $booking->booking_source,
+                'is_membership' => $booking->membership_id !== null || $booking->booking_source === 'membership',
+            ]);
 
         return response()->json([
             'date' => $date,

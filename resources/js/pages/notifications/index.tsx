@@ -31,14 +31,9 @@ export default function NotificationsIndex({ notifications }: Props) {
     const handleMarkAsRead = (id: string, url?: string) => {
         router.post(
             `/notifications/${id}/read`,
-            {},
+            url ? { redirect: url } : {},
             {
                 preserveScroll: true,
-                onSuccess: () => {
-                    if (url) {
-                        router.visit(url);
-                    }
-                },
             },
         );
     };

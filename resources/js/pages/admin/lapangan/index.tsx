@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import {
     Edit2,
     Eye,
@@ -39,7 +39,7 @@ interface Props {
 export default function AdminLapanganIndex({ lapangans }: Props) {
     const [deleting, setDeleting] = useState<Lapangan | null>(null);
     return (
-        <AppLayout
+        <AdminLayout
             breadcrumbs={[
                 { title: 'Superadmin Workspace', href: '/admin' },
                 { title: 'Kelola Lapangan', href: '/admin/lapangans' },
@@ -247,6 +247,6 @@ export default function AdminLapanganIndex({ lapangans }: Props) {
                         });
                 }}
             />
-        </AppLayout>
+        </AdminLayout>
     );
 }

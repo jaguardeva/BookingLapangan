@@ -3,15 +3,10 @@ import { useEffect, useState } from 'react';
 import {
     Trophy,
     CalendarCheck,
-    Shield,
     ShieldCheck,
     LogOut,
     User as UserIcon,
     LayoutDashboard,
-    Home,
-    Layers,
-    Bell,
-    LogIn,
     ArrowRight,
     Menu,
 } from 'lucide-react';
@@ -46,6 +41,7 @@ import { home, login, register } from '@/routes';
 import { history as bookingHistory } from '@/routes/booking';
 import { index as lapanganIndex } from '@/routes/lapangan';
 import { index as notificationsIndex } from '@/routes/notification';
+import { index as membershipIndex } from '@/routes/membership';
 import type { User } from '@/types/auth';
 
 export function Navbar() {
@@ -63,11 +59,18 @@ export function Navbar() {
     const isLanding = isCurrentUrl(home.url());
     const [landingNavState, setLandingNavState] = useState<'top' | 'revealed'>('top');
     const isLandingOverlay = isLanding && landingNavState === 'top';
-    const navLinkClass = isLanding
-        ? isLandingOverlay
-            ? 'text-brand-deep/75 hover:text-brand-deep dark:text-brand-foreground/75 dark:hover:text-brand-foreground transition-colors'
-            : 'text-foreground/75 hover:text-primary transition-colors'
-        : 'text-muted-foreground hover:text-primary transition-colors';
+
+    const getNavLinkClass = (isActive: boolean) => {
+        if (isLanding && isLandingOverlay) {
+            return isActive
+                ? 'font-semibold text-brand-deep dark:text-brand-foreground transition-colors'
+                : 'text-brand-deep/75 hover:text-brand-deep dark:text-brand-foreground/75 dark:hover:text-brand-foreground transition-colors';
+        }
+
+        return isActive
+            ? 'font-semibold text-foreground dark:text-foreground transition-colors'
+            : 'text-muted-foreground hover:text-foreground transition-colors';
+    };
 
     useEffect(() => {
         setUnreadNotificationsCount(user?.unread_notifications_count ?? 0);
@@ -106,28 +109,30 @@ export function Navbar() {
               {
                   label: 'Beranda',
                   href: home(),
-                  icon: Home,
                   active: isCurrentUrl(home.url()),
                   unreadCount: 0,
               },
               {
-                  label: 'Lapangan',
+                  label: 'Cari Lapangan',
                   href: lapanganIndex(),
-                  icon: Layers,
                   active: isCurrentOrParentUrl(lapanganIndex.url()),
                   unreadCount: 0,
               },
               {
-                  label: 'Booking',
+                  label: 'Riwayat Booking',
                   href: bookingHistory(),
-                  icon: CalendarCheck,
                   active: isBookingActive,
+                  unreadCount: 0,
+              },
+              {
+                  label: 'Membership',
+                  href: membershipIndex(),
+                  active: isCurrentOrParentUrl(membershipIndex.url()),
                   unreadCount: 0,
               },
               {
                   label: 'Notifikasi',
                   href: notificationsIndex(),
-                  icon: Bell,
                   active: isCurrentOrParentUrl(notificationsIndex.url()),
                   unreadCount: unreadNotificationsCount,
               },
@@ -136,21 +141,18 @@ export function Navbar() {
               {
                   label: 'Beranda',
                   href: home(),
-                  icon: Home,
                   active: isCurrentUrl(home.url()),
                   unreadCount: 0,
               },
               {
-                  label: 'Lapangan',
+                  label: 'Cari Lapangan',
                   href: lapanganIndex(),
-                  icon: Layers,
                   active: isCurrentOrParentUrl(lapanganIndex.url()),
                   unreadCount: 0,
               },
               {
                   label: 'Masuk',
                   href: login(),
-                  icon: LogIn,
                   active: isCurrentOrParentUrl(login.url()),
                   unreadCount: 0,
               },
@@ -194,34 +196,40 @@ export function Navbar() {
                         </Link>
 
                         {/* Desktop Navigation Links */}
-                        <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
+                        <nav className="hidden items-center gap-7 text-sm font-medium tracking-tight md:flex">
                             <Link
                                 href={home()}
-                                className={navLinkClass}
+                                className={getNavLinkClass(isCurrentUrl(home.url()))}
                             >
                                 Beranda
                             </Link>
                             <Link
                                 href={lapanganIndex()}
-                                className={navLinkClass}
+                                className={getNavLinkClass(isCurrentOrParentUrl(lapanganIndex.url()))}
                             >
                                 Cari Lapangan
                             </Link>
                             {user && (
                                 <Link
                                     href={bookingHistory()}
-                                    className={`${navLinkClass} flex items-center gap-1.5`}
+                                    className={getNavLinkClass(isBookingActive)}
                                 >
-                                    <CalendarCheck className="size-4" />
                                     Riwayat Booking
+                                </Link>
+                            )}
+                            {user && (
+                                <Link
+                                    href={membershipIndex()}
+                                    className={getNavLinkClass(isCurrentOrParentUrl(membershipIndex.url()))}
+                                >
+                                    Membership
                                 </Link>
                             )}
                             {isStaff && (
                                 <Link
                                     href="/admin"
-                                    className={`${isLandingOverlay ? 'border-brand-deep/20 bg-brand-deep/5 text-brand-deep hover:bg-brand-deep/10 dark:border-brand-soft/30 dark:bg-brand-soft/10 dark:text-brand-soft dark:hover:bg-brand-soft/20' : 'border-primary/20 bg-primary/10 text-primary hover:bg-primary/20'} inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all`}
+                                    className={`${isLandingOverlay ? 'border-brand-deep/20 bg-brand-deep/5 text-brand-deep hover:bg-brand-deep/10 dark:border-brand-soft/30 dark:bg-brand-soft/10 dark:text-brand-soft dark:hover:bg-brand-soft/20' : 'border-primary/20 bg-primary/10 text-primary hover:bg-primary/20'} rounded-full border px-3 py-1 text-xs font-semibold transition-all`}
                                 >
-                                    <Shield className="size-3.5" />
                                     Admin Panel
                                 </Link>
                             )}
@@ -230,7 +238,14 @@ export function Navbar() {
 
                     {/* Right Actions */}
                     <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-                        <ThemeToggleButton />
+                        {user && (
+                            <NotificationCenter
+                                onUnreadCountChange={setUnreadNotificationsCount}
+                            />
+                        )}
+                        <div className="hidden md:block">
+                            <ThemeToggleButton />
+                        </div>
                         <div className="md:hidden">
                             <Sheet>
                                 <SheetTrigger asChild>
@@ -245,6 +260,7 @@ export function Navbar() {
                                 </SheetTrigger>
                                 <SheetContent
                                     side="left"
+                                    disableAnimation
                                     className="bg-background/95 h-dvh w-screen max-w-none gap-0 overflow-hidden rounded-none border-r-0 p-0 backdrop-blur-xl"
                                 >
                                     <SheetHeader className="from-primary/15 via-primary/5 border-border relative border-b bg-gradient-to-br to-transparent px-5 pt-6 pb-5 text-left">
@@ -280,7 +296,6 @@ export function Navbar() {
                                             ({
                                                 label,
                                                 href,
-                                                icon: Icon,
                                                 active,
                                                 unreadCount,
                                             }) => (
@@ -296,27 +311,18 @@ export function Navbar() {
                                                                 ? 'page'
                                                                 : undefined
                                                         }
-                                                        className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                                                        className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
                                                             active
-                                                                ? 'bg-primary/10 text-primary'
-                                                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                                                ? 'bg-primary/10 text-primary font-semibold'
+                                                                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                                                         }`}
                                                     >
-                                                        <span className="relative">
-                                                            <Icon className="size-4" />
-                                                            {label ===
-                                                                'Notifikasi' &&
-                                                                unreadCount >
-                                                                    0 && (
-                                                                    <span className="bg-destructive text-destructive-foreground absolute -top-2 -right-2 flex size-4 items-center justify-center rounded-full text-[9px] font-bold">
-                                                                        {unreadCount >
-                                                                        99
-                                                                            ? '99+'
-                                                                            : unreadCount}
-                                                                    </span>
-                                                                )}
-                                                        </span>
                                                         <span>{label}</span>
+                                                        {label === 'Notifikasi' && unreadCount > 0 && (
+                                                            <span className="bg-destructive text-destructive-foreground flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold">
+                                                                {unreadCount > 99 ? '99+' : unreadCount}
+                                                            </span>
+                                                        )}
                                                     </Link>
                                                 </SheetClose>
                                             ),
@@ -329,16 +335,21 @@ export function Navbar() {
                                                     Manajemen
                                                 </p>
                                                 <SheetClose asChild>
-                                                <Link
-                                                    href={adminDashboard()}
-                                                    className="text-primary hover:bg-primary/10 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors"
-                                                >
-                                                    <Shield className="size-4" />
-                                                    Admin Panel
-                                                </Link>
+                                                    <Link
+                                                        href={adminDashboard()}
+                                                        className="text-primary hover:bg-primary/10 flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors"
+                                                    >
+                                                        <span>Admin Panel</span>
+                                                    </Link>
                                                 </SheetClose>
                                             </>
                                         )}
+
+                                        <div className="border-border my-3 border-t" />
+                                        <div className="text-muted-foreground flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm">
+                                            <span>Tema</span>
+                                            <ThemeToggleButton />
+                                        </div>
 
                                         {user ? (
                                             <>
@@ -349,18 +360,16 @@ export function Navbar() {
                                                 <SheetClose asChild>
                                                     <Link
                                                         href={editProfile()}
-                                                        className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors"
+                                                        className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center rounded-xl px-3.5 py-2.5 text-sm transition-colors"
                                                     >
-                                                        <UserIcon className="size-4" />
                                                         Pengaturan Akun
                                                     </Link>
                                                 </SheetClose>
                                                 <SheetClose asChild>
                                                     <Link
                                                         href={editSecurity()}
-                                                        className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors"
+                                                        className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center rounded-xl px-3.5 py-2.5 text-sm transition-colors"
                                                     >
-                                                        <ShieldCheck className="size-4" />
                                                         Keamanan
                                                     </Link>
                                                 </SheetClose>
@@ -369,9 +378,8 @@ export function Navbar() {
                                                         href={logout()}
                                                         method="post"
                                                         as="button"
-                                                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-rose-600 transition-colors hover:bg-rose-500/10 dark:text-rose-400"
+                                                        className="flex w-full items-center rounded-xl px-3.5 py-2.5 text-left text-sm text-rose-600 transition-colors hover:bg-rose-500/10 dark:text-rose-400"
                                                     >
-                                                        <LogOut className="size-4" />
                                                         Keluar
                                                     </Link>
                                                 </SheetClose>
@@ -385,9 +393,8 @@ export function Navbar() {
                                                 <SheetClose asChild>
                                                     <Link
                                                         href={register()}
-                                                        className="text-primary hover:bg-primary/10 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors"
+                                                        className="text-primary hover:bg-primary/10 flex items-center rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors"
                                                     >
-                                                        <ArrowRight className="size-4" />
                                                         Daftar Sekarang
                                                     </Link>
                                                 </SheetClose>
@@ -404,14 +411,6 @@ export function Navbar() {
                         </div>
                         {user ? (
                             <>
-                                <div className="hidden md:block">
-                                    <NotificationCenter
-                                        onUnreadCountChange={
-                                            setUnreadNotificationsCount
-                                        }
-                                    />
-                                </div>
-
                                 <div className="hidden md:block">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>

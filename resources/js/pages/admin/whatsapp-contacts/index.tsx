@@ -1,7 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { Edit2, MessageCircle, Plus, Trash2 } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import ConfirmDialog from '@/components/confirm-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -79,7 +79,7 @@ export default function WhatsappContactsIndex({ contacts }: Props) {
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Kontak WhatsApp', href: '/admin/whatsapp-contacts' }]}>
+        <AdminLayout breadcrumbs={[{ title: 'Kontak WhatsApp', href: '/admin/whatsapp-contacts' }]}>
             <Head title="Kontak WhatsApp" />
 
             <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
@@ -160,6 +160,6 @@ export default function WhatsappContactsIndex({ contacts }: Props) {
                 icon={Trash2}
                 onConfirm={confirmDelete}
             />
-        </AppLayout>
+        </AdminLayout>
     );
 }

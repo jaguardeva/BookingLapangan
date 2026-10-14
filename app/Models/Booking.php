@@ -14,12 +14,17 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[Fillable([
     'booking_code',
     'user_id',
+    'membership_id',
+    'membership_reservation_id',
+    'booking_source',
     'lapangan_id',
     'booking_date',
     'start_time',
     'end_time',
     'duration_hours',
     'base_price',
+    'coupon_id',
+    'discount_amount',
     'validation_code',
     'total_price',
     'payment_method',
@@ -46,6 +51,7 @@ class Booking extends Model
             'booking_date' => 'date:Y-m-d',
             'duration_hours' => 'integer',
             'base_price' => 'integer',
+            'discount_amount' => 'integer',
             'validation_code' => 'integer',
             'total_price' => 'integer',
             'points_redeemed' => 'integer',
@@ -83,6 +89,21 @@ class Booking extends Model
     public function validator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'validated_by');
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
+    }
+
+    public function membership(): BelongsTo
+    {
+        return $this->belongsTo(Membership::class);
+    }
+
+    public function membershipReservation(): BelongsTo
+    {
+        return $this->belongsTo(MembershipReservation::class);
     }
 
     public function review(): HasOne

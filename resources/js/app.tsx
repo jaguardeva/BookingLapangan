@@ -21,6 +21,8 @@ void createInertiaApp({
             // Public pages self-render PublicLayout — return null to avoid double-wrapping with AppLayout
             case name === 'home':
             case name === 'Home':
+            case name === 'membership/index':
+            case name.startsWith('membership/'):
             case name.startsWith('lapangan/'):
             case name === 'lapangan/index':
             case name.startsWith('booking/'):
@@ -29,7 +31,7 @@ void createInertiaApp({
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
+                return SettingsLayout;
             case name.startsWith('admin/'):
                 return null;
             default:

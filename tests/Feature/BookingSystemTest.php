@@ -3,6 +3,7 @@
 use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Lapangan;
+use App\Models\Membership;
 use App\Models\User;
 use App\Notifications\BookingCreatedDatabaseNotification;
 use App\Notifications\BookingCreatedNotification;
@@ -166,6 +167,124 @@ test('booking email actions use the configured application origin', function () 
 test('public can view lapangan detail with slots data', function () {
     $response = $this->get(route('lapangan.show', $this->lapangan->slug));
     $response->assertOk();
+});
+
+test('lapangan detail identifies membership reservations without hiding the lapangan', function () {
+    $membership = Membership::create([
+        'user_id' => $this->user->id,
+        'amount' => 100000,
+        'status' => 'active',
+        'payment_status' => 'approved',
+        'starts_at' => now()->subDay(),
+        'ends_at' => now()->addMonth(),
+    ]);
+    $booking = Booking::create([
+        'booking_code' => 'BKG-MEMBER-SLOT',
+        'user_id' => $this->user->id,
+        'membership_id' => $membership->id,
+        'booking_source' => 'membership',
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '10:00',
+        'end_time' => '11:00',
+        'duration_hours' => 1,
+        'base_price' => 100000,
+        'total_price' => 100000,
+        'payment_method' => 'transfer',
+        'payment_status' => 'approved',
+        'customer_name' => $this->user->name,
+        'customer_phone' => '08123456789',
+        'validation_code' => 0,
+        'payment_deadline' => now()->addHour(),
+    ]);
+
+    $this->get(route('lapangan.show', $this->lapangan->slug))
+        ->assertInertia(fn ($page) => $page
+            ->where('lapangan.id', $this->lapangan->id)
+            ->where('existingBookings.0.id', $booking->id)
+            ->where('existingBookings.0.is_membership', true)
+            ->where('existingBookings.0.booking_source', 'membership')
+        );
+});
+
+test('daily booking receives a membership-specific conflict message', function () {
+    $membership = Membership::create([
+        'user_id' => $this->user->id,
+        'amount' => 100000,
+        'status' => 'active',
+        'payment_status' => 'approved',
+        'starts_at' => now()->subDay(),
+        'ends_at' => now()->addMonth(),
+    ]);
+    Booking::create([
+        'booking_code' => 'BKG-MEMBER-CONFLICT',
+        'user_id' => $this->user->id,
+        'membership_id' => $membership->id,
+        'booking_source' => 'membership',
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '10:00',
+        'end_time' => '11:00',
+        'duration_hours' => 1,
+        'base_price' => 100000,
+        'total_price' => 100000,
+        'payment_method' => 'transfer',
+        'payment_status' => 'approved',
+        'customer_name' => $this->user->name,
+        'customer_phone' => '08123456789',
+        'validation_code' => 0,
+        'payment_deadline' => now()->addHour(),
+    ]);
+
+    $this->actingAs($this->user)
+        ->post(route('booking.store'), [
+            'lapangan_id' => $this->lapangan->id,
+            'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+            'start_time' => '10:00',
+            'duration_hours' => 1,
+            'payment_method' => 'transfer',
+            'use_points' => false,
+            'customer_name' => $this->user->name,
+            'customer_phone' => '08123456789',
+        ])
+        ->assertSessionHasErrors(['start_time' => 'Slot ini sedang dicadangkan untuk jadwal membership. Silakan pilih jam lain.']);
+});
+
+test('admin cannot approve membership booking from regular booking management', function () {
+    $this->admin->assignedLapangans()->sync([$this->lapangan->id]);
+    $membership = Membership::create([
+        'user_id' => $this->user->id,
+        'amount' => 100000,
+        'status' => 'active',
+        'payment_status' => 'approved',
+        'starts_at' => now()->subDay(),
+        'ends_at' => now()->addMonth(),
+    ]);
+    $booking = Booking::create([
+        'booking_code' => 'BKG-MEMBER-ADMIN',
+        'user_id' => $this->user->id,
+        'membership_id' => $membership->id,
+        'booking_source' => 'membership',
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '12:00',
+        'end_time' => '13:00',
+        'duration_hours' => 1,
+        'base_price' => 100000,
+        'total_price' => 100000,
+        'payment_method' => 'transfer',
+        'payment_status' => 'pending_validation',
+        'customer_name' => $this->user->name,
+        'customer_phone' => '08123456789',
+        'validation_code' => 0,
+        'payment_deadline' => now()->addHour(),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->post(route('admin.bookings.approve', $booking))
+        ->assertSessionHasErrors(['booking' => 'Booking membership dikelola melalui halaman Membership.']);
+
+    expect($booking->fresh()->payment_status)->toBe('pending_validation');
 });
 
 test('user cannot book more than 2 days in advance (PRD Rule)', function () {
@@ -678,4 +797,42 @@ test('public lapangan search matches name and description case-insensitively', f
                 ->where('lapangans.data.0.id', $this->lapangan->id)
             );
     }
+});
+
+test('booking show invoice resolves by booking_code and by uuid id', function () {
+    $booking = Booking::create([
+        'booking_code' => 'BKG-RESOLVE-TEST',
+        'user_id' => $this->user->id,
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '10:00',
+        'end_time' => '11:00',
+        'duration_hours' => 1,
+        'base_price' => 100000,
+        'validation_code' => 123,
+        'total_price' => 100123,
+        'payment_method' => 'transfer',
+        'payment_status' => 'pending',
+        'customer_name' => $this->user->name,
+        'customer_phone' => '081234567899',
+        'payment_deadline' => now()->addHours(2),
+    ]);
+
+    $this->actingAs($this->user);
+
+    // Resolves by booking_code
+    $this->get(route('booking.show', $booking->booking_code))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('booking/invoice')
+            ->where('booking.booking_code', $booking->booking_code)
+        );
+
+    // Resolves by uuid id
+    $this->get("/booking/{$booking->id}")
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('booking/invoice')
+            ->where('booking.id', $booking->id)
+        );
 });

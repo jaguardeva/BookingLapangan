@@ -52,6 +52,7 @@ export default function Checkout({
         customer_name: currentUser?.name ?? "",
         customer_phone: currentUser?.phone ?? "",
         notes: "",
+        coupon_code: "",
     });
 
     const pointsDiscount =
@@ -116,6 +117,13 @@ export default function Checkout({
                                         {errors.customer_phone && <p className="text-xs text-rose-500">{errors.customer_phone}</p>}
                                     </div>
                                 </div>
+                            </section>
+
+                            <section className="bg-card border-border/70 rounded-2xl border p-4 shadow-sm sm:p-6">
+                                <Label htmlFor="coupon_code">Kode promo <span className="text-muted-foreground font-normal">(opsional)</span></Label>
+                                <Input id="coupon_code" value={data.coupon_code} onChange={(event) => setData("coupon_code", event.target.value.toUpperCase())} placeholder="Masukkan kode kupon" className="mt-2 h-11 rounded-xl" />
+                                {errors.coupon_code && <p className="mt-1 text-xs text-rose-500">{errors.coupon_code}</p>}
+                                <p className="text-muted-foreground mt-2 text-xs">Potongan akan dihitung ulang dan dikunci saat booking dibuat.</p>
                             </section>
 
                             <section className="bg-card border-border/70 rounded-2xl border p-4 shadow-sm sm:p-6">

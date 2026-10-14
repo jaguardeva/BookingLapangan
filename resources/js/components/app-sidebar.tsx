@@ -13,6 +13,9 @@ import {
     Home,
     Bell,
     MessageCircle,
+    Crown,
+    TicketPercent,
+    Image,
 } from 'lucide-react';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -80,6 +83,21 @@ export function AppSidebar() {
             title: 'Laporan & Export',
             href: '/admin/reports',
             icon: FileText,
+        },
+        {
+            title: 'Membership',
+            href: '/admin/memberships',
+            icon: Crown,
+        },
+        {
+            title: 'Kupon Promosi',
+            href: '/admin/coupons',
+            icon: TicketPercent,
+        },
+        {
+            title: 'Banner Publik',
+            href: '/admin/banners',
+            icon: Image,
         },
     ];
 

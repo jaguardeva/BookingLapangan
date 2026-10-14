@@ -1,7 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { Layers, Plus, Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import { CatalogIcon, catalogIconOptions, getCatalogIconName } from '@/components/catalog-icon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -98,7 +98,7 @@ export default function CatalogIndex({ categories, facilities }: Props) {
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Kategori & Fasilitas" />
 
             <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
@@ -314,6 +314,6 @@ export default function CatalogIndex({ categories, facilities }: Props) {
                     </form>
                 </DialogContent>
             </Dialog>
-        </AppLayout>
+        </AdminLayout>
     );
 }

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Lapangan;
 use App\Models\Review;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -46,6 +48,14 @@ class HomeController extends Controller
             'categories' => $categories,
             'featuredLapangans' => $featuredLapangans,
             'testimonials' => $testimonials,
+            'banners' => Banner::visible()->get()->each(function (Banner $banner): void {
+                $banner->setAttribute(
+                    'image_url',
+                    str_starts_with($banner->image_path, 'http')
+                        ? $banner->image_path
+                        : Storage::disk('public')->url($banner->image_path),
+                );
+            }),
             'stats' => [
                 'total_lapangan' => Lapangan::where('is_active', true)
                     ->whereHas('category', fn ($query) => $query->where('is_active', true))

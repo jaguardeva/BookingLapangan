@@ -12,6 +12,8 @@ interface ImportMeta {
 
 interface TawkApi {
     [key: string]: unknown;
+    hideWidget?: () => void;
+    showWidget?: () => void;
 }
 
 interface Window {
