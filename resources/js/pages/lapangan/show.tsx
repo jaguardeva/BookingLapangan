@@ -21,6 +21,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { checkout as bookingCheckout } from '@/routes/booking';
 import LapanganController from '@/actions/App/Http/Controllers/LapanganController';
 import MembershipController from '@/actions/App/Http/Controllers/MembershipController';
@@ -57,9 +63,7 @@ const emptyLapangan: Lapangan = {
     is_active: false,
 };
 
-export default function LapanganShow({
-    slug,
-}: Props) {
+export default function LapanganShow({ slug }: Props) {
     const { auth } = usePage<{ auth: { user: AuthUser | null } }>().props;
     const currentUser = auth.user;
     const [lapanganData, setLapanganData] = useState<Lapangan | null>(null);
@@ -85,6 +89,7 @@ export default function LapanganShow({
                   'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80',
               ];
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+    const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const currentPhotoIndex = Math.min(activePhotoIndex, photos.length - 1);
     const dragStartRef = useRef<{ x: number; y: number } | null>(null);
     const hasDraggedRef = useRef(false);
@@ -101,13 +106,16 @@ export default function LapanganShow({
             }
 
             try {
-                const response = await fetch(LapanganController.showData.url(detailSlug), {
-                    signal: controller.signal,
-                    headers: {
-                        Accept: 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
+                const response = await fetch(
+                    LapanganController.showData.url(detailSlug),
+                    {
+                        signal: controller.signal,
+                        headers: {
+                            Accept: 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
                     },
-                });
+                );
 
                 if (response.status === 404) {
                     setNotFound(true);
@@ -125,7 +133,10 @@ export default function LapanganShow({
                 setRelatedLapangans(data.relatedLapangans);
                 setSelectedDate(data.allowedDates[0]?.date ?? '');
             } catch (error) {
-                if (error instanceof DOMException && error.name === 'AbortError') {
+                if (
+                    error instanceof DOMException &&
+                    error.name === 'AbortError'
+                ) {
                     return;
                 }
 
@@ -222,6 +233,14 @@ export default function LapanganShow({
         hasDraggedRef.current = false;
     };
 
+    const handleCarouselClick = (event: React.MouseEvent<HTMLDivElement>) => {
+        if ((event.target as HTMLElement).closest('button')) {
+            return;
+        }
+
+        setIsLightboxOpen(true);
+    };
+
     const handleCarouselPointerCancel = (
         event: React.PointerEvent<HTMLDivElement>,
     ) => {
@@ -255,7 +274,10 @@ export default function LapanganShow({
     const currentTimeValue = formatTimeIndonesia(currentTime);
 
     useEffect(() => {
-        const interval = window.setInterval(() => setCurrentTime(new Date()), 60_000);
+        const interval = window.setInterval(
+            () => setCurrentTime(new Date()),
+            60_000,
+        );
 
         return () => window.clearInterval(interval);
     }, []);
@@ -339,7 +361,11 @@ export default function LapanganShow({
     const handleSlotDoubleClick = (startTime: string) => {
         const slot = hourlySlots.find((item) => item.start === startTime);
 
-        if (!slot || isSlotBooked(slot.start, slot.end) || isSlotPast(slot.start)) {
+        if (
+            !slot ||
+            isSlotBooked(slot.start, slot.end) ||
+            isSlotPast(slot.start)
+        ) {
             return;
         }
 
@@ -384,7 +410,8 @@ export default function LapanganShow({
                             Lapangan Tidak Ditemukan
                         </h1>
                         <p className="text-muted-foreground mt-2 text-sm">
-                            Lapangan yang Anda cari tidak tersedia atau sudah tidak aktif.
+                            Lapangan yang Anda cari tidak tersedia atau sudah
+                            tidak aktif.
                         </p>
                         <Button asChild className="mt-5 rounded-xl">
                             <Link href="/lapangan">Kembali ke Katalog</Link>
@@ -400,10 +427,14 @@ export default function LapanganShow({
             <PublicLayout>
                 <Head title="Gagal Memuat Lapangan" />
                 <div className="public-container flex min-h-[60vh] max-w-[1240px] items-center justify-center py-16">
-                    <div role="alert" className="border-destructive/20 bg-destructive/5 text-destructive w-full max-w-lg rounded-2xl border p-10 text-center">
+                    <div
+                        role="alert"
+                        className="border-destructive/20 bg-destructive/5 text-destructive w-full max-w-lg rounded-2xl border p-10 text-center"
+                    >
                         <h1 className="text-xl font-bold">Gagal Memuat Data</h1>
                         <p className="mt-2 text-sm">
-                            Detail lapangan belum dapat dimuat. Silakan coba lagi.
+                            Detail lapangan belum dapat dimuat. Silakan coba
+                            lagi.
                         </p>
                         <Button
                             type="button"
@@ -451,13 +482,21 @@ export default function LapanganShow({
                             onPointerUp={handleCarouselPointerUp}
                             onPointerCancel={handleCarouselPointerCancel}
                             onClickCapture={handleCarouselClickCapture}
+                            onClick={handleCarouselClick}
                         >
-                            <img
-                                src={photos[currentPhotoIndex]}
-                                alt={`${lapangan.name} â€” foto ${currentPhotoIndex + 1}`}
-                                draggable={false}
-                                className="size-full object-cover"
-                            />
+                            <button
+                                type="button"
+                                onClick={() => setIsLightboxOpen(true)}
+                                aria-label={`Perbesar foto ${currentPhotoIndex + 1} dari ${lapangan.name}`}
+                                className="absolute inset-0 size-full cursor-zoom-in text-left focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none focus-visible:ring-inset"
+                            >
+                                <img
+                                    src={photos[currentPhotoIndex]}
+                                    alt={`${lapangan.name} â€” foto ${currentPhotoIndex + 1}`}
+                                    draggable={false}
+                                    className="size-full object-cover"
+                                />
+                            </button>
                             {photos.length > 1 && (
                                 <>
                                     <button
@@ -511,7 +550,13 @@ export default function LapanganShow({
                             )}
                             <div className="absolute top-4 left-4 flex gap-2">
                                 <Badge className="bg-background/90 text-foreground border-border/40 border font-semibold backdrop-blur-md">
-                                    <CatalogIcon name={lapangan.category?.icon ?? lapangan.category?.slug} className="mr-1.5 size-3.5" />
+                                    <CatalogIcon
+                                        name={
+                                            lapangan.category?.icon ??
+                                            lapangan.category?.slug
+                                        }
+                                        className="mr-1.5 size-3.5"
+                                    />
                                     {lapangan.category?.name}
                                 </Badge>
                                 <Badge className="bg-primary text-primary-foreground font-semibold">
@@ -519,6 +564,56 @@ export default function LapanganShow({
                                 </Badge>
                             </div>
                         </div>
+
+                        <Dialog
+                            open={isLightboxOpen}
+                            onOpenChange={setIsLightboxOpen}
+                        >
+                            <DialogContent
+                                className="inset-0 top-0 left-0 flex h-screen max-h-none w-screen max-w-none translate-x-0 translate-y-0 items-center justify-center overflow-hidden rounded-none border-none bg-transparent p-0 shadow-none sm:w-screen sm:max-w-none"
+                                showCloseButton
+                            >
+                                <DialogTitle className="sr-only">
+                                    Pratinjau foto {currentPhotoIndex + 1} dari{' '}
+                                    {lapangan.name}
+                                </DialogTitle>
+                                <DialogDescription className="sr-only">
+                                    Gunakan tombol navigasi untuk melihat foto
+                                    lainnya.
+                                </DialogDescription>
+                                <div className="relative flex h-[calc(100vh-1rem)] min-h-0 w-[calc(100vw-1rem)] items-center justify-center sm:h-[calc(100vh-2rem)] sm:w-screen">
+                                    <img
+                                        src={photos[currentPhotoIndex]}
+                                        alt={`${lapangan.name} Ã¢â‚¬â€ foto ${currentPhotoIndex + 1}`}
+                                        className="size-full max-h-[calc(100vh-2rem)] max-w-full object-contain"
+                                    />
+                                    {photos.length > 1 && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={showPreviousPhoto}
+                                                aria-label="Lihat foto sebelumnya"
+                                                className="absolute top-1/2 left-2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none sm:left-4"
+                                            >
+                                                <ChevronLeft className="size-5" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={showNextPhoto}
+                                                aria-label="Lihat foto berikutnya"
+                                                className="absolute top-1/2 right-2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none sm:right-4"
+                                            >
+                                                <ChevronRight className="size-5" />
+                                            </button>
+                                            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-xs font-medium text-white/90 sm:bottom-4">
+                                                {currentPhotoIndex + 1} /{' '}
+                                                {photos.length}
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
+                            </DialogContent>
+                        </Dialog>
 
                         {/* Title & Stats */}
                         <div>
@@ -557,7 +652,10 @@ export default function LapanganShow({
                                         className="text-foreground/90 flex items-center gap-2"
                                     >
                                         <div className="bg-primary/10 text-primary flex size-5 shrink-0 items-center justify-center rounded-full">
-                                            <CatalogIcon name={f.icon} className="size-3.5" />
+                                            <CatalogIcon
+                                                name={f.icon}
+                                                className="size-3.5"
+                                            />
                                         </div>
                                         <span>{f.name}</span>
                                     </div>
@@ -675,15 +773,17 @@ export default function LapanganShow({
                                 </div>
                             </div>
 
-                            {/* 1. Date Selector Tabs (Hari Ini, Besok, Lusa) */}
+                            {/* 1. Date Selector Tabs (hari ini sampai 7 hari ke depan) */}
                             <div className="space-y-2.5">
                                 <Label className="text-foreground text-xs font-bold tracking-wide uppercase">
                                     Pilih Tanggal Main
                                 </Label>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                                     {allowedDates.map((d) => {
                                         const isSelected =
                                             selectedDate === d.date;
+                                        const isCurrentDate =
+                                            d.date === allowedDates[0]?.date;
                                         return (
                                             <button
                                                 key={d.date}
@@ -695,8 +795,8 @@ export default function LapanganShow({
                                                 aria-pressed={isSelected}
                                                 className={`rounded-xl border px-2 py-3 text-center transition-colors ${
                                                     isSelected
-                                                        ? 'border-primary bg-primary text-primary-foreground shadow-primary/20 shadow-sm'
-                                                        : 'border-border bg-muted/20 text-muted-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-foreground'
+                                                        ? `border-primary bg-primary text-primary-foreground shadow-primary/20 shadow-sm ${isCurrentDate ? 'border-dashed' : ''}`
+                                                        : `border-border bg-muted/20 text-muted-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-foreground ${isCurrentDate ? 'border-primary/70 bg-primary/5 border-dashed' : ''}`
                                                 }`}
                                             >
                                                 <p className="text-[10px] font-semibold tracking-wider uppercase opacity-80">
@@ -749,7 +849,8 @@ export default function LapanganShow({
                                             slot.end,
                                         );
                                         const booked = booking !== undefined;
-                                        const memberReserved = booking?.is_membership === true;
+                                        const memberReserved =
+                                            booking?.is_membership === true;
                                         const past = isSlotPast(slot.start);
                                         if (past) return null;
                                         const selected = selectedSlots.includes(
@@ -794,7 +895,9 @@ export default function LapanganShow({
                                                     <Check className="size-3.5 stroke-[3]" />
                                                 ) : booked ? (
                                                     <span className="text-xs font-bold tracking-tight text-rose-500 uppercase">
-                                                        {memberReserved ? 'Jadwal member' : 'Terisi'}
+                                                        {memberReserved
+                                                            ? 'Jadwal member'
+                                                            : 'Terisi'}
                                                     </span>
                                                 ) : past ? (
                                                     <span className="text-muted-foreground text-xs font-bold tracking-tight uppercase">
@@ -807,7 +910,9 @@ export default function LapanganShow({
                                 </div>
 
                                 <p className="text-muted-foreground text-[11px]">
-                                    Slot bertanda Jadwal member dicadangkan untuk jadwal rutin member dan tidak dapat dibooking harian.
+                                    Slot bertanda Jadwal member dicadangkan
+                                    untuk jadwal rutin member dan tidak dapat
+                                    dibooking harian.
                                 </p>
 
                                 {/* Slot Legend */}
@@ -825,7 +930,7 @@ export default function LapanganShow({
                                         <span>Terisi / Lewat</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
-                                        <div className="bg-rose-100 size-2.5 rounded dark:bg-rose-950" />
+                                        <div className="size-2.5 rounded bg-rose-100 dark:bg-rose-950" />
                                         <span>Jadwal member</span>
                                     </div>
                                 </div>
@@ -862,7 +967,8 @@ export default function LapanganShow({
                                     Ingin jadwal rutin?
                                 </p>
                                 <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                                    Daftar membership untuk mengunci jadwal bermain selama 30 hari.
+                                    Daftar membership untuk mengunci jadwal
+                                    bermain selama 30 hari.
                                 </p>
                                 {currentUser ? (
                                     <Button
@@ -870,9 +976,16 @@ export default function LapanganShow({
                                         variant="outline"
                                         className="border-primary/40 text-primary hover:bg-primary/10 mt-3 h-10 w-full rounded-xl font-bold"
                                     >
-                                        <Link href={MembershipController.checkout.url(lapangan.slug)}>
+                                        <Link
+                                            href={MembershipController.checkout.url(
+                                                lapangan.slug,
+                                            )}
+                                        >
                                             Daftar Membership
-                                            <ArrowRight className="size-4" aria-hidden="true" />
+                                            <ArrowRight
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
                                         </Link>
                                     </Button>
                                 ) : (
@@ -881,7 +994,9 @@ export default function LapanganShow({
                                         variant="outline"
                                         className="border-primary/40 text-primary hover:bg-primary/10 mt-3 h-10 w-full rounded-xl font-bold"
                                     >
-                                        <Link href="/login">Masuk untuk Membership</Link>
+                                        <Link href="/login">
+                                            Masuk untuk Membership
+                                        </Link>
                                     </Button>
                                 )}
                             </div>

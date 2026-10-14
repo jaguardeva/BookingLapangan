@@ -47,7 +47,10 @@ test('lapangan detail JSON response contains dynamic field data', function () {
             'relatedLapangans',
         ])
         ->assertJsonPath('lapangan.slug', $this->lapangan->slug)
-        ->assertJsonCount(3, 'allowedDates');
+        ->assertJsonCount(8, 'allowedDates')
+        ->assertJsonPath('allowedDates.0.date', today()->format('Y-m-d'))
+        ->assertJsonPath('allowedDates.0.day_name', today()->translatedFormat('l'))
+        ->assertJsonPath('allowedDates.7.date', today()->addDays(7)->format('Y-m-d'));
 });
 
 test('invalid lapangan slugs return graceful not found responses', function () {

@@ -92,7 +92,7 @@ test('public pages receive configured site contact details', function () {
 });
 
 test('authenticated users can open the dedicated booking checkout page', function () {
-    $bookingDate = Carbon::tomorrow()->format('Y-m-d');
+    $bookingDate = Carbon::today()->addDays(7)->format('Y-m-d');
 
     $this->actingAs($this->user)
         ->get(route('booking.checkout', [
@@ -127,11 +127,11 @@ test('unverified users can open checkout and verify before submitting', function
         ->assertInertia(fn ($page) => $page->component('booking/checkout'));
 });
 
-test('checkout rejects dates outside the available booking window', function () {
+test('checkout rejects dates beyond seven days in advance', function () {
     $this->actingAs($this->user)
         ->get(route('booking.checkout', [
             'lapangan' => $this->lapangan->slug,
-            'booking_date' => Carbon::today()->addDays(3)->format('Y-m-d'),
+            'booking_date' => Carbon::today()->addDays(8)->format('Y-m-d'),
             'start_time' => '14:00',
             'duration_hours' => 1,
         ]))
@@ -285,11 +285,11 @@ test('admin cannot approve membership booking from regular booking management', 
     expect($booking->fresh()->payment_status)->toBe('pending_validation');
 });
 
-test('user cannot book more than 2 days in advance (PRD Rule)', function () {
+test('user cannot book more than 7 days in advance (PRD Rule)', function () {
     $this->actingAs($this->user);
 
-    // 4 days from now is invalid
-    $invalidDate = Carbon::today()->addDays(4)->format('Y-m-d');
+    // 8 days from now is invalid
+    $invalidDate = Carbon::today()->addDays(8)->format('Y-m-d');
 
     $response = $this->post(route('booking.store'), [
         'lapangan_id' => $this->lapangan->id,

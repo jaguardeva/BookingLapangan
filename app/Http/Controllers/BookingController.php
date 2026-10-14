@@ -35,9 +35,9 @@ class BookingController extends Controller
 
         $bookingDate = Carbon::createFromFormat('Y-m-d', $validated['booking_date'])->startOfDay();
 
-        if ($bookingDate->lt(Carbon::today()) || $bookingDate->gt(Carbon::today()->addDays(2)->endOfDay())) {
+        if ($bookingDate->lt(Carbon::today()) || $bookingDate->gt(Carbon::today()->addDays(7)->endOfDay())) {
             throw ValidationException::withMessages([
-                'booking_date' => 'Booking hanya diperbolehkan untuk hari ini, besok, atau lusa.',
+                'booking_date' => 'Booking hanya diperbolehkan dari hari ini sampai 7 hari ke depan.',
             ]);
         }
 
@@ -80,12 +80,12 @@ class BookingController extends Controller
 
         $bookingDate = Carbon::parse($validated['booking_date'])->startOfDay();
         $today = Carbon::today();
-        $maxDate = Carbon::today()->addDays(2)->endOfDay();
+        $maxDate = Carbon::today()->addDays(7)->endOfDay();
 
-        // 1. Business Rule: Only today, tomorrow, and day after tomorrow allowed
+        // 1. Business Rule: Booking is available from today through seven days ahead
         if ($bookingDate->lt($today) || $bookingDate->gt($maxDate)) {
             throw ValidationException::withMessages([
-                'booking_date' => 'Booking hanya diperbolehkan untuk hari ini, besok, atau lusa.',
+                'booking_date' => 'Booking hanya diperbolehkan dari hari ini sampai 7 hari ke depan.',
             ]);
         }
 

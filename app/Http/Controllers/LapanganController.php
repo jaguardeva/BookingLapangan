@@ -94,32 +94,25 @@ class LapanganController extends Controller
             ], 404);
         }
 
-        // 3 Days allowed horizon: Today, Tomorrow, Day After Tomorrow
         $today = Carbon::today();
-        $tomorrow = Carbon::tomorrow();
-        $dayAfter = Carbon::today()->addDays(2);
+        $allowedDates = collect(range(0, 7))
+            ->map(function (int $dayOffset) use ($today): array {
+                $date = $today->copy()->addDays($dayOffset);
 
-        $allowedDates = [
-            [
-                'date' => $today->format('Y-m-d'),
-                'day_name' => 'Hari Ini',
-                'formatted' => $today->translatedFormat('d M Y'),
-            ],
-            [
-                'date' => $tomorrow->format('Y-m-d'),
-                'day_name' => 'Besok',
-                'formatted' => $tomorrow->translatedFormat('d M Y'),
-            ],
-            [
-                'date' => $dayAfter->format('Y-m-d'),
-                'day_name' => 'Lusa',
-                'formatted' => $dayAfter->translatedFormat('d M Y'),
-            ],
-        ];
+                return [
+                    'date' => $date->format('Y-m-d'),
+                    'day_name' => $date->translatedFormat('l'),
+                    'formatted' => $date->translatedFormat('d M Y'),
+                ];
+            })
+            ->all();
 
-        // Fetch all active bookings in this 3-day window to calculate occupied slots
+        // Fetch all active bookings in this 8-day window to calculate occupied slots
         $bookings = Booking::where('lapangan_id', $lapangan->id)
-            ->whereIn('booking_date', [$today->format('Y-m-d'), $tomorrow->format('Y-m-d'), $dayAfter->format('Y-m-d')])
+            ->whereBetween('booking_date', [
+                $today->format('Y-m-d'),
+                $today->copy()->addDays(7)->format('Y-m-d'),
+            ])
             ->whereIn('payment_status', ['pending', 'pending_validation', 'approved'])
             ->get(['id', 'booking_date', 'start_time', 'end_time', 'duration_hours', 'membership_id', 'booking_source'])
             ->map(function (Booking $booking): array {
