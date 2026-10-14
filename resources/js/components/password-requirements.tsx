@@ -18,14 +18,14 @@ function RequirementItem({ label, isMet }: Requirement): ReactNode {
     return (
         <li
             className={cn(
-                'flex items-center gap-2 text-sm',
+                'flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-2 text-xs font-medium transition-colors',
                 isMet
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-muted-foreground',
+                    ? 'border-emerald-500/20 bg-emerald-500/8 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-300'
+                    : 'border-border/70 bg-muted/20 text-muted-foreground',
             )}
         >
             <Icon className="size-4 shrink-0" aria-hidden="true" />
-            <span>{label}</span>
+            <span className="min-w-0 leading-snug">{label}</span>
         </li>
     );
 }
@@ -42,15 +42,62 @@ export default function PasswordRequirements({ password, className }: Props) {
         { label: 'Mengandung angka (0-9)', isMet: /\d/.test(password) },
         { label: 'Mengandung simbol', isMet: /[^A-Za-z0-9\s]/.test(password) },
     ];
+    const completedRequirements = requirements.filter(
+        (requirement) => requirement.isMet,
+    ).length;
+    const completionPercentage =
+        (completedRequirements / requirements.length) * 100;
 
     return (
-        <ul
-            className={cn('grid gap-1.5', className)}
-            aria-label="Syarat kata sandi"
+        <div
+            className={cn(
+                'border-border/70 bg-muted/15 rounded-xl border p-3',
+                className,
+            )}
         >
-            {requirements.map((requirement) => (
-                <RequirementItem key={requirement.label} {...requirement} />
-            ))}
-        </ul>
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-foreground text-xs font-bold">
+                        Persyaratan kata sandi
+                    </p>
+                    <p className="text-muted-foreground mt-0.5 text-[11px] leading-relaxed">
+                        Gunakan kombinasi karakter agar akun Anda tetap aman.
+                    </p>
+                </div>
+                <span
+                    className={cn(
+                        'shrink-0 rounded-full px-2 py-1 text-[10px] font-bold tabular-nums',
+                        completedRequirements === requirements.length
+                            ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-muted text-muted-foreground',
+                    )}
+                >
+                    {completedRequirements}/{requirements.length}
+                </span>
+            </div>
+
+            <div
+                className="bg-muted mt-3 h-1.5 overflow-hidden rounded-full"
+                role="progressbar"
+                aria-label="Progress persyaratan kata sandi"
+                aria-valuemin={0}
+                aria-valuemax={requirements.length}
+                aria-valuenow={completedRequirements}
+            >
+                <div
+                    className="h-full rounded-full bg-emerald-500 transition-[width] duration-200"
+                    style={{ width: `${completionPercentage}%` }}
+                />
+            </div>
+
+            <ul
+                className="mt-3 grid gap-2 sm:grid-cols-2"
+                aria-label="Syarat kata sandi"
+            >
+                {requirements.map((requirement) => (
+                    <RequirementItem key={requirement.label} {...requirement} />
+                ))}
+            </ul>
+        </div>
     );
 }
