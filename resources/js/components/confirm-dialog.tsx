@@ -22,6 +22,7 @@ type ConfirmDialogProps = {
   cancelLabel?: string; // default "Batal"
   variant?: "destructive" | "default"; // controls confirm button style
   icon?: LucideIcon; // custom icon override
+  confirmDisabled?: boolean;
   onConfirm: () => void;
 };
 
@@ -34,6 +35,7 @@ export default function ConfirmDialog({
   cancelLabel = "Batal",
   variant = "default",
   icon,
+  confirmDisabled = false,
   onConfirm,
 }: ConfirmDialogProps) {
   const isDestructive = variant === "destructive";
@@ -73,6 +75,7 @@ export default function ConfirmDialog({
             <Button
               variant={isDestructive ? "destructive" : "default"}
               className="w-full rounded-xl font-bold sm:w-auto"
+              disabled={confirmDisabled}
               onClick={onConfirm}
             >
               <ConfirmIcon className="size-4" />

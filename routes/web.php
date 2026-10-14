@@ -35,9 +35,12 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware(['admin.workspace'])->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::get('/home/data', [HomeController::class, 'data'])->name('home.data');
 });
 Route::middleware(['public.catalog'])->group(function () {
     Route::get('/lapangan', [LapanganController::class, 'index'])->name('lapangan.index');
+    Route::get('/lapangan/data', [LapanganController::class, 'data'])->name('lapangan.data');
+    Route::get('/lapangan/{slug}/data', [LapanganController::class, 'showData'])->name('lapangan.show-data');
     Route::get('/lapangan/{slug}', [LapanganController::class, 'show'])->name('lapangan.show');
     Route::get('/lapangan/{lapangan}/slots', [LapanganController::class, 'getSlots'])->name('lapangan.slots');
 });
@@ -87,6 +90,7 @@ Route::middleware(['auth', 'admin.workspace'])->group(function () {
     // Customer actions requiring verified email
     Route::middleware(['verified'])->group(function () {
         Route::get('/membership', [MembershipController::class, 'index'])->name('membership.index');
+        Route::get('/membership/data', [MembershipController::class, 'data'])->name('membership.data');
         Route::get('/membership/slots', [MembershipController::class, 'slots'])->name('membership.slots');
         Route::get('/membership/checkout/{lapangan:slug}', [MembershipController::class, 'checkout'])->name('membership.checkout');
         Route::post('/membership', [MembershipController::class, 'store'])->name('membership.store');
@@ -100,6 +104,7 @@ Route::middleware(['auth', 'admin.workspace'])->group(function () {
         Route::post('/booking/{booking_code}/submit-payment', [BookingController::class, 'submitPayment'])->name('booking.submit-payment');
         Route::post('/booking/{booking_code}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
         Route::get('/my-bookings', [BookingController::class, 'history'])->name('booking.history');
+        Route::get('/my-bookings/data', [BookingController::class, 'data'])->name('booking.data');
 
         // Review action
         Route::post('/reviews', [ReviewController::class, 'store'])->name('review.store');

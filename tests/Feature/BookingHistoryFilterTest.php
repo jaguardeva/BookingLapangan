@@ -43,9 +43,25 @@ test('booking history page loads with currentType prop', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('booking/history')
-            ->has('currentType')
-            ->where('currentType', 'all')
+            ->missing('currentType')
+            ->missing('currentStatus')
+            ->missing('bookings')
         );
+});
+
+test('booking history JSON response contains paginated booking data', function () {
+    $this->actingAs($this->user)
+        ->getJson(route('booking.data'))
+        ->assertOk()
+        ->assertJsonStructure([
+            'bookings' => [
+                'data',
+                'links',
+                'total',
+            ],
+            'currentStatus',
+            'currentType',
+        ]);
 });
 
 test('type filter membership returns only membership bookings', function () {
@@ -106,14 +122,11 @@ test('type filter membership returns only membership bookings', function () {
     ]);
 
     $this->actingAs($this->user)
-        ->get(route('booking.history', ['type' => 'membership']))
+        ->getJson(route('booking.data', ['type' => 'membership']))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('booking/history')
-            ->where('currentType', 'membership')
-            ->has('bookings.data', 1)
-            ->where('bookings.data.0.membership_id', $membership->id)
-        );
+        ->assertJsonPath('currentType', 'membership')
+        ->assertJsonCount(1, 'bookings.data')
+        ->assertJsonPath('bookings.data.0.membership_id', $membership->id);
 });
 
 test('type filter regular returns only daily bookings', function () {
@@ -174,14 +187,11 @@ test('type filter regular returns only daily bookings', function () {
     ]);
 
     $this->actingAs($this->user)
-        ->get(route('booking.history', ['type' => 'regular']))
+        ->getJson(route('booking.data', ['type' => 'regular']))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('booking/history')
-            ->where('currentType', 'regular')
-            ->has('bookings.data', 1)
-            ->where('bookings.data.0.membership_id', null)
-        );
+        ->assertJsonPath('currentType', 'regular')
+        ->assertJsonCount(1, 'bookings.data')
+        ->assertJsonPath('bookings.data.0.membership_id', null);
 });
 
 test('booking history eager loads membership relation', function () {
@@ -218,12 +228,9 @@ test('booking history eager loads membership relation', function () {
     ]);
 
     $this->actingAs($this->user)
-        ->get(route('booking.history'))
+        ->getJson(route('booking.data'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('booking/history')
-            ->has('bookings.data.0.membership')
-        );
+        ->assertJsonPath('bookings.data.0.membership.id', $membership->id);
 });
 
 test('membership with multiple sessions counts as only 1 item in pagination', function () {
@@ -288,22 +295,17 @@ test('membership with multiple sessions counts as only 1 item in pagination', fu
     }
 
     $this->actingAs($this->user)
-        ->get(route('booking.history'))
+        ->getJson(route('booking.data'))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('booking/history')
-            // 5 membership sessions + 2 regular = 3 total items in paginator, NOT 7!
-            ->where('bookings.total', 3)
-            ->has('bookings.data', 3)
-            // The membership entry has its 5 sessions loaded in relation
-            ->where('bookings.data', function ($items) {
-                $membershipItem = collect($items)->firstWhere('membership_id', '!=', null);
+        ->assertJsonPath('bookings.total', 3)
+        ->assertJsonCount(3, 'bookings.data')
+        ->assertJsonPath('bookings.data', function ($items) {
+            $membershipItem = collect($items)->firstWhere('membership_id', '!=', null);
 
-                return $membershipItem !== null
-                    && isset($membershipItem['membership']['bookings'])
-                    && count($membershipItem['membership']['bookings']) === 5;
-            })
-        );
+            return $membershipItem !== null
+                && isset($membershipItem['membership']['bookings'])
+                && count($membershipItem['membership']['bookings']) === 5;
+        });
 });
 
 test('membership filter with multiple sessions counts as 1 item', function () {
@@ -342,12 +344,9 @@ test('membership filter with multiple sessions counts as 1 item', function () {
     }
 
     $this->actingAs($this->user)
-        ->get(route('booking.history', ['type' => 'membership']))
+        ->getJson(route('booking.data', ['type' => 'membership']))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page
-            ->component('booking/history')
-            ->where('bookings.total', 1)
-            ->has('bookings.data', 1)
-            ->where('bookings.data.0.membership_id', $membership->id)
-        );
+        ->assertJsonPath('bookings.total', 1)
+        ->assertJsonCount(1, 'bookings.data')
+        ->assertJsonPath('bookings.data.0.membership_id', $membership->id);
 });

@@ -25,6 +25,8 @@ export interface PaginationProps {
     variant?: 'all' | 'summary' | 'navigation';
     className?: string;
     preserveScroll?: boolean;
+    onPageChange?: (page: number) => void;
+    onPerPageChange?: (perPage: number) => void;
 }
 
 export function Pagination({
@@ -37,6 +39,8 @@ export function Pagination({
     variant = 'all',
     className,
     preserveScroll = true,
+    onPageChange,
+    onPerPageChange,
 }: PaginationProps) {
     const page = usePage();
     const pageSizeOptions = [10, 25, 50, 100];
@@ -86,6 +90,11 @@ export function Pagination({
                         <Select
                             value={String(selectedPerPage)}
                             onValueChange={(value) => {
+                                if (onPerPageChange) {
+                                    onPerPageChange(Number(value));
+                                    return;
+                                }
+
                                 const url = new URL(
                                     page.url,
                                     'http://localhost',
@@ -145,6 +154,17 @@ export function Pagination({
                             link.label.includes('...') ||
                             link.label.includes('&hellip;');
 
+                        const getPageFromUrl = (url: string | null): number | null => {
+                            if (!url) return null;
+                            try {
+                                const parsed = new URL(url, 'http://localhost');
+                                const p = parsed.searchParams.get('page');
+                                return p ? Number(p) : 1;
+                            } catch {
+                                return null;
+                            }
+                        };
+
                         // Ellipsis separator
                         if (isEllipsis) {
                             return (
@@ -175,6 +195,21 @@ export function Pagination({
                                 );
                             }
 
+                            if (onPageChange) {
+                                const prevPage = getPageFromUrl(link.url);
+                                return (
+                                    <button
+                                        type="button"
+                                        key={`prev-${idx}`}
+                                        onClick={() => prevPage && onPageChange(prevPage)}
+                                        aria-label="Halaman sebelumnya"
+                                        className="border-border/70 bg-card text-foreground hover:border-border hover:bg-muted flex size-9 cursor-pointer items-center justify-center rounded-xl border transition-colors"
+                                    >
+                                        <ChevronLeft className="size-4" />
+                                    </button>
+                                );
+                            }
+
                             return (
                                 <Link
                                     key={`prev-${idx}`}
@@ -202,6 +237,21 @@ export function Pagination({
                                             Halaman selanjutnya
                                         </span>
                                     </span>
+                                );
+                            }
+
+                            if (onPageChange) {
+                                const nextPage = getPageFromUrl(link.url);
+                                return (
+                                    <button
+                                        type="button"
+                                        key={`next-${idx}`}
+                                        onClick={() => nextPage && onPageChange(nextPage)}
+                                        aria-label="Halaman selanjutnya"
+                                        className="border-border/70 bg-card text-foreground hover:border-border hover:bg-muted flex size-9 cursor-pointer items-center justify-center rounded-xl border transition-colors"
+                                    >
+                                        <ChevronRight className="size-4" />
+                                    </button>
                                 );
                             }
 
@@ -243,6 +293,21 @@ export function Pagination({
                                 >
                                     {pageNumber}
                                 </span>
+                            );
+                        }
+
+                        if (onPageChange) {
+                            const targetPage = getPageFromUrl(link.url) ?? Number(pageNumber);
+                            return (
+                                <button
+                                    type="button"
+                                    key={`page-${idx}`}
+                                    onClick={() => onPageChange(targetPage)}
+                                    aria-label={`Ke halaman ${pageNumber}`}
+                                    className="border-border/70 bg-card text-foreground hover:border-border hover:bg-muted flex size-9 cursor-pointer items-center justify-center rounded-xl border text-xs font-semibold transition-colors"
+                                >
+                                    {pageNumber}
+                                </button>
                             );
                         }
 

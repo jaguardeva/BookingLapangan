@@ -91,10 +91,13 @@ test('deactivating a category hides its lapangan from public pages without delet
         ->assertRedirect()
         ->assertSessionHasNoErrors();
 
+    $this->getJson(route('lapangan.data'))
+        ->assertOk()
+        ->assertJsonPath('lapangans.data', []);
     $this->get(route('lapangan.index'))
-        ->assertInertia(fn ($page) => $page->where('lapangans.data', []));
-    $this->get(route('home'))
-        ->assertInertia(fn ($page) => $page->where('featuredLapangans', []));
+        ->assertOk();
+    $this->getJson(route('home.data'))
+        ->assertJsonPath('featuredLapangans', []);
     $this->get(route('lapangan.show', $lapangan->slug))->assertNotFound();
 
     $this->actingAs($user)
@@ -241,10 +244,9 @@ test('lapangan detail exposes all stored photos in their saved order', function 
         'is_active' => true,
     ]);
 
-    $this->get(route('lapangan.show', $lapangan->slug))
-        ->assertInertia(fn ($page) => $page
-            ->component('lapangan/show')
-            ->where('lapangan.images', $photos));
+    $this->getJson(route('lapangan.show-data', $lapangan->slug))
+        ->assertOk()
+        ->assertJsonPath('lapangan.images', $photos);
 });
 
 test('lapangan image uploads reject more than four files', function () {

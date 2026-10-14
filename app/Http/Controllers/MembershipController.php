@@ -67,6 +67,11 @@ class MembershipController extends Controller
 
     public function index(): Response
     {
+        return Inertia::render('membership/index');
+    }
+
+    public function data(): JsonResponse
+    {
         $user = auth()->user();
         $memberships = $user->memberships()
             ->with('reservations.lapangan')
@@ -81,7 +86,7 @@ class MembershipController extends Controller
             ->latest('ends_at')
             ->get();
 
-        return Inertia::render('membership/index', [
+        return response()->json([
             'membership' => $memberships->first(),
             'memberships' => $memberships,
             'activeMemberships' => $activeMemberships,
@@ -107,7 +112,7 @@ class MembershipController extends Controller
     public function show(string $membership): Response
     {
         $record = auth()->user()->memberships()
-            ->with(['reservations.lapangan.category', 'bookings.lapangan.category'])
+            ->with(['user', 'reservations.lapangan.category', 'bookings.lapangan.category'])
             ->whereKey($membership)
             ->firstOrFail();
 

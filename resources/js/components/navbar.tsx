@@ -8,7 +8,14 @@ import {
     User as UserIcon,
     LayoutDashboard,
     ArrowRight,
+    House,
+    Search,
+    Crown,
+    Bell,
     Menu,
+    X,
+    UserPlus,
+    Palette,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotificationCenter } from '@/components/notification-center';
@@ -23,16 +30,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-    SheetClose,
-} from '@/components/ui/sheet';
 import { useInitials } from '@/hooks/use-initials';
-import { UserInfo } from '@/components/user-info';
 import { edit as editSecurity } from '@/routes/security';
 import { edit as editProfile } from '@/routes/profile';
 import { dashboard as adminDashboard } from '@/routes/admin';
@@ -58,6 +56,7 @@ export function Navbar() {
     const { currentUrl, isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
     const isLanding = isCurrentUrl(home.url());
     const [landingNavState, setLandingNavState] = useState<'top' | 'revealed'>('top');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const isLandingOverlay = isLanding && landingNavState === 'top';
 
     const getNavLinkClass = (isActive: boolean) => {
@@ -104,37 +103,56 @@ export function Navbar() {
         isCurrentOrParentUrl(bookingHistory.url()) ||
         currentUrl.startsWith('/booking/');
 
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [currentUrl]);
+
+    useEffect(() => {
+        if (!isMobileMenuOpen) {
+            return;
+        }
+
+        const previousOverflow = document.body.style.overflow;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setIsMobileMenuOpen(false);
+            }
+        };
+
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isMobileMenuOpen]);
+
     const mobileNavItems = user
         ? [
               {
                   label: 'Beranda',
                   href: home(),
                   active: isCurrentUrl(home.url()),
-                  unreadCount: 0,
+                  icon: House,
               },
               {
                   label: 'Cari Lapangan',
                   href: lapanganIndex(),
                   active: isCurrentOrParentUrl(lapanganIndex.url()),
-                  unreadCount: 0,
+                  icon: Search,
               },
               {
                   label: 'Riwayat Booking',
                   href: bookingHistory(),
                   active: isBookingActive,
-                  unreadCount: 0,
+                  icon: CalendarCheck,
               },
               {
-                  label: 'Membership',
+                  label: 'Paket Membership',
                   href: membershipIndex(),
                   active: isCurrentOrParentUrl(membershipIndex.url()),
-                  unreadCount: 0,
-              },
-              {
-                  label: 'Notifikasi',
-                  href: notificationsIndex(),
-                  active: isCurrentOrParentUrl(notificationsIndex.url()),
-                  unreadCount: unreadNotificationsCount,
+                  icon: Crown,
               },
           ]
         : [
@@ -142,25 +160,20 @@ export function Navbar() {
                   label: 'Beranda',
                   href: home(),
                   active: isCurrentUrl(home.url()),
-                  unreadCount: 0,
+                  icon: House,
               },
               {
                   label: 'Cari Lapangan',
                   href: lapanganIndex(),
                   active: isCurrentOrParentUrl(lapanganIndex.url()),
-                  unreadCount: 0,
-              },
-              {
-                  label: 'Masuk',
-                  href: login(),
-                  active: isCurrentOrParentUrl(login.url()),
-                  unreadCount: 0,
+                  icon: Search,
               },
           ];
 
     return (
         <>
-            <header className={`fixed inset-x-0 top-0 z-40 w-full border-b backdrop-blur-md transition-all duration-300 print:hidden ${isLandingOverlay ? 'border-transparent bg-transparent text-brand-deep backdrop-blur-sm dark:text-brand-foreground' : isLanding ? 'border-border/70 bg-white/95 text-foreground shadow-sm dark:bg-card/95' : 'border-border/60 bg-background/95 text-foreground shadow-sm dark:bg-card/95'}`}>
+            <>
+                <header className={`fixed inset-x-0 top-0 z-40 w-full border-b backdrop-blur-md transition-all duration-300 print:hidden ${isLandingOverlay ? 'border-transparent bg-transparent text-brand-deep backdrop-blur-sm dark:text-brand-foreground' : isLanding ? 'border-border/70 bg-white/95 text-foreground shadow-sm dark:bg-card/95' : 'border-border/60 bg-background/95 text-foreground shadow-sm dark:bg-card/95'}`}>
                 {user && user.is_verified === false && !isStaff && (
                     <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 border-b border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-center text-xs text-amber-700 sm:px-4 dark:bg-amber-500/15 dark:text-amber-300">
                         <span>
@@ -247,167 +260,291 @@ export function Navbar() {
                             <ThemeToggleButton />
                         </div>
                         <div className="md:hidden">
-                            <Sheet>
-                                <SheetTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="size-9"
-                                        aria-label="Buka menu navigasi"
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`size-9 rounded-xl ${
+                                    isLandingOverlay
+                                        ? 'text-brand-deep hover:bg-brand-deep/10 dark:text-brand-foreground dark:hover:bg-brand-foreground/10'
+                                        : 'text-foreground hover:bg-muted'
+                                }`}
+                                aria-label={isMobileMenuOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
+                                aria-expanded={isMobileMenuOpen}
+                                aria-controls="mobile-navigation-drawer"
+                                onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+                            >
+                                {isMobileMenuOpen ? (
+                                    <X className="size-5" aria-hidden="true" />
+                                ) : (
+                                    <Menu className="size-5" aria-hidden="true" />
+                                )}
+                            </Button>
+                            {isMobileMenuOpen && (
+                                <div className="fixed inset-0 z-50 md:hidden" role="presentation">
+                                    <button
+                                        type="button"
+                                        className="absolute inset-0 bg-slate-950/45"
+                                        aria-label="Tutup menu navigasi"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    />
+                                    <aside
+                                        id="mobile-navigation-drawer"
+                                        role="dialog"
+                                        aria-modal="true"
+                                        aria-labelledby="mobile-navigation-title"
+                                        className="bg-background relative flex h-dvh w-full flex-col gap-0 p-0"
                                     >
-                                        <Menu className="size-5" />
-                                    </Button>
-                                </SheetTrigger>
-                                <SheetContent
-                                    side="left"
-                                    disableAnimation
-                                    className="bg-background/95 h-dvh w-screen max-w-none gap-0 overflow-hidden rounded-none border-r-0 p-0 backdrop-blur-xl"
-                                >
-                                    <SheetHeader className="from-primary/15 via-primary/5 border-border relative border-b bg-gradient-to-br to-transparent px-5 pt-6 pb-5 text-left">
-                                        <div className="flex items-center gap-3 pr-8">
-                                            <div className="bg-primary text-primary-foreground flex size-10 shrink-0 items-center justify-center rounded-2xl shadow-lg shadow-primary/20">
-                                                <Trophy className="size-5" />
+                                    {/* Header Drawer */}
+                                    <div className="border-b border-border/70 px-4 py-3.5 text-left sm:px-5">
+                                        <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs shadow-primary/25">
+                                                <Trophy className="size-4" />
                                             </div>
-                                            <div className="min-w-0">
-                                                <SheetTitle className="truncate text-base">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-bold tracking-tight text-foreground">
                                                     {appName}
-                                                </SheetTitle>
-                                                <p className="text-muted-foreground mt-0.5 text-xs">
-                                                    Navigasi utama
+                                                </p>
+                                                <p className="truncate text-[10px] font-medium tracking-wide uppercase text-muted-foreground">
+                                                    Venue Olahraga Sportify
                                                 </p>
                                             </div>
                                         </div>
-                                    </SheetHeader>
+                                            <button
+                                                type="button"
+                                                className="text-muted-foreground hover:bg-muted hover:text-foreground flex size-9 shrink-0 items-center justify-center rounded-xl"
+                                                aria-label="Tutup menu navigasi"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                            >
+                                                <X className="size-5" aria-hidden="true" />
+                                            </button>
+                                        </div>
+                                        <h2 id="mobile-navigation-title" className="sr-only">Menu Navigasi Mobile</h2>
+                                    </div>
 
-                                    <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
-                                        {user && (
-                                            <div className="border-border/70 bg-muted/35 mb-3 flex items-center gap-3 rounded-2xl border p-3">
-                                                <UserInfo user={user} showEmail />
-                                                {user.is_verified === false && (
-                                                    <span className="size-2 shrink-0 rounded-full bg-amber-500" title="Email belum diverifikasi" />
-                                                )}
+                                    {/* Unverified Email Warning Banner */}
+                                    {user && user.is_verified === false && !isStaff && (
+                                        <div className="flex items-center justify-between gap-2 border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-xs text-amber-700 dark:text-amber-300">
+                                            <span className="truncate">Email belum diverifikasi</span>
+                                            <Link
+                                                href="/email/verify"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                                className="inline-flex shrink-0 items-center gap-1 font-bold underline hover:text-amber-900 dark:hover:text-amber-200"
+                                            >
+                                                Verifikasi
+                                                <ArrowRight className="size-3" aria-hidden="true" />
+                                            </Link>
+                                        </div>
+                                    )}
+
+                                    {/* Scrollable Navigation Body */}
+                                    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+                                        {/* User Profile or Guest Card */}
+                                        {user ? (
+                                            <div className="space-y-2.5 rounded-2xl border border-border/80 bg-card p-3.5 shadow-xs">
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="size-11 shrink-0 rounded-xl border border-border">
+                                                        <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
+                                                        <AvatarFallback className="rounded-xl bg-primary/10 text-xs font-bold text-primary">
+                                                            {getInitials(user.name)}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <p className="truncate text-sm font-bold text-foreground">
+                                                                {user.name}
+                                                            </p>
+                                                            {isStaff ? (
+                                                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold tracking-wide uppercase text-primary">
+                                                                    Admin
+                                                                </span>
+                                                            ) : (
+                                                                <span className="rounded-full bg-muted px-2 py-0.5 text-[9px] font-medium tracking-wide uppercase text-muted-foreground">
+                                                                    Member
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="truncate text-xs text-muted-foreground">
+                                                            {user.email}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2 border-t border-border/50 pt-2">
+                                                    <Link
+                                                        href={editProfile()}
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="flex items-center justify-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                                                    >
+                                                        <UserIcon className="size-3.5 text-muted-foreground" />
+                                                        Profil
+                                                    </Link>
+                                                    <Link
+                                                        href={editSecurity()}
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="flex items-center justify-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                                                    >
+                                                        <ShieldCheck className="size-3.5 text-muted-foreground" />
+                                                        Keamanan
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-xs">
+                                                <p className="text-sm font-bold text-foreground">
+                                                    Selamat Datang di {appName}
+                                                </p>
+                                                <p className="mt-0.5 mb-3 text-xs leading-relaxed text-muted-foreground">
+                                                    Masuk untuk reservasi lapangan olahraga dan nikmati harga khusus member.
+                                                </p>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <Link
+                                                        href={login()}
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="flex items-center justify-center gap-1.5 rounded-xl border border-border bg-background py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+                                                    >
+                                                        <UserIcon className="size-3.5" />
+                                                        Masuk
+                                                    </Link>
+                                                    <Link
+                                                        href={register()}
+                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                        className="flex items-center justify-center gap-1.5 rounded-xl bg-primary py-2 text-xs font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90"
+                                                    >
+                                                        <UserPlus className="size-3.5" />
+                                                        Daftar
+                                                    </Link>
+                                                </div>
                                             </div>
                                         )}
 
-                                        <p className="text-muted-foreground px-3 pb-1 text-[10px] font-bold tracking-[0.16em] uppercase">
-                                            Menu utama
-                                        </p>
-                                        {mobileNavItems.map(
-                                            ({
-                                                label,
-                                                href,
-                                                active,
-                                                unreadCount,
-                                            }) => (
-                                                <SheetClose
+                                        {/* Main Navigation Links */}
+                                        <nav className="space-y-1">
+                                            <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+                                                Menu Utama
+                                            </p>
+                                            {mobileNavItems.map(({ label, href, active, icon: Icon }) => (
+                                                <Link
                                                     key={label}
-                                                    asChild
+                                                    href={href}
+                                                    prefetch
+                                                    onClick={() => setIsMobileMenuOpen(false)}
+                                                    aria-current={active ? 'page' : undefined}
+                                                    className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                                                        active
+                                                            ? 'bg-primary/10 font-semibold text-primary'
+                                                            : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                                    }`}
                                                 >
-                                                    <Link
-                                                        href={href}
-                                                        prefetch
-                                                        aria-current={
-                                                            active
-                                                                ? 'page'
-                                                                : undefined
-                                                        }
-                                                        className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
-                                                            active
-                                                                ? 'bg-primary/10 text-primary font-semibold'
-                                                                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                                                        }`}
-                                                    >
+                                                    <span className="flex items-center gap-3">
+                                                        <span
+                                                            className={`flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                                                                active
+                                                                    ? 'bg-primary text-primary-foreground shadow-xs shadow-primary/20'
+                                                                    : 'bg-muted text-muted-foreground group-hover:bg-background group-hover:text-foreground'
+                                                            }`}
+                                                        >
+                                                            <Icon className="size-4" aria-hidden="true" />
+                                                        </span>
                                                         <span>{label}</span>
-                                                        {label === 'Notifikasi' && unreadCount > 0 && (
-                                                            <span className="bg-destructive text-destructive-foreground flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold">
-                                                                {unreadCount > 99 ? '99+' : unreadCount}
-                                                            </span>
-                                                        )}
-                                                    </Link>
-                                                </SheetClose>
-                                            ),
-                                        )}
+                                                    </span>
+                                                    {active && (
+                                                        <span className="size-1.5 rounded-full bg-primary" />
+                                                    )}
+                                                </Link>
+                                            ))}
 
+                                            {user && (
+                                                <Link
+                                                    href={notificationsIndex()}
+                                                    prefetch
+                                                    onClick={() => setIsMobileMenuOpen(false)}
+                                                    aria-current={isCurrentOrParentUrl(notificationsIndex.url()) ? 'page' : undefined}
+                                                    className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                                                        isCurrentOrParentUrl(notificationsIndex.url())
+                                                            ? 'bg-primary/10 font-semibold text-primary'
+                                                            : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                                    }`}
+                                                >
+                                                    <span className="flex items-center gap-3">
+                                                        <span
+                                                            className={`flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                                                                isCurrentOrParentUrl(notificationsIndex.url())
+                                                                    ? 'bg-primary text-primary-foreground shadow-xs shadow-primary/20'
+                                                                    : 'bg-muted text-muted-foreground group-hover:bg-background group-hover:text-foreground'
+                                                            }`}
+                                                        >
+                                                            <Bell className="size-4" aria-hidden="true" />
+                                                        </span>
+                                                        <span>Notifikasi</span>
+                                                    </span>
+                                                    {unreadNotificationsCount > 0 ? (
+                                                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+                                                            {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
+                                                        </span>
+                                                    ) : (
+                                                        isCurrentOrParentUrl(notificationsIndex.url()) && (
+                                                            <span className="size-1.5 rounded-full bg-primary" />
+                                                        )
+                                                    )}
+                                                </Link>
+                                            )}
+                                        </nav>
+
+                                        {/* Staff / Management Section */}
                                         {isStaff && (
-                                            <>
-                                                <div className="border-border/70 my-3 border-t" />
-                                                <p className="text-muted-foreground px-3 pb-1 text-[10px] font-bold tracking-[0.16em] uppercase">
+                                            <div className="space-y-1 border-t border-border/60 pt-2">
+                                                <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
                                                     Manajemen
                                                 </p>
-                                                <SheetClose asChild>
-                                                    <Link
-                                                        href={adminDashboard()}
-                                                        className="text-primary hover:bg-primary/10 flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors"
-                                                    >
+                                                <Link
+                                                    href={adminDashboard()}
+                                                    onClick={() => setIsMobileMenuOpen(false)}
+                                                    className="group flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+                                                >
+                                                    <span className="flex items-center gap-3">
+                                                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                                                            <LayoutDashboard className="size-4" />
+                                                        </span>
                                                         <span>Admin Panel</span>
-                                                    </Link>
-                                                </SheetClose>
-                                            </>
+                                                    </span>
+                                                    <span className="rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                                                        Staff
+                                                    </span>
+                                                </Link>
+                                            </div>
                                         )}
+                                    </div>
 
-                                        <div className="border-border my-3 border-t" />
-                                        <div className="text-muted-foreground flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm">
-                                            <span>Tema</span>
+                                    {/* Bottom Utility & Footer */}
+                                    <div className="mt-auto space-y-3 border-t border-border/70 bg-muted/20 p-4">
+                                        <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card px-3.5 py-2.5 shadow-xs">
+                                            <span className="flex items-center gap-2.5 text-xs font-medium text-foreground">
+                                                <Palette className="size-4 text-muted-foreground" />
+                                                Mode Tampilan
+                                            </span>
                                             <ThemeToggleButton />
                                         </div>
 
-                                        {user ? (
-                                            <>
-                                                <div className="border-border my-3 border-t" />
-                                                <p className="text-muted-foreground px-3 pb-1 text-[10px] font-bold tracking-[0.16em] uppercase">
-                                                    Akun
-                                                </p>
-                                                <SheetClose asChild>
-                                                    <Link
-                                                        href={editProfile()}
-                                                        className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center rounded-xl px-3.5 py-2.5 text-sm transition-colors"
-                                                    >
-                                                        Pengaturan Akun
-                                                    </Link>
-                                                </SheetClose>
-                                                <SheetClose asChild>
-                                                    <Link
-                                                        href={editSecurity()}
-                                                        className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center rounded-xl px-3.5 py-2.5 text-sm transition-colors"
-                                                    >
-                                                        Keamanan
-                                                    </Link>
-                                                </SheetClose>
-                                                <SheetClose asChild>
-                                                    <Link
-                                                        href={logout()}
-                                                        method="post"
-                                                        as="button"
-                                                        className="flex w-full items-center rounded-xl px-3.5 py-2.5 text-left text-sm text-rose-600 transition-colors hover:bg-rose-500/10 dark:text-rose-400"
-                                                    >
-                                                        Keluar
-                                                    </Link>
-                                                </SheetClose>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="border-border my-3 border-t" />
-                                                <p className="text-muted-foreground px-3 pb-1 text-[10px] font-bold tracking-[0.16em] uppercase">
-                                                    Akun
-                                                </p>
-                                                <SheetClose asChild>
-                                                    <Link
-                                                        href={register()}
-                                                        className="text-primary hover:bg-primary/10 flex items-center rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors"
-                                                    >
-                                                        Daftar Sekarang
-                                                    </Link>
-                                                </SheetClose>
-                                            </>
+                                        {user && (
+                                            <Link
+                                                href={logout()}
+                                                method="post"
+                                                as="button"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                                className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/5 px-3.5 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-500/10 active:bg-rose-500/15 dark:text-rose-400"
+                                            >
+                                                <LogOut className="size-3.5" />
+                                                Keluar dari Akun
+                                            </Link>
                                         )}
-                                    </nav>
-                                    <div className="border-border/70 bg-muted/20 border-t px-5 py-3">
-                                        <p className="text-muted-foreground text-center text-[11px]">
-                                            SportBooking · Venue olahraga Sportify
+
+                                        <p className="text-center text-[10px] text-muted-foreground/75">
+                                            {appName} · Venue Olahraga Sportify
                                         </p>
                                     </div>
-                                </SheetContent>
-                            </Sheet>
+                                    </aside>
+                                </div>
+                            )}
                         </div>
                         {user ? (
                             <>
@@ -526,7 +663,9 @@ export function Navbar() {
                         )}
                     </div>
                 </div>
-            </header>
+                </header>
+
+            </>
         </>
     );
 }

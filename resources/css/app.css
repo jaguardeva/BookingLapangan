@@ -9,7 +9,7 @@
 
 @theme {
     --font-sans:
-        'Inter', ui-sans-serif, system-ui, sans-serif,
+        'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
@@ -214,23 +214,65 @@
     nav,
     footer,
     [data-sonner-toaster],
-    .whatsapp-widget {
+    .whatsapp-widget,
+    aside.no-print,
+    button.no-print {
         display: none !important;
     }
 
     body {
         background: #ffffff !important;
-        color: #000000 !important;
+        color: #0f172a !important;
         padding: 0 !important;
         margin: 0 !important;
+        font-size: 11pt !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
 
     @page {
-        margin: 15mm;
-        size: auto;
+        size: A4 portrait;
+        margin: 10mm 12mm;
     }
+
+    .print-avoid-break {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .print-border-solid {
+        border-color: #cbd5e1 !important;
+    }
+}
+
+.invoice-stamp-paid {
+    border: 3px double #16a34a;
+    color: #15803d;
+    background-color: rgba(240, 253, 244, 0.9);
+    letter-spacing: 0.12em;
+    font-weight: 900;
+    text-transform: uppercase;
+    transform: rotate(-3deg);
+    box-shadow: 0 0 0 1px #16a34a;
+}
+
+.invoice-stamp-pending {
+    border: 2px dashed #d97706;
+    color: #b45309;
+    background-color: rgba(254, 252, 232, 0.9);
+    letter-spacing: 0.08em;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.invoice-stamp-cancelled {
+    border: 3px double #e11d48;
+    color: #be123c;
+    background-color: rgba(255, 241, 242, 0.9);
+    letter-spacing: 0.12em;
+    font-weight: 900;
+    text-transform: uppercase;
+    transform: rotate(-3deg);
 }
 
 /* Keep the public experience aligned with Sportify's green brand. */

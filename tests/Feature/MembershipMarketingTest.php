@@ -588,12 +588,10 @@ test('membership index exposes all active memberships', function () {
     ]);
 
     $this->actingAs($user)
-        ->get(route('membership.index'))
-        ->assertInertia(fn ($page) => $page
-            ->component('membership/index')
-            ->has('activeMemberships', 2)
-            ->whereNot('activeMemberships.0.ends_at', null)
-        );
+        ->getJson(route('membership.data'))
+        ->assertOk()
+        ->assertJsonCount(2, 'activeMemberships')
+        ->assertJsonPath('activeMemberships.0.ends_at', fn ($endsAt) => $endsAt !== null);
 });
 
 test('user can create another membership while an existing membership is active', function () {
@@ -654,13 +652,30 @@ test('membership index exposes a membership summary without occurrence details',
     ]);
 
     $this->actingAs($user)
+        ->getJson(route('membership.data'))
+        ->assertOk()
+        ->assertJsonPath('membership.id', $membership->id)
+        ->assertJsonPath('membership.bookings_count', 1)
+        ->assertJsonMissingPath('membership.bookings');
+});
+
+test('membership index serves a lightweight shell and an empty JSON state', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+
+    $this->actingAs($user)
         ->get(route('membership.index'))
         ->assertInertia(fn ($page) => $page
             ->component('membership/index')
-            ->where('membership.id', $membership->id)
-            ->where('membership.bookings_count', 1)
-            ->missing('membership.bookings')
+            ->missing('memberships')
+            ->missing('activeMemberships')
         );
+
+    $this->actingAs($user)
+        ->getJson(route('membership.data'))
+        ->assertOk()
+        ->assertJsonPath('membership', null)
+        ->assertJsonPath('memberships.data', [])
+        ->assertJsonPath('activeMemberships', []);
 });
 
 test('membership invoice is limited to its owner and payment confirmation updates occurrences', function () {
@@ -719,12 +734,10 @@ test('active scheduled banners are exposed publicly and inactive banners are hid
     ])->assertRedirect()->assertSessionHasNoErrors();
 
     $banner = Banner::firstOrFail();
-    $this->actingAs($user)->get(route('home'))->assertInertia(fn ($page) => $page
-        ->component('home')
-        ->where('banners.0.title', 'Promo Ramadhan'));
+    $this->actingAs($user)->getJson(route('home.data'))->assertJsonPath('banners.0.title', 'Promo Ramadhan');
 
     $banner->update(['is_active' => false]);
-    $this->actingAs($user)->get(route('home'))->assertInertia(fn ($page) => $page->where('banners', []));
+    $this->actingAs($user)->getJson(route('home.data'))->assertJsonPath('banners', []);
 });
 
 test('membership cannot be renewed if expiration is more than 7 days away', function () {

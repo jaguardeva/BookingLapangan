@@ -198,13 +198,11 @@ test('lapangan detail identifies membership reservations without hiding the lapa
         'payment_deadline' => now()->addHour(),
     ]);
 
-    $this->get(route('lapangan.show', $this->lapangan->slug))
-        ->assertInertia(fn ($page) => $page
-            ->where('lapangan.id', $this->lapangan->id)
-            ->where('existingBookings.0.id', $booking->id)
-            ->where('existingBookings.0.is_membership', true)
-            ->where('existingBookings.0.booking_source', 'membership')
-        );
+    $this->getJson(route('lapangan.show-data', $this->lapangan->slug))
+        ->assertJsonPath('lapangan.id', $this->lapangan->id)
+        ->assertJsonPath('existingBookings.0.id', $booking->id)
+        ->assertJsonPath('existingBookings.0.is_membership', true)
+        ->assertJsonPath('existingBookings.0.booking_source', 'membership');
 });
 
 test('daily booking receives a membership-specific conflict message', function () {
@@ -650,27 +648,45 @@ test('superadmin can access admin workspace and manage lapangans', function () {
     $lapangansResponse->assertOk();
 });
 
-test('public user can view lapangan catalog page and receives structured filters', function () {
+test('public user can view the lapangan catalog shell without catalog data', function () {
     $response = $this->get(route('lapangan.index'));
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
         ->component('lapangan/index')
-        ->has('lapangans.data')
-        ->has('categories')
+        ->missing('lapangans')
+        ->missing('categories')
+        ->missing('filters')
         ->missing('facilities')
-        ->where('filters.sort', 'latest')
     );
 });
 
-test('public catalog ignores the removed facility filter', function () {
+test('public catalog shell ignores the removed facility filter', function () {
     $response = $this->get(route('lapangan.index', ['facility' => '999999']));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
         ->component('lapangan/index')
-        ->where('filters.sort', 'latest')
+        ->missing('filters')
         ->missing('filters.facility')
     );
+});
+
+test('public user can fetch lapangan catalog via json for client side rendering', function () {
+    $response = $this->getJson(route('lapangan.data'));
+    $response->assertOk();
+    $response->assertJsonStructure([
+        'lapangans' => [
+            'data',
+            'links',
+            'total',
+        ],
+        'categories',
+        'filters' => [
+            'search',
+            'category',
+            'sort',
+        ],
+    ]);
 });
 
 test('regular admin is redirected away from the public catalog while superadmin can access it', function () {
@@ -790,12 +806,10 @@ test('public lapangan search matches name and description case-insensitively', f
     ]);
 
     foreach (['lapangan test pro', 'TURF ARENA'] as $search) {
-        $this->get(route('lapangan.index', ['search' => $search]))
-            ->assertInertia(fn ($page) => $page
-                ->component('lapangan/index')
-                ->has('lapangans.data', 1)
-                ->where('lapangans.data.0.id', $this->lapangan->id)
-            );
+        $this->getJson(route('lapangan.data', ['search' => $search]))
+            ->assertOk()
+            ->assertJsonCount(1, 'lapangans.data')
+            ->assertJsonPath('lapangans.data.0.id', $this->lapangan->id);
     }
 });
 

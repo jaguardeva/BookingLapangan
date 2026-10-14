@@ -6,6 +6,7 @@ use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Lapangan;
 use App\Models\Review;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,6 +14,11 @@ use Inertia\Response;
 class HomeController extends Controller
 {
     public function index(): Response
+    {
+        return Inertia::render('home');
+    }
+
+    public function data(): JsonResponse
     {
         $categories = Category::where('is_active', true)
             ->withCount(['lapangans' => fn ($q) => $q->where('is_active', true)])
@@ -44,7 +50,7 @@ class HomeController extends Controller
         $totalReviews = (clone $activeReviews)->count();
         $averageRating = (float) ((clone $activeReviews)->avg('rating') ?? 0);
 
-        return Inertia::render('home', [
+        $data = [
             'categories' => $categories,
             'featuredLapangans' => $featuredLapangans,
             'testimonials' => $testimonials,
@@ -64,6 +70,8 @@ class HomeController extends Controller
                 'total_reviews' => $totalReviews,
                 'average_rating' => round($averageRating, 1),
             ],
-        ]);
+        ];
+
+        return response()->json($data);
     }
 }

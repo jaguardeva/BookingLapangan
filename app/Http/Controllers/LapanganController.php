@@ -14,7 +14,12 @@ use Inertia\Response;
 
 class LapanganController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(): Response
+    {
+        return Inertia::render('lapangan/index');
+    }
+
+    public function data(Request $request): JsonResponse
     {
         $query = Lapangan::where('is_active', true)
             ->whereHas('category', fn ($query) => $query->where('is_active', true))
@@ -47,12 +52,9 @@ class LapanganController extends Controller
             $query->latest();
         }
 
-        $lapangans = $query->paginate(Pagination::perPage($request, 10))->withQueryString();
-        $categories = Category::where('is_active', true)->get();
-
-        return Inertia::render('lapangan/index', [
-            'lapangans' => $lapangans,
-            'categories' => $categories,
+        return response()->json([
+            'lapangans' => $query->paginate(Pagination::perPage($request, 10))->withQueryString(),
+            'categories' => Category::where('is_active', true)->get(),
             'filters' => [
                 'search' => $request->query('search', ''),
                 'category' => $request->query('category', ''),
@@ -63,13 +65,34 @@ class LapanganController extends Controller
 
     public function show(string $slug): Response
     {
-        $lapangan = Lapangan::where('slug', $slug)
+        $lapanganQuery = fn () => Lapangan::where('slug', $slug)
             ->where('is_active', true)
-            ->whereHas('category', fn ($query) => $query->where('is_active', true))
+            ->whereHas('category', fn ($query) => $query->where('is_active', true));
+
+        abort_unless($lapanganQuery()->exists(), 404);
+
+        return Inertia::render('lapangan/show', [
+            'slug' => $slug,
+        ]);
+    }
+
+    public function showData(string $slug): JsonResponse
+    {
+        $lapanganQuery = fn () => Lapangan::where('slug', $slug)
+            ->where('is_active', true)
+            ->whereHas('category', fn ($query) => $query->where('is_active', true));
+
+        $lapangan = $lapanganQuery()
             ->with(['category', 'facilities', 'reviews.user'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
-            ->firstOrFail();
+            ->first();
+
+        if (! $lapangan) {
+            return response()->json([
+                'message' => 'Lapangan tidak ditemukan atau sudah tidak tersedia.',
+            ], 404);
+        }
 
         // 3 Days allowed horizon: Today, Tomorrow, Day After Tomorrow
         $today = Carbon::today();
@@ -121,12 +144,14 @@ class LapanganController extends Controller
             ->take(3)
             ->get();
 
-        return Inertia::render('lapangan/show', [
+        $data = [
             'lapangan' => $lapangan,
             'allowedDates' => $allowedDates,
             'existingBookings' => $bookings,
             'relatedLapangans' => $relatedLapangans,
-        ]);
+        ];
+
+        return response()->json($data);
     }
 
     public function getSlots(Request $request, Lapangan $lapangan): JsonResponse

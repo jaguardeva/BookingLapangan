@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, ArrowRight, CalendarDays, CalendarPlus, Clock, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,12 +8,7 @@ import { formatDateIndonesia } from '@/lib/locale';
 import MembershipController from '@/actions/App/Http/Controllers/MembershipController';
 import { index as lapanganIndex } from '@/routes/lapangan';
 import type { Membership } from '@/types/booking';
-
-interface Props {
-    membership: Membership | null;
-    memberships: { data: Membership[] };
-    activeMemberships: Membership[];
-}
+import { MembershipSkeleton } from '@/components/membership-skeleton';
 
 const weekdays = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const statusLabels: Record<string, string> = {
@@ -37,7 +33,55 @@ function statusVariant(status?: string): 'default' | 'secondary' | 'destructive'
     return 'outline';
 }
 
-export default function MembershipIndex({ memberships, activeMemberships }: Props) {
+export default function MembershipIndex() {
+    const [memberships, setMemberships] = useState<{ data: Membership[] }>({ data: [] });
+    const [activeMemberships, setActiveMemberships] = useState<Membership[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    const fetchMemberships = async () => {
+        abortControllerRef.current?.abort();
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+        setLoading(true);
+        setHasError(false);
+
+        try {
+            const response = await fetch(MembershipController.data.url(), {
+                signal: controller.signal,
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Gagal mengambil data membership.');
+            }
+
+            const json: { memberships: { data: Membership[] }; activeMemberships: Membership[] } = await response.json();
+            setMemberships(json.memberships ?? { data: [] });
+            setActiveMemberships(json.activeMemberships ?? []);
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                return;
+            }
+
+            setHasError(true);
+        } finally {
+            if (!controller.signal.aborted) {
+                setLoading(false);
+            }
+        }
+    };
+
+    useEffect(() => {
+        void fetchMemberships();
+
+        return () => abortControllerRef.current?.abort();
+    }, []);
+
     const activeCount = activeMemberships.length;
     const now = new Date();
 
@@ -82,6 +126,23 @@ export default function MembershipIndex({ memberships, activeMemberships }: Prop
                 </div>
 
                 <div className="space-y-6 pt-6">
+                    {loading ? (
+                        <MembershipSkeleton />
+                    ) : hasError ? (
+                        <div className="border-destructive/30 bg-destructive/5 rounded-3xl border border-dashed p-10 text-center sm:p-14">
+                            <div className="bg-destructive/10 text-destructive mx-auto flex size-12 items-center justify-center rounded-2xl">
+                                <AlertCircle className="size-6" />
+                            </div>
+                            <h2 className="mt-4 text-lg font-bold">Membership gagal dimuat</h2>
+                            <p className="text-muted-foreground mx-auto mt-1.5 max-w-sm text-sm">
+                                Terjadi kendala saat mengambil data membership. Silakan coba lagi.
+                            </p>
+                            <Button type="button" variant="outline" className="mt-6 rounded-xl font-bold" onClick={() => void fetchMemberships()}>
+                                Coba Lagi
+                            </Button>
+                        </div>
+                    ) : (
+                        <>
                     {/* Pending Payment Notice Banner */}
                     {pendingMembership && (
                         <div className="border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 flex flex-col justify-between gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:px-5">
@@ -287,6 +348,8 @@ export default function MembershipIndex({ memberships, activeMemberships }: Prop
                                 })}
                             </div>
                         </section>
+                    )}
+                        </>
                     )}
                 </div>
             </div>

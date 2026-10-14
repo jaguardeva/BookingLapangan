@@ -14,6 +14,7 @@ use App\Notifications\PaymentProofSubmittedNotification;
 use App\Services\CouponService;
 use App\Support\Pagination;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -322,8 +323,16 @@ class BookingController extends Controller
         return back()->with('info', 'Booking Anda berhasil dibatalkan.');
     }
 
-    public function history(Request $request): Response
+    public function history(): Response
     {
+        return Inertia::render('booking/history');
+    }
+
+    public function data(Request $request): JsonResponse
+    {
+        $currentStatus = $request->query('status', 'all');
+        $currentType = $request->query('type', 'all');
+
         $userId = auth()->id();
         $driver = DB::connection()->getDriverName();
         $minIdExpr = $driver === 'pgsql' ? 'MIN(id::text)::uuid' : 'MIN(id)';
@@ -367,10 +376,10 @@ class BookingController extends Controller
 
         $bookings = $query->paginate(Pagination::perPage($request, 10))->withQueryString();
 
-        return Inertia::render('booking/history', [
+        return response()->json([
             'bookings' => $bookings,
-            'currentStatus' => $request->query('status', 'all'),
-            'currentType' => $request->query('type', 'all'),
+            'currentStatus' => $currentStatus,
+            'currentType' => $currentType,
         ]);
     }
 }

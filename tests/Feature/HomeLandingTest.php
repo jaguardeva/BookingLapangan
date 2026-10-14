@@ -50,23 +50,31 @@ test('landing page exposes real venue and review statistics', function () {
         'comment' => 'Lapangan nyaman.',
     ]);
 
-    $this->get(route('home'))
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('home')
-            ->where('stats.total_lapangan', 1)
-            ->where('stats.total_categories', 1)
-            ->where('stats.total_reviews', 1)
-            ->where('stats.average_rating', 5)
-            ->has('testimonials', 1),
-        );
+    $this->getJson(route('home.data'))
+        ->assertOk()
+        ->assertJsonPath('stats.total_lapangan', 1)
+        ->assertJsonPath('stats.total_categories', 1)
+        ->assertJsonPath('stats.total_reviews', 1)
+        ->assertJsonPath('stats.average_rating', 5)
+        ->assertJsonCount(1, 'testimonials');
 });
 
 test('landing page renders an empty review collection safely', function () {
+    $this->getJson(route('home.data'))
+        ->assertOk()
+        ->assertJsonPath('stats.total_reviews', 0)
+        ->assertJsonPath('stats.average_rating', 0)
+        ->assertJsonCount(0, 'testimonials');
+});
+
+test('landing page renders a shell without dynamic homepage data', function () {
     $this->get(route('home'))
         ->assertInertia(fn (Assert $page) => $page
             ->component('home')
-            ->where('stats.total_reviews', 0)
-            ->where('stats.average_rating', 0)
-            ->has('testimonials', 0),
+            ->missing('categories')
+            ->missing('featuredLapangans')
+            ->missing('testimonials')
+            ->missing('banners')
+            ->missing('stats'),
         );
 });

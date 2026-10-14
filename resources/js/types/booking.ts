@@ -56,6 +56,7 @@ export type Banner = {
 
 export type Membership = {
     id: string;
+    user_id?: string | null;
     amount: number;
     subtotal?: number;
     reservation_month?: string | null;

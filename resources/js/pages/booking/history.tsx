@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PublicLayout } from '@/layouts/public-layout';
+import BookingController from '@/actions/App/Http/Controllers/BookingController';
 import {
     Calendar,
     Clock,
@@ -31,28 +32,39 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { formatDateIndonesia } from '@/lib/locale';
 import { Pagination } from '@/components/pagination';
+import { BookingHistorySkeleton } from '@/components/booking-history-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { Booking } from '@/types/booking';
+import { toast } from 'sonner';
 
-interface Props {
-    bookings: {
-        data: Booking[];
-        links: { url: string | null; label: string; active: boolean }[];
-        total: number;
-        from?: number | null;
-        to?: number | null;
-        current_page?: number;
-        last_page?: number;
-        per_page?: number;
-    };
-    currentStatus: string;
-    currentType: string;
+interface PaginatedBookings {
+    data: Booking[];
+    links: { url: string | null; label: string; active: boolean }[];
+    total: number;
+    from?: number | null;
+    to?: number | null;
+    current_page?: number;
+    last_page?: number;
+    per_page?: number;
 }
 
-export default function BookingHistory({
-    bookings,
-    currentStatus = 'all',
-    currentType = 'all',
-}: Props) {
+export default function BookingHistory() {
+    const initialParams = new URLSearchParams(
+        typeof window !== 'undefined' ? window.location.search : '',
+    );
+    const initialPage = Number(initialParams.get('page') ?? 1);
+    const initialPerPage = Number(initialParams.get('per_page') ?? 10);
+    const [bookings, setBookings] = useState<PaginatedBookings>({
+        data: [],
+        links: [],
+        total: 0,
+    });
+    const [status, setStatus] = useState(initialParams.get('status') ?? 'all');
+    const [type, setType] = useState(initialParams.get('type') ?? 'all');
+    const [page, setPage] = useState(Number.isInteger(initialPage) && initialPage > 0 ? initialPage : 1);
+    const [perPage, setPerPage] = useState(Number.isInteger(initialPerPage) && initialPerPage > 0 ? initialPerPage : 10);
+    const [loading, setLoading] = useState(true);
+    const abortControllerRef = useRef<AbortController | null>(null);
     const [selectedBookingForReview, setSelectedBookingForReview] =
         useState<Booking | null>(null);
     const [selectedMembershipForDetail, setSelectedMembershipForDetail] =
@@ -60,36 +72,89 @@ export default function BookingHistory({
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState('');
 
-    const {
-        post: postReview,
-        processing: reviewProcessing,
-        reset: resetReview,
-    } = useForm({
+    const { processing: reviewProcessing, reset: resetReview } = useForm({
         booking_id: 0,
         rating: 5,
         comment: '',
     });
 
+    const fetchBookings = useCallback(
+        async (statusValue: string, typeValue: string, pageValue: number, perPageValue: number) => {
+            abortControllerRef.current?.abort();
+
+            const controller = new AbortController();
+            abortControllerRef.current = controller;
+            const url = new URL(BookingController.data.url(), window.location.origin);
+
+            if (statusValue !== 'all') {
+                url.searchParams.set('status', statusValue);
+            }
+            if (typeValue !== 'all') {
+                url.searchParams.set('type', typeValue);
+            }
+            if (pageValue > 1) {
+                url.searchParams.set('page', String(pageValue));
+            }
+            if (perPageValue !== 10) {
+                url.searchParams.set('per_page', String(perPageValue));
+            }
+
+            setLoading(true);
+
+            try {
+                const response = await fetch(url, {
+                    signal: controller.signal,
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil riwayat booking.');
+                }
+
+                const json: { bookings: PaginatedBookings } = await response.json();
+                setBookings(json.bookings);
+                const pageUrl = new URL(
+                    BookingController.history.url(),
+                    window.location.origin,
+                );
+                pageUrl.search = url.search;
+                window.history.replaceState(
+                    {},
+                    '',
+                    `${pageUrl.pathname}${pageUrl.search}`,
+                );
+            } catch (error) {
+                if (error instanceof DOMException && error.name === 'AbortError') {
+                    return;
+                }
+
+                toast.error('Gagal memperbarui riwayat booking.');
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
+            }
+        },
+        [],
+    );
+
+    useEffect(() => {
+        void fetchBookings(status, type, page, perPage);
+
+        return () => abortControllerRef.current?.abort();
+    }, [fetchBookings, page, perPage, status, type]);
+
     const filterStatus = (status: string) => {
-        router.get(
-            '/my-bookings',
-            {
-                status: status !== 'all' ? status : '',
-                type: currentType !== 'all' ? currentType : '',
-            },
-            { preserveScroll: true },
-        );
+        setStatus(status);
+        setPage(1);
     };
 
     const filterType = (type: string) => {
-        router.get(
-            '/my-bookings',
-            {
-                status: currentStatus !== 'all' ? currentStatus : '',
-                type: type !== 'all' ? type : '',
-            },
-            { preserveScroll: true },
-        );
+        setType(type);
+        setPage(1);
     };
 
     const handleOpenReview = (booking: Booking) => {
@@ -102,7 +167,7 @@ export default function BookingHistory({
         e.preventDefault();
         if (!selectedBookingForReview) return;
 
-        postReview(
+        router.post(
             '/reviews',
             {
                 booking_id: selectedBookingForReview.id,
@@ -112,7 +177,10 @@ export default function BookingHistory({
             {
                 onSuccess: () => {
                     setSelectedBookingForReview(null);
+                    setComment('');
+                    setRating(5);
                     resetReview();
+                    void fetchBookings(status, type, page, perPage);
                 },
             },
         );
@@ -203,7 +271,7 @@ export default function BookingHistory({
                                 key={tab.key}
                                 onClick={() => filterType(tab.key)}
                                 className={`inline-flex items-center justify-center rounded-xl px-2 py-2 sm:px-4 sm:py-2 text-xs font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 ${
-                                    currentType === tab.key
+                                    type === tab.key
                                         ? tab.key === 'membership'
                                             ? 'bg-background text-indigo-700 shadow-xs ring-1 ring-indigo-500/30 sm:bg-indigo-500/15 sm:ring-1 sm:ring-indigo-500/30 dark:bg-card dark:text-indigo-300'
                                             : 'bg-background text-primary shadow-xs ring-1 ring-primary/20 sm:bg-primary/10 sm:ring-primary/30 dark:bg-card'
@@ -246,7 +314,7 @@ export default function BookingHistory({
                                 key={tab.key}
                                 onClick={() => filterStatus(tab.key)}
                                 className={`inline-flex shrink-0 items-center justify-center rounded-full px-3.5 py-1.5 text-xs leading-none font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 ${
-                                    currentStatus === tab.key
+                                    status === tab.key
                                         ? 'bg-primary text-primary-foreground shadow-sm'
                                         : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
                                 }`}
@@ -258,20 +326,34 @@ export default function BookingHistory({
                     </div>
                 </div>
 
-                <Pagination
-                    links={bookings.links}
-                    from={bookings.from}
-                    to={bookings.to}
-                    total={bookings.total}
-                    lastPage={bookings.last_page}
-                    perPage={bookings.per_page}
-                    variant="summary"
-                    className="pt-6"
-                />
+                {loading ? (
+                    <div className="flex items-center justify-between gap-3 pt-6">
+                        <Skeleton className="h-4 w-48 rounded-md" />
+                        <Skeleton className="h-8 w-24 rounded-lg" />
+                    </div>
+                ) : (
+                    <Pagination
+                        links={bookings.links}
+                        from={bookings.from}
+                        to={bookings.to}
+                        total={bookings.total}
+                        lastPage={bookings.last_page}
+                        perPage={bookings.per_page}
+                        variant="summary"
+                        className="pt-6"
+                        onPageChange={setPage}
+                        onPerPageChange={(value) => {
+                            setPerPage(value);
+                            setPage(1);
+                        }}
+                    />
+                )}
 
                 {/* Bookings List */}
                 <div className="space-y-4 pt-6">
-                    {bookings.data.length === 0 ? (
+                    {loading ? (
+                        <BookingHistorySkeleton />
+                    ) : bookings.data.length === 0 ? (
                         <div className="border-border bg-card rounded-2xl border border-dashed p-16 text-center">
                             <Calendar className="text-muted-foreground/40 mx-auto mb-3 size-10" />
                             <h3 className="text-foreground text-base font-bold">
@@ -323,6 +405,11 @@ export default function BookingHistory({
                         perPage={bookings.per_page}
                         variant="navigation"
                         className="border-border/50 mt-8 border-t pt-6"
+                        onPageChange={setPage}
+                        onPerPageChange={(value) => {
+                            setPerPage(value);
+                            setPage(1);
+                        }}
                     />
                 )}
             </div>

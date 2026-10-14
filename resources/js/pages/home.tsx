@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ArrowRight,
     CalendarDays,
@@ -12,24 +12,42 @@ import {
 } from 'lucide-react';
 import { CatalogIcon } from '@/components/catalog-icon';
 import { LapanganCard } from '@/components/lapangan-card';
+import { LapanganCardSkeleton } from '@/components/lapangan-card-skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    HomeBannerSkeleton,
+    HomeCategorySkeleton,
+    HomeStatsSkeleton,
+    HomeTestimonialsSkeleton,
+} from '@/components/home-skeleton';
 import { PublicLayout } from '@/layouts/public-layout';
+import { toast } from 'sonner';
+import HomeController from '@/actions/App/Http/Controllers/HomeController';
 import { index as lapanganIndex } from '@/routes/lapangan';
 import type { Banner, Category, Lapangan, Review } from '@/types/booking';
 
-interface Props {
+interface HomeStats {
+    total_lapangan: number;
+    total_categories: number;
+    total_reviews: number;
+    average_rating: number;
+}
+
+interface HomeData {
     categories: Category[];
     featuredLapangans: Lapangan[];
     testimonials: Review[];
-    banners?: Banner[];
-    stats: {
-        total_lapangan: number;
-        total_categories: number;
-        total_reviews: number;
-        average_rating: number;
-    };
+    banners: Banner[];
+    stats: HomeStats;
 }
+
+const emptyStats: HomeStats = {
+    total_lapangan: 0,
+    total_categories: 0,
+    total_reviews: 0,
+    average_rating: 0,
+};
 
 const faqs = [
     {
@@ -73,14 +91,64 @@ const steps = [
 
 const quickSearches = ['Futsal', 'Badminton', 'Basket', 'Mini Soccer'];
 
-export default function Home({
-    categories = [],
-    featuredLapangans = [],
-    testimonials = [],
-    banners = [],
-    stats,
-}: Props) {
+export default function Home() {
     const [openFaq, setOpenFaq] = useState<number | null>(null);
+    const [homeData, setHomeData] = useState<HomeData>({
+        categories: [],
+        featuredLapangans: [],
+        testimonials: [],
+        banners: [],
+        stats: emptyStats,
+    });
+    const [loading, setLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        const fetchHomeData = async () => {
+            setHasError(false);
+
+            try {
+                const response = await fetch(HomeController.data.url(), {
+                    signal: controller.signal,
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil data homepage.');
+                }
+
+                const data: HomeData = await response.json();
+                setHomeData(data);
+            } catch (error) {
+                if (error instanceof DOMException && error.name === 'AbortError') {
+                    return;
+                }
+
+                setHasError(true);
+                toast.error('Gagal memuat data homepage. Silakan coba lagi.');
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        void fetchHomeData();
+
+        return () => {
+            controller.abort();
+            abortControllerRef.current = null;
+        };
+    }, []);
+
+    const { categories, featuredLapangans, testimonials, banners, stats } = homeData;
 
     const { name } = usePage<{ name?: string }>().props;
     const appName = name ?? 'Sportify';
@@ -200,7 +268,10 @@ export default function Home({
                         </div>
 
                         <div className="border-brand-deep/10 dark:border-brand-foreground/15 mx-auto mt-10 w-full max-w-4xl border-t pt-6 sm:mt-16 sm:pt-8">
-                            <div className="grid grid-cols-2 gap-y-6 sm:grid-cols-4 sm:gap-y-0">
+                            {loading ? (
+                                <HomeStatsSkeleton />
+                            ) : (
+                                <div className="grid grid-cols-2 gap-y-6 sm:grid-cols-4 sm:gap-y-0">
                                 {[
                                     [
                                         stats?.total_lapangan ?? 0,
@@ -233,12 +304,27 @@ export default function Home({
                                         </p>
                                     </div>
                                 ))}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </section>
 
-                {banners.length > 0 && (
+                {hasError && (
+                    <div
+                        role="alert"
+                        className="border-destructive/20 bg-destructive/5 text-destructive mx-auto mt-6 w-[calc(100%-2rem)] max-w-[1240px] rounded-xl border px-4 py-3 text-sm sm:w-[calc(100%-3rem)] lg:w-[calc(100%-4rem)]"
+                    >
+                        Data homepage belum dapat dimuat. Silakan muat ulang
+                        halaman untuk mencoba lagi.
+                    </div>
+                )}
+
+                {loading ? (
+                    <section className="public-container mx-auto max-w-[1240px] px-4 pt-10 sm:px-6 sm:pt-14 lg:px-8">
+                        <HomeBannerSkeleton />
+                    </section>
+                ) : banners.length > 0 ? (
                     <section className="public-container mx-auto max-w-[1240px] px-4 pt-10 sm:px-6 sm:pt-14 lg:px-8">
                         <div className="grid gap-4 md:grid-cols-2">
                             {banners.map((banner) => {
@@ -247,7 +333,7 @@ export default function Home({
                             })}
                         </div>
                     </section>
-                )}
+                ) : null}
 
                 <section className="public-container mx-auto max-w-[1240px] px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
                     <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
@@ -273,7 +359,13 @@ export default function Home({
                             </Link>
                         </Button>
                     </div>
-                    {featuredLapangans.length > 0 ? (
+                    {loading ? (
+                        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                            {Array.from({ length: 6 }).map((_, index) => (
+                                <LapanganCardSkeleton key={index} />
+                            ))}
+                        </div>
+                    ) : featuredLapangans.length > 0 ? (
                         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                             {featuredLapangans.slice(0, 6).map((item) => (
                                 <LapanganCard key={item.id} item={item} />
@@ -300,7 +392,10 @@ export default function Home({
                                     kerja—semuanya tersedia di Sportify.
                                 </p>
                             </div>
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            {loading ? (
+                                <HomeCategorySkeleton />
+                            ) : (
+                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                                 {categories.map((category) => (
                                     <Link
                                         key={category.id}
@@ -324,7 +419,8 @@ export default function Home({
                                         </span>
                                     </Link>
                                 ))}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </section>
@@ -388,7 +484,9 @@ export default function Home({
                                 Pengalaman pemain Sportify
                             </div>
                         </div>
-                        {testimonials.length > 0 ? (
+                        {loading ? (
+                            <HomeTestimonialsSkeleton />
+                        ) : testimonials.length > 0 ? (
                             <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 {testimonials.slice(0, 6).map((review) => (
                                     <article

@@ -3,24 +3,28 @@ import { useState } from 'react';
 import {
     AlertCircle,
     ArrowLeft,
-    ArrowRight,
+    Calendar,
     CalendarDays,
     Check,
     CheckCircle2,
     Clock,
     Copy,
     CreditCard,
-    MapPin,
+    FileText,
+    Mail,
+    Phone,
     Printer,
     RefreshCw,
     Trophy,
+    User as UserIcon,
+    XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { PublicLayout } from '@/layouts/public-layout';
-import { formatDateIndonesia } from '@/lib/locale';
+import { formatDateIndonesia, formatDateTimeIndonesia } from '@/lib/locale';
 import MembershipController from '@/actions/App/Http/Controllers/MembershipController';
 import { home } from '@/routes';
 import { index as membershipIndex } from '@/routes/membership/index';
@@ -36,7 +40,7 @@ const weekdays = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'
 const statusLabels: Record<string, string> = {
     pending: 'Menunggu Pembayaran',
     pending_validation: 'Menunggu Validasi',
-    approved: 'Terkonfirmasi',
+    approved: 'Terkonfirmasi (Lunas)',
     active: 'Aktif',
     expired: 'Kedaluwarsa',
     rejected: 'Ditolak',
@@ -56,18 +60,22 @@ function statusVariant(status?: string): 'default' | 'secondary' | 'destructive'
 }
 
 export default function MembershipInvoice({ membership, bankAccounts }: Props) {
-    const { name: appName = 'SportBooking' } = usePage<{ name?: string }>().props;
+    const { auth, name: appName = 'SportBooking' } = usePage<{ auth?: { user?: any }; name?: string }>().props;
     const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
     const [submittingPayment, setSubmittingPayment] = useState(false);
     const [renewing, setRenewing] = useState(false);
 
+    const memberUser = membership.user ?? auth?.user;
     const primaryReservation = membership.reservations?.[0];
     const lapanganName = primaryReservation?.lapangan?.name ?? 'Membership Lapangan';
     const categoryName = primaryReservation?.lapangan?.category?.name;
 
     const isPendingPayment = membership.payment_status === 'pending';
     const isPendingValidation = membership.payment_status === 'pending_validation';
-    const isActive = membership.status === 'active';
+    const isPaid = membership.payment_status === 'approved' || membership.status === 'active';
+    const isExpired = membership.status === 'expired';
+    const isCancelled = membership.payment_status === 'cancelled' || membership.status === 'cancelled';
+    const isRejected = membership.payment_status === 'rejected' || membership.status === 'rejected';
 
     const now = new Date();
     const endsAtDate = membership.ends_at ? new Date(membership.ends_at) : null;
@@ -76,11 +84,10 @@ export default function MembershipInvoice({ membership, bankAccounts }: Props) {
         : null;
     const daysLeft = diffDays !== null ? Math.max(0, diffDays) : null;
     const isWithinRenewalWindow = daysLeft !== null && daysLeft <= 7;
-    const canRenew = membership.status === 'expired' || (isActive && isWithinRenewalWindow);
+    const canRenew = membership.status === 'expired' || (membership.status === 'active' && isWithinRenewalWindow);
     const hasDiscount = Number(membership.discount_amount) > 0;
-    const renewalOpensDate = endsAtDate
-        ? new Date(endsAtDate.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
-        : null;
+
+    const invoiceSubtotal = Number(membership.subtotal ?? (membership.amount + Number(membership.discount_amount || 0)));
 
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
@@ -113,10 +120,10 @@ export default function MembershipInvoice({ membership, bankAccounts }: Props) {
 
     return (
         <PublicLayout>
-            <Head title={`Detail Membership - ${lapanganName}`} />
+            <Head title={`Invoice Membership #${membership.id.substring(0, 8)} - ${lapanganName}`} />
 
-            {/* Breadcrumb Strip (> 2 levels deep) */}
-            <div className="border-border/60 bg-muted/20 text-muted-foreground border-b py-3 text-xs">
+            {/* Breadcrumb Strip (hidden on print) */}
+            <div className="border-border/60 bg-muted/20 text-muted-foreground border-b py-3 text-xs no-print print:hidden">
                 <div className="public-container w-full max-w-[1240px]">
                     <Breadcrumbs
                         breadcrumbs={[
@@ -128,458 +135,492 @@ export default function MembershipInvoice({ membership, bankAccounts }: Props) {
                 </div>
             </div>
 
-            <div className="min-h-screen py-6 sm:py-10 print:min-h-0 print:py-0">
-                <div className="public-container w-full max-w-[1240px] space-y-6 print:max-w-none print:space-y-4">
-                    {/* Back Link + Print Button */}
-                    <div className="flex items-center justify-between no-print">
+            <div className="min-h-screen min-w-0 py-4 sm:py-8 print:min-h-0 print:py-0">
+                <div className="public-container min-w-0 w-full max-w-4xl space-y-5 print:m-0 print:max-w-none print:p-0 print:space-y-5 sm:space-y-6">
+                    {/* Back Link + Print Button (hidden on print) */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 no-print print:hidden">
                         <Link
                             href={membershipIndex.url()}
-                            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-xs font-semibold transition-colors"
+                            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-xs font-semibold transition-colors"
                         >
-                            <ArrowLeft className="size-4" /> Kembali ke Daftar Membership
+                            <ArrowLeft className="size-3.5" /> Kembali ke Daftar Membership
                         </Link>
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => window.print()}
-                            className="rounded-xl text-xs"
+                            className="rounded-xl text-xs font-semibold shadow-xs hover:bg-muted"
                         >
-                            <Printer className="size-3.5" /> Cetak / Simpan PDF
+                            <Printer className="mr-1.5 size-3.5 text-primary" /> Cetak / Simpan PDF
                         </Button>
                     </div>
 
-                    {/* Hero Header Card */}
-                    <div className="border-border/70 bg-card rounded-2xl border p-5 shadow-xs sm:p-7 print:border-none print:bg-transparent print:p-0 print:shadow-none">
-                        {/* Official Print Header (Only shown when printing) */}
-                        <div className="hidden border-b-2 border-primary/40 pb-4 print:flex print:items-center print:justify-between">
-                            <div className="flex items-center gap-2.5">
-                                <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                                    <Trophy className="size-5" />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-black tracking-tight text-foreground">{appName}</h2>
-                                    <p className="text-[10px] text-muted-foreground">Platform Sewa Lapangan Olahraga Resmi</p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <span className="inline-block text-xs font-bold uppercase tracking-wider text-primary">
-                                    Bukti Membership Resmi
-                                </span>
-                                <p className="text-[10px] text-muted-foreground">ID: #{membership.id.substring(0, 8)}</p>
-                            </div>
-                        </div>
+                    {/* MAIN INVOICE SHEET (Struktur Faktur Standar A4) */}
+                    <div className="border-border/80 bg-card min-w-0 rounded-2xl border p-4 shadow-lg sm:p-9 print:border-none print:bg-transparent print:p-0 print:shadow-none space-y-5 print:space-y-5 sm:space-y-6">
 
-                        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start print:mt-4">
-                            <div className="space-y-1.5">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span className="text-muted-foreground font-mono text-xs font-semibold">
-                                        #{membership.id.substring(0, 8)}
-                                    </span>
-                                    {categoryName && (
-                                        <Badge variant="secondary" className="text-[11px] font-semibold">
-                                            {categoryName}
-                                        </Badge>
-                                    )}
-                                    <Badge
-                                        variant={statusVariant(
-                                            isPendingPayment || isPendingValidation
-                                                ? membership.payment_status
-                                                : membership.status,
+                        {/* 1. KOP SURAT & INVOICE HEADER */}
+                        <div className="border-b-2 border-primary/30 pb-5 print:pb-4">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                {/* Logo & Venue Identity */}
+                                <div className="flex min-w-0 items-start gap-3">
+                                    <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs print:size-10 print:border print:border-slate-800">
+                                        <Trophy className="size-6 text-primary-foreground print:size-5" />
+                                    </div>
+                                    <div className="min-w-0 space-y-0.5">
+                                        <h1 className="break-words text-xl font-black tracking-tight text-foreground sm:text-2xl print:text-xl">
+                                            {appName}
+                                        </h1>
+                                        <p className="break-words text-xs font-medium text-muted-foreground print:text-slate-600">
+                                            Platform & Arena Sewa Lapangan Olahraga Resmi
+                                        </p>
+                                        <p className="text-[11px] text-muted-foreground print:text-slate-500">
+                                            Layanan Membership Bulanan & Reservasi Rutin
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Metadata Invoice & Stamp Box */}
+                                <div className="flex min-w-0 flex-col items-start gap-1.5 sm:items-end">
+                                    <div className="min-w-0 max-w-full text-left sm:text-right">
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-primary print:text-slate-800">
+                                            Bukti Membership Resmi
+                                        </span>
+                                        <h2 className="break-all font-mono text-lg font-black tracking-tight text-foreground sm:text-2xl print:text-xl">
+                                            #MBR-{membership.id.substring(0, 8).toUpperCase()}
+                                        </h2>
+                                        <p className="text-[11px] text-muted-foreground print:text-slate-600">
+                                            Dibuat: {formatDateTimeIndonesia(membership.created_at || new Date())} WIB
+                                        </p>
+                                    </div>
+
+                                    {/* Cap Stempel Status */}
+                                    <div className="mt-1">
+                                        {isPaid && (
+                                            <div className="invoice-stamp-paid px-3 py-1 rounded text-xs font-black inline-flex items-center gap-1">
+                                                <CheckCircle2 className="size-3.5" /> LUNAS / MEMBER AKTIF
+                                            </div>
                                         )}
-                                        className="text-[11px] font-semibold"
-                                    >
-                                        {statusLabels[
-                                            isPendingPayment || isPendingValidation
-                                                ? membership.payment_status
-                                                : membership.status
-                                        ] ?? membership.status}
-                                    </Badge>
+                                        {isPendingPayment && (
+                                            <div className="invoice-stamp-pending px-3 py-1 rounded text-xs font-bold inline-flex items-center gap-1">
+                                                <Clock className="size-3.5" /> MENUNGGU PEMBAYARAN
+                                            </div>
+                                        )}
+                                        {isPendingValidation && (
+                                            <div className="border-2 border-sky-600 bg-sky-50 text-sky-800 px-3 py-1 rounded text-xs font-bold inline-flex items-center gap-1">
+                                                <Clock className="size-3.5" /> MENUNGGU VALIDASI
+                                            </div>
+                                        )}
+                                        {isExpired && (
+                                            <div className="invoice-stamp-cancelled px-3 py-1 rounded text-xs font-black inline-flex items-center gap-1">
+                                                <Clock className="size-3.5" /> KEDALUWARSA
+                                            </div>
+                                        )}
+                                        {(isCancelled || isRejected) && (
+                                            <div className="invoice-stamp-cancelled px-3 py-1 rounded text-xs font-black inline-flex items-center gap-1">
+                                                <XCircle className="size-3.5" /> {isRejected ? 'DITOLAK' : 'DIBATALKAN'}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <h1 className="text-foreground text-2xl font-black tracking-tight sm:text-3xl print:text-xl">
-                                    {lapanganName}
-                                </h1>
-                            </div>
-
-                            <div className="text-left sm:text-right">
-                                <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-                                    Total Biaya
-                                </span>
-                                <p className="text-primary text-2xl font-black sm:text-3xl print:text-xl">
-                                    Rp {membership.amount.toLocaleString('id-ID')}
-                                </p>
                             </div>
                         </div>
 
-                        {/* Summary Metrics Bar */}
-                        <div className="border-border/60 mt-6 grid grid-cols-1 gap-4 border-t pt-5 sm:grid-cols-3 print:grid-cols-3 print:mt-4 print:pt-3">
-                            <div>
-                                <span className="text-muted-foreground text-xs">Periode Mulai</span>
-                                <p className="mt-0.5 text-sm font-bold text-foreground">
-                                    {formatDate(membership.starts_at ?? membership.reservation_start_date)}
-                                </p>
+                        {/* 2. DUA KOLOM: DATA MEMBER & INFORMASI PAKET MEMBERSHIP */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-xs print:grid-cols-2 print:gap-4 print-avoid-break">
+                            {/* Ditagihkan Kepada (Member Identity) */}
+                            <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-2.5 print:border-slate-300 print:bg-slate-50/50">
+                                <div className="flex items-center gap-1.5 border-b border-border/60 pb-1.5 text-foreground font-bold tracking-wider uppercase text-[11px] print:border-slate-200">
+                                    <UserIcon className="size-3.5 text-primary print:text-slate-700" />
+                                    <span>Ditagihkan Kepada (Member)</span>
+                                </div>
+                                <div className="space-y-1.5 text-muted-foreground print:text-slate-700">
+                                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1 sm:justify-start sm:gap-2">
+                                        <span className="w-24 text-muted-foreground print:text-slate-500">Nama:</span>
+                                        <span className="font-bold text-foreground print:text-slate-900">{memberUser?.name || 'Member Terdaftar'}</span>
+                                    </div>
+                                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1 sm:justify-start sm:gap-2">
+                                        <span className="w-24 text-muted-foreground print:text-slate-500">No. Telepon:</span>
+                                        <span className="font-semibold text-foreground print:text-slate-900">{memberUser?.phone || '-'}</span>
+                                    </div>
+                                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1 sm:justify-start sm:gap-2">
+                                        <span className="w-24 text-muted-foreground print:text-slate-500">Email:</span>
+                                        <span className="text-foreground print:text-slate-900">{memberUser?.email || '-'}</span>
+                                    </div>
+                                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1 sm:justify-start sm:gap-2">
+                                        <span className="w-24 text-muted-foreground print:text-slate-500">ID Member:</span>
+                                        <span className="font-mono text-foreground print:text-slate-900">
+                                            #{memberUser?.id ? String(memberUser.id).substring(0, 8).toUpperCase() : (membership.user_id ? String(membership.user_id).substring(0, 8).toUpperCase() : '-')}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <span className="text-muted-foreground text-xs">Periode Berakhir</span>
-                                <p className="mt-0.5 text-sm font-bold text-foreground">
-                                    {formatDate(membership.ends_at)}
-                                </p>
-                            </div>
-                            <div>
-                                <span className="text-muted-foreground text-xs">Jadwal Rutin</span>
-                                <p className="mt-0.5 text-sm font-bold text-foreground">
-                                    {membership.reservations?.map((r) => `${weekdays[r.weekday]} (${r.start_time} - ${r.end_time})`).join(', ') || '-'}
-                                </p>
+
+                            {/* Detail Paket Membership & Periode */}
+                            <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-2.5 print:border-slate-300 print:bg-slate-50/50">
+                                <div className="flex items-center gap-1.5 border-b border-border/60 pb-1.5 text-foreground font-bold tracking-wider uppercase text-[11px] print:border-slate-200">
+                                    <FileText className="size-3.5 text-primary print:text-slate-700" />
+                                    <span>Detail Paket & Periode</span>
+                                </div>
+                                <div className="space-y-1.5 text-muted-foreground print:text-slate-700">
+                                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1 sm:justify-start sm:gap-2">
+                                        <span className="w-28 text-muted-foreground print:text-slate-500">Layanan:</span>
+                                        <span className="font-semibold text-foreground print:text-slate-900">Membership Rutin 30 Hari</span>
+                                    </div>
+                                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1 sm:justify-start sm:gap-2">
+                                        <span className="w-28 text-muted-foreground print:text-slate-500">Lapangan:</span>
+                                        <span className="font-bold text-foreground print:text-slate-900">
+                                            {lapanganName} {categoryName ? `(${categoryName})` : ''}
+                                        </span>
+                                    </div>
+                                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1 sm:justify-start sm:gap-2">
+                                        <span className="w-28 text-muted-foreground print:text-slate-500">Periode Aktif:</span>
+                                        <span className="font-medium text-foreground print:text-slate-900">
+                                            {formatDate(membership.starts_at ?? membership.reservation_start_date)} s/d {formatDate(membership.ends_at)}
+                                        </span>
+                                    </div>
+                                    <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1 sm:justify-start sm:gap-2">
+                                        <span className="w-28 text-muted-foreground print:text-slate-500">Metode Bayar:</span>
+                                        <span className="font-semibold uppercase text-foreground print:text-slate-900">
+                                            {membership.payment_method === 'transfer' ? 'Transfer Bank' : 'Transfer'}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Discount Breakdown (shown for all states when discount exists) */}
-                        {hasDiscount && (
-                            <div className="border-border/60 mt-5 rounded-xl border p-4 print:mt-3 print:p-3">
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2.5">
-                                    Rincian Biaya
-                                </h3>
-                                <div className="space-y-1.5 text-xs">
-                                    <div className="flex justify-between text-muted-foreground">
-                                        <span>Subtotal ({membership.reservations?.length ?? 0} jadwal)</span>
-                                        <span>
-                                            Rp {Number(membership.subtotal ?? (membership.amount + Number(membership.discount_amount))).toLocaleString('id-ID')}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between font-medium text-emerald-600 dark:text-emerald-400">
-                                        <span>Diskon Membership ({membership.discount_value ?? 0}%)</span>
-                                        <span>
-                                            - Rp {Number(membership.discount_amount).toLocaleString('id-ID')}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between border-t border-border/50 pt-2 font-bold text-foreground">
-                                        <span>Total Dibayar</span>
-                                        <span className="text-primary text-sm font-black">
-                                            Rp {membership.amount.toLocaleString('id-ID')}
-                                        </span>
+                        {/* Alert Penolakan jika Ada */}
+                        {membership.rejection_reason && (
+                            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-700 print:border-rose-400 print:bg-rose-50 print-avoid-break">
+                                <p className="flex items-center gap-1.5 text-sm font-bold">
+                                    <AlertCircle className="size-4" /> Alasan Penolakan Kasir:
+                                </p>
+                                <p className="mt-1 leading-relaxed">{membership.rejection_reason}</p>
+                            </div>
+                        )}
+
+                        {/* 3. TABEL ITEM DETAIL PAKET & JADWAL MINGGUAN */}
+                        <div className="overflow-hidden rounded-xl border border-border/80 print:border-slate-300 print-avoid-break">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr className="bg-muted/70 text-foreground font-bold border-b border-border/80 print:bg-slate-100 print:text-slate-900 print:border-slate-300">
+                                            <th className="py-3 px-3.5 text-center w-10">No</th>
+                                            <th className="py-3 px-3.5">Layanan / Lapangan</th>
+                                            <th className="py-3 px-3.5">Jadwal Rutin Mingguan</th>
+                                            <th className="py-3 px-3.5 text-center">Durasi</th>
+                                            <th className="py-3 px-3.5 text-center">Total Pertemuan</th>
+                                            <th className="py-3 px-3.5 text-right">Tarif / Sesi</th>
+                                            <th className="py-3 px-3.5 text-right">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border/60 print:divide-slate-200">
+                                        {membership.reservations && membership.reservations.length > 0 ? (
+                                            membership.reservations.map((res, idx) => {
+                                                const occ = res.occurrence_count ?? 4;
+                                                const unitPrice = res.price_per_occurrence ?? 0;
+                                                const lineSubtotal = unitPrice * occ;
+                                                return (
+                                                    <tr key={res.id || idx} className="text-foreground hover:bg-muted/30">
+                                                        <td className="py-3.5 px-3.5 text-center font-mono text-muted-foreground print:text-slate-600">
+                                                            {idx + 1}
+                                                        </td>
+                                                        <td className="py-3.5 px-3.5">
+                                                            <p className="font-bold text-foreground print:text-slate-900">
+                                                                Paket 30 Hari - {res.lapangan?.name || lapanganName}
+                                                            </p>
+                                                            <p className="text-[11px] text-muted-foreground print:text-slate-600">
+                                                                Kategori: {res.lapangan?.category?.name || categoryName || 'Olahraga'}
+                                                            </p>
+                                                        </td>
+                                                        <td className="py-3.5 px-3.5">
+                                                            <p className="font-semibold text-foreground print:text-slate-900">
+                                                                Setiap {weekdays[res.weekday]}
+                                                            </p>
+                                                            <p className="text-[11px] text-muted-foreground print:text-slate-600">
+                                                                Pukul {res.start_time} - {res.end_time} WIB
+                                                            </p>
+                                                        </td>
+                                                        <td className="py-3.5 px-3.5 text-center font-medium">
+                                                            {res.duration_hours} Jam
+                                                        </td>
+                                                        <td className="py-3.5 px-3.5 text-center font-bold text-foreground print:text-slate-900">
+                                                            {occ} Sesi
+                                                        </td>
+                                                        <td className="py-3.5 px-3.5 text-right font-medium text-muted-foreground print:text-slate-700">
+                                                            Rp {Number(unitPrice).toLocaleString('id-ID')}
+                                                        </td>
+                                                        <td className="py-3.5 px-3.5 text-right font-bold text-foreground print:text-slate-900">
+                                                            Rp {Number(lineSubtotal).toLocaleString('id-ID')}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        ) : (
+                                            <tr className="text-foreground">
+                                                <td className="py-3.5 px-3.5 text-center font-mono text-muted-foreground">1</td>
+                                                <td className="py-3.5 px-3.5 font-bold">{lapanganName}</td>
+                                                <td className="py-3.5 px-3.5">Jadwal Rutin Membership</td>
+                                                <td className="py-3.5 px-3.5 text-center">-</td>
+                                                <td className="py-3.5 px-3.5 text-center">4 Sesi</td>
+                                                <td className="py-3.5 px-3.5 text-right">-</td>
+                                                <td className="py-3.5 px-3.5 text-right font-bold">
+                                                    Rp {membership.amount.toLocaleString('id-ID')}
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* 4. TABEL RINCIAN SESI BERMAIN 30 HARI (TERJADWAL) */}
+                        {membership.bookings && membership.bookings.length > 0 && (
+                            <div className="space-y-2 print-avoid-break">
+                                <div className="flex flex-wrap items-start justify-between gap-2 text-xs">
+                                    <h3 className="font-bold uppercase tracking-wider text-foreground text-[11px] print:text-slate-900 flex items-center gap-1.5">
+                                        <CalendarDays className="size-3.5 text-primary print:text-slate-700" />
+                                        Daftar Sesi Bermain Terjadwal (30 Hari)
+                                    </h3>
+                                    <span className="text-muted-foreground text-[11px] print:text-slate-600">
+                                        {membership.bookings.length} Sesi Terdaftar
+                                    </span>
+                                </div>
+                                <div className="overflow-hidden rounded-xl border border-border/80 print:border-slate-300">
+                                    <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-xs border-collapse">
+                                        <thead>
+                                            <tr className="bg-muted/50 text-foreground font-semibold border-b border-border/70 print:bg-slate-100 print:text-slate-900 print:border-slate-300 text-[11px]">
+                                                <th className="py-2.5 px-3 text-center w-10">Sesi</th>
+                                                <th className="py-2.5 px-3">Hari & Tanggal Main</th>
+                                                <th className="py-2.5 px-3">Waktu Main</th>
+                                                <th className="py-2.5 px-3">Lapangan</th>
+                                                <th className="py-2.5 px-3 text-center">Status Sesi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-border/50 print:divide-slate-200 text-[11px]">
+                                            {membership.bookings.map((b, i) => (
+                                                <tr key={b.id || i} className="text-foreground hover:bg-muted/20">
+                                                    <td className="py-2 px-3 text-center font-mono text-muted-foreground print:text-slate-600">
+                                                        #{i + 1}
+                                                    </td>
+                                                    <td className="py-2 px-3 font-semibold text-foreground print:text-slate-900">
+                                                        {formatDate(b.booking_date)}
+                                                    </td>
+                                                    <td className="py-2 px-3 text-muted-foreground print:text-slate-700">
+                                                        {b.start_time} - {b.end_time} WIB
+                                                    </td>
+                                                    <td className="py-2 px-3 text-foreground print:text-slate-900">
+                                                        {b.lapangan?.name || lapanganName}
+                                                    </td>
+                                                    <td className="py-2 px-3 text-center">
+                                                        <span className="font-semibold text-emerald-700 dark:text-emerald-400 print:text-emerald-900">
+                                                            Terkonfirmasi
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                     </div>
                                 </div>
                             </div>
                         )}
-                    </div>
 
-                    {/* Rejection / Cancellation Alert (if applicable) */}
-                    {membership.rejection_reason && (
-                        <div className="border-destructive/30 bg-destructive/10 text-destructive flex items-start gap-3 rounded-2xl border p-4 text-xs font-medium">
-                            <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                            <div>
-                                <p className="font-bold">Alasan Penolakan:</p>
-                                <p className="mt-0.5">{membership.rejection_reason}</p>
+                        {/* 5. KALKULASI FINANSIAL & INSTRUKSI PEMBAYARAN */}
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 pt-1 print:grid-cols-2 print:gap-6 print-avoid-break">
+                            {/* Kolom Kiri: Informasi Rekening / Catatan */}
+                            <div className="space-y-3">
+                                <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-2 text-xs print:border-slate-300 print:bg-slate-50/50">
+                                    <p className="font-bold uppercase tracking-wider text-foreground text-[11px] print:text-slate-900">
+                                        Informasi Pembayaran
+                                    </p>
+                                    <div className="space-y-1.5 text-muted-foreground print:text-slate-700 leading-relaxed">
+                                        <p>
+                                            Pembayaran Paket Membership via Transfer Bank resmi pengelola arena:
+                                        </p>
+                                        {bankAccounts.length > 0 ? (
+                                            <div className="space-y-1 pt-1">
+                                                {bankAccounts.map((b) => (
+                                                    <div key={b.id} className="font-mono text-[11px] text-foreground print:text-slate-900">
+                                                        • <strong>{b.bank_name}</strong>: {b.account_number} a.n {b.account_name}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="italic">Rekening transfer terdaftar di sistem.</p>
+                                        )}
+                                        {isPendingPayment && membership.validation_code && (
+                                            <p className="text-[11px] text-primary font-semibold pt-1 print:text-slate-800">
+                                                *Sertakan Kode Validasi transfer: <strong>{membership.validation_code}</strong>
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Kolom Kanan: Rincian Angka Finansial */}
+                            <div className="space-y-2 text-xs">
+                                <div className="rounded-xl border border-border/80 bg-card p-4 space-y-2.5 print:border-slate-300 print:bg-slate-50/30">
+                                    <div className="flex flex-col justify-between gap-1 text-muted-foreground sm:flex-row sm:items-baseline print:text-slate-700">
+                                        <span>Subtotal Paket Membership</span>
+                                        <span className="font-semibold text-foreground print:text-slate-900">
+                                            Rp {invoiceSubtotal.toLocaleString('id-ID')}
+                                        </span>
+                                    </div>
+
+                                    {hasDiscount && (
+                                        <div className="flex flex-col justify-between gap-1 font-medium text-emerald-600 sm:flex-row sm:items-baseline dark:text-emerald-400 print:text-emerald-800">
+                                            <span>Diskon Membership ({membership.discount_value ?? 0}%)</span>
+                                            <span>- Rp {Number(membership.discount_amount).toLocaleString('id-ID')}</span>
+                                        </div>
+                                    )}
+
+                                    {membership.payment_method === 'transfer' && membership.validation_code > 0 && isPendingPayment && (
+                                        <div className="flex flex-col justify-between gap-1 text-muted-foreground sm:flex-row sm:items-baseline print:text-slate-700">
+                                            <span className="flex items-center gap-1">
+                                                Kode Unik Transfer
+                                                <span className="rounded bg-muted px-1.5 py-0.2 text-[10px] print:hidden">
+                                                    Otomatis
+                                                </span>
+                                            </span>
+                                            <span className="font-medium text-foreground print:text-slate-900">
+                                                + Rp {membership.validation_code}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <div className="border-t-2 border-border/80 flex flex-col gap-1 pt-3 text-sm font-black sm:flex-row sm:items-center sm:justify-between print:border-slate-300">
+                                        <span className="text-foreground print:text-slate-900">TOTAL TAGIHAN:</span>
+                                        <span className="text-right text-xl font-extrabold text-primary print:text-slate-950">
+                                            Rp {Number(membership.amount).toLocaleString('id-ID')}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    )}
 
-                    {/* Main Two-Column Content */}
-                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start print:block print:space-y-4">
-                        {/* Left Column: Schedule & Sesi Bermain */}
-                        <main className="space-y-6">
-                            {/* Jadwal Rutin Card */}
-                            <section className="border-border/70 bg-card rounded-2xl border p-5 shadow-xs sm:p-6">
-                                <h2 className="flex items-center gap-2 text-sm font-bold tracking-tight">
-                                    <CalendarDays className="text-primary size-4" /> Jadwal Mingguan Terdaftar
-                                </h2>
+                        {/* 6. CATATAN KEANGGOTAAN */}
+                        <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5 text-xs text-muted-foreground print:border-slate-300 print:bg-slate-50/50 print:text-slate-700 print-avoid-break">
+                            <p className="font-bold text-foreground text-[11px] print:text-slate-900">
+                                Catatan Keanggotaan:
+                            </p>
+                            <p className="text-[11px] mt-0.5 leading-relaxed">
+                                Invoice membership ini berlaku selama 30 hari kalender. Jadwal mingguan Anda telah terkunci secara otomatis. Tunjukkan invoice ini kepada petugas kasir saat kedatangan untuk setiap sesi bermain.
+                            </p>
+                        </div>
 
-                                <div className="mt-4 space-y-2.5">
-                                    {membership.reservations?.map((res) => (
-                                        <div
-                                            key={res.id}
-                                            className="bg-muted/30 border-border/60 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3.5 text-sm"
+                        {/* 7. FOOTER CETAK RESMI */}
+                        <div className="text-center text-[10px] text-muted-foreground print:text-slate-500 pt-2 border-t border-border/60 print:border-slate-200">
+                            <p>
+                                Terima kasih atas keanggotaan Anda di {appName}. Dokumen ini diterbitkan secara resmi sebagai bukti sah keanggotaan dan reservasi membership.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* 9. INTERACTIVE ACTION PANELS (WEB ONLY: NO-PRINT) */}
+                    <div className="no-print space-y-5 print:hidden">
+                        {/* CASE: ACTIVE MEMBERSHIP / RENEWAL ALERT */}
+                        {membership.status === 'active' && daysLeft !== null && (
+                            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
+                                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                                    <div className="space-y-1">
+                                        <h3 className="text-foreground text-sm font-bold flex items-center gap-2">
+                                            <Calendar className="size-4 text-primary" /> Status Masa Aktif Membership
+                                        </h3>
+                                        <p className="text-muted-foreground text-xs leading-relaxed">
+                                            Membership Anda aktif hingga{' '}
+                                            <strong className="text-foreground">{formatDate(membership.ends_at)}</strong>{' '}
+                                            ({daysLeft} hari tersisa).
+                                            {isWithinRenewalWindow && ' Masa perpanjangan telah dibuka! Anda dapat memperpanjang paket sekarang.'}
+                                        </p>
+                                    </div>
+
+                                    {canRenew && (
+                                        <Button
+                                            type="button"
+                                            onClick={handleRenew}
+                                            disabled={renewing}
+                                            className="h-9 w-full rounded-xl bg-primary px-5 font-bold text-primary-foreground shadow-sm hover:bg-primary/90 sm:w-auto"
                                         >
-                                            <div>
-                                                <p className="font-bold text-foreground">
-                                                    Setiap {weekdays[res.weekday]}
-                                                </p>
-                                                <p className="text-muted-foreground mt-0.5 text-xs">
-                                                    {res.start_time} - {res.end_time} WIB · {res.duration_hours} jam
-                                                </p>
+                                            <RefreshCw className={`mr-1.5 size-3.5 ${renewing ? 'animate-spin' : ''}`} />
+                                            {renewing ? 'Memproses...' : 'Perpanjang Membership'}
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* CASE: PENDING PAYMENT INSTRUCTIONS */}
+                        {isPendingPayment && (
+                            <div className="space-y-4 rounded-2xl border border-primary/25 bg-primary/5 p-5">
+                                <div className="flex items-center gap-2">
+                                    <CreditCard className="size-5 text-primary" />
+                                    <h3 className="text-foreground text-sm font-bold">
+                                        Instruksi Pembayaran Transfer Bank
+                                    </h3>
+                                </div>
+
+                                <p className="text-muted-foreground text-xs leading-relaxed">
+                                    Silakan transfer ke salah satu rekening resmi kami di bawah ini dengan nominal tepat{' '}
+                                    <strong className="text-primary font-bold">
+                                        Rp {membership.amount.toLocaleString('id-ID')}
+                                    </strong>.
+                                </p>
+
+                                <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-3">
+                                    {bankAccounts.map((b) => (
+                                        <div
+                                            key={b.id}
+                                            className="border-border bg-card space-y-1.5 rounded-xl border p-3.5 text-xs shadow-xs"
+                                        >
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <Badge variant="outline" className="text-xs font-bold">
+                                                    {b.bank_name}
+                                                </Badge>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => copyToClipboard(b.account_number, b.bank_name)}
+                                                    className="text-muted-foreground hover:text-foreground p-1 transition-colors"
+                                                    title="Salin Nomor Rekening"
+                                                >
+                                                    {copiedAccount === b.account_number ? (
+                                                        <Check className="size-3.5 text-primary" />
+                                                    ) : (
+                                                        <Copy className="size-3.5" />
+                                                    )}
+                                                </button>
                                             </div>
-                                            <div className="text-right">
-                                                <span className="text-muted-foreground text-xs font-semibold">
-                                                    {res.occurrence_count ?? 0} Pertemuan (30 hari)
-                                                </span>
-                                            </div>
+                                            <p className="text-foreground font-mono text-sm font-bold tracking-wider">
+                                                {b.account_number}
+                                            </p>
+                                            <p className="text-muted-foreground text-xs uppercase">
+                                                {b.account_name}
+                                            </p>
                                         </div>
                                     ))}
                                 </div>
-                            </section>
 
-                            {/* Timeline Sesi Bermain */}
-                            <section className="border-border/70 bg-card rounded-2xl border p-5 shadow-xs sm:p-6">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="flex items-center gap-2 text-sm font-bold tracking-tight">
-                                        <Clock className="text-primary size-4" /> Daftar Sesi Bermain
-                                    </h2>
-                                    <span className="text-muted-foreground text-xs font-medium">
-                                        {membership.bookings?.length ?? 0} Sesi Terjadwal
-                                    </span>
-                                </div>
-
-                                <div className="divide-border/50 mt-4 divide-y">
-                                    {membership.bookings && membership.bookings.length > 0 ? (
-                                        membership.bookings.map((booking) => (
-                                            <div
-                                                key={booking.id}
-                                                className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-1 last:pb-0 text-xs"
-                                            >
-                                                <div className="space-y-0.5">
-                                                    <p className="font-bold text-foreground">
-                                                        {formatDate(booking.booking_date)}
-                                                    </p>
-                                                    <p className="text-muted-foreground">
-                                                        {booking.start_time} - {booking.end_time} WIB
-                                                    </p>
-                                                </div>
-                                                <Badge
-                                                    variant={
-                                                        booking.payment_status === 'approved'
-                                                            ? 'default'
-                                                            : booking.payment_status === 'pending'
-                                                              ? 'outline'
-                                                              : 'secondary'
-                                                    }
-                                                    className="text-[10px]"
-                                                >
-                                                    {booking.payment_status === 'approved'
-                                                        ? 'Terkonfirmasi'
-                                                        : booking.payment_status === 'pending'
-                                                          ? 'Menunggu Bayar'
-                                                          : 'Verifikasi'}
-                                                </Badge>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-muted-foreground py-4 text-xs">
-                                            Sesi bermain akan dibuat otomatis saat periode dimulai.
-                                        </p>
-                                    )}
-                                </div>
-                            </section>
-                        </main>
-
-                        {/* Right Column: Context-Aware Action Sidebar (hidden in print) */}
-                        <aside className="space-y-5 lg:sticky lg:top-24 no-print">
-                            {/* CASE 1: Menunggu Pembayaran */}
-                            {isPendingPayment && (
-                                <section className="border-border/70 bg-card rounded-2xl border p-5 shadow-xs">
-                                    <div className="flex items-center gap-2">
-                                        <CreditCard className="text-primary size-5" />
-                                        <h2 className="text-sm font-bold">Instruksi Pembayaran</h2>
-                                    </div>
-
-                                    {/* Subtotal & Total */}
-                                    <div className="border-border/60 mt-4 space-y-2 border-y py-3 text-xs">
-                                        {membership.discount_amount && Number(membership.discount_amount) > 0 ? (
-                                            <>
-                                                <div className="flex justify-between text-muted-foreground">
-                                                    <span>Subtotal</span>
-                                                    <span>
-                                                        Rp {Number(membership.subtotal ?? (membership.amount + Number(membership.discount_amount))).toLocaleString('id-ID')}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between font-medium text-emerald-600 dark:text-emerald-400">
-                                                    <span>Diskon Membership ({membership.discount_value ?? 0}%)</span>
-                                                    <span>
-                                                        - Rp {Number(membership.discount_amount).toLocaleString('id-ID')}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between border-t border-border/50 pt-1.5 font-bold text-foreground">
-                                                    <span>Jumlah Tagihan</span>
-                                                    <span className="text-primary text-sm font-black">
-                                                        Rp {membership.amount.toLocaleString('id-ID')}
-                                                    </span>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Jumlah Tagihan</span>
-                                                <span className="font-semibold">
-                                                    Rp {membership.amount.toLocaleString('id-ID')}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {membership.payment_deadline && (
-                                            <div className="flex justify-between text-amber-700 dark:text-amber-300">
-                                                <span>Batas Waktu</span>
-                                                <span className="font-semibold">
-                                                    {new Date(membership.payment_deadline).toLocaleString('id-ID', {
-                                                        day: 'numeric',
-                                                        month: 'short',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                    })}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Kode Validasi */}
-                                    <div className="bg-primary/5 border-primary/20 mt-4 rounded-xl border p-3.5 text-xs">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-muted-foreground text-[11px] font-semibold uppercase">
-                                                Kode Validasi
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => copyToClipboard(String(membership.validation_code), 'Kode validasi')}
-                                                className="text-primary hover:text-primary/80 inline-flex items-center gap-1 font-bold"
-                                            >
-                                                {copiedAccount === String(membership.validation_code) ? (
-                                                    <Check className="size-3 text-emerald-600" />
-                                                ) : (
-                                                    <Copy className="size-3" />
-                                                )}
-                                                Salin
-                                            </button>
-                                        </div>
-                                        <p className="mt-1 text-xl font-black tracking-widest text-primary">
-                                            {membership.validation_code}
-                                        </p>
-                                        <p className="text-muted-foreground mt-1 text-[11px]">
-                                            Sertakan kode ini pada berita/keterangan transfer.
+                                {/* Confirmation Button */}
+                                <div className="bg-card border-border/80 mt-2 flex flex-col justify-between gap-3 rounded-xl border p-4 shadow-xs sm:flex-row sm:items-center">
+                                    <div className="space-y-0.5">
+                                        <h4 className="text-foreground text-xs font-bold">
+                                            Konfirmasi Pembayaran
+                                        </h4>
+                                        <p className="text-muted-foreground text-xs">
+                                            Sudah melakukan transfer sesuai nominal di atas? Klik tombol di samping untuk memberi tahu kasir.
                                         </p>
                                     </div>
-
-                                    {/* Rekening Tujuan */}
-                                    <div className="mt-4 space-y-2">
-                                        <p className="text-muted-foreground text-[11px] font-bold uppercase tracking-wider">
-                                            Rekening Pembayaran
-                                        </p>
-                                        {bankAccounts.map((bank) => (
-                                            <div
-                                                key={bank.id}
-                                                className="bg-muted/30 border-border/60 rounded-xl border p-3 text-xs"
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <span className="font-bold">{bank.bank_name}</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => copyToClipboard(bank.account_number, 'Nomor rekening')}
-                                                        className="text-primary hover:text-primary/80 inline-flex items-center gap-1 text-[11px] font-semibold"
-                                                    >
-                                                        {copiedAccount === bank.account_number ? (
-                                                            <Check className="size-3 text-emerald-600" />
-                                                        ) : (
-                                                            <Copy className="size-3" />
-                                                        )}
-                                                        Salin
-                                                    </button>
-                                                </div>
-                                                <p className="mt-1 font-mono font-bold text-foreground">
-                                                    {bank.account_number}
-                                                </p>
-                                                <p className="text-muted-foreground text-[11px]">
-                                                    a.n. {bank.account_name}
-                                                </p>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {/* Konfirmasi Button */}
                                     <Button
                                         type="button"
-                                        disabled={submittingPayment}
                                         onClick={handleConfirmPayment}
-                                        className="mt-5 h-11 w-full rounded-xl font-bold"
+                                        disabled={submittingPayment}
+                                        className="h-9 w-full rounded-xl bg-primary px-5 font-bold text-primary-foreground shadow-sm hover:bg-primary/90 sm:w-auto"
                                     >
-                                        {submittingPayment ? 'Memproses...' : 'Saya Sudah Transfer'}
+                                        {submittingPayment ? 'Mengirim...' : 'Saya Sudah Transfer'}
                                     </Button>
-                                </section>
-                            )}
-
-                            {/* CASE 2: Menunggu Validasi Admin */}
-                            {isPendingValidation && (
-                                <section className="border-border/70 bg-card rounded-2xl border p-5 shadow-xs">
-                                    <div className="flex items-start gap-3">
-                                        <CheckCircle2 className="text-primary mt-0.5 size-5 shrink-0" />
-                                        <div className="space-y-1">
-                                            <h2 className="text-sm font-bold">Pembayaran Sedang Diverifikasi</h2>
-                                            <p className="text-muted-foreground text-xs leading-relaxed">
-                                                Konfirmasi pembayaran Anda telah kami terima. Admin akan memverifikasi mutasi bank dalam 1x24 jam.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </section>
-                            )}
-
-                            {/* CASE 3: Membership Aktif / Expired */}
-                            {(isActive || membership.status === 'expired') && (
-                                <section className="border-border/70 bg-card rounded-2xl border p-5 shadow-xs space-y-4">
-                                    <div className="space-y-1">
-                                        <h2 className="text-sm font-bold">Status Membership</h2>
-                                        <p className="text-muted-foreground text-xs">
-                                            {isActive
-                                                ? 'Membership Anda aktif dan sesi bermain telah dikonfirmasi.'
-                                                : 'Masa aktif membership Anda telah berakhir.'}
-                                        </p>
-                                    </div>
-
-                                    <div className="border-border/60 bg-muted/20 rounded-xl border p-3.5 text-xs space-y-1.5">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Pembayaran</span>
-                                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                                                Lunas
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Periode Aktif</span>
-                                            <span className="font-semibold">30 Hari</span>
-                                        </div>
-                                        {membership.ends_at && (
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Berlaku Hingga</span>
-                                                <span className="font-semibold">{formatDate(membership.ends_at)}</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {canRenew ? (
-                                        <div className="space-y-2">
-                                            <div className="bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200 rounded-xl border p-3 text-xs leading-relaxed">
-                                                <p className="font-bold">Masa Perpanjangan Dibuka</p>
-                                                <p className="opacity-90 mt-0.5">
-                                                    {membership.status === 'expired'
-                                                        ? 'Membership sudah berakhir. Perpanjang sekarang untuk melanjutkan jadwal rutin Anda.'
-                                                        : `Masa aktif tersisa ${daysLeft === 0 ? 'hari ini' : `${daysLeft} hari lagi`}. Perpanjang sekarang untuk mengamankan slot periode berikutnya.`}
-                                                </p>
-                                            </div>
-                                            <Button
-                                                type="button"
-                                                disabled={renewing}
-                                                onClick={handleRenew}
-                                                className="h-10 w-full rounded-xl font-bold"
-                                            >
-                                                <RefreshCw className={`mr-2 size-4 ${renewing ? 'animate-spin' : ''}`} />
-                                                {renewing ? 'Memproses...' : 'Perpanjang Membership'}
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        isActive && (
-                                            <div className="space-y-2">
-                                                <div className="bg-muted/40 border-border/70 text-muted-foreground rounded-xl border p-3 text-xs leading-relaxed">
-                                                    <p className="font-semibold text-foreground">Perpanjangan Belum Dibuka</p>
-                                                    <p className="mt-0.5">
-                                                        Membership hanya dapat diperpanjang mulai 1 minggu sebelum masa aktif berakhir
-                                                        {renewalOpensDate ? ` (${formatDate(renewalOpensDate)})` : ''}.
-                                                    </p>
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    disabled
-                                                    className="h-10 w-full rounded-xl font-bold opacity-50 cursor-not-allowed"
-                                                >
-                                                    <RefreshCw className="mr-2 size-4" />
-                                                    Perpanjang Membership
-                                                </Button>
-                                            </div>
-                                        )
-                                    )}
-                                </section>
-                            )}
-                        </aside>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

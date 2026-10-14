@@ -2,6 +2,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PublicLayout } from '@/layouts/public-layout';
 import { CatalogIcon } from '@/components/catalog-icon';
+import { LapanganDetailSkeleton } from '@/components/lapangan-detail-skeleton';
 import {
     Clock,
     Star,
@@ -21,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { checkout as bookingCheckout } from '@/routes/booking';
+import LapanganController from '@/actions/App/Http/Controllers/LapanganController';
 import MembershipController from '@/actions/App/Http/Controllers/MembershipController';
 import type { Lapangan, Booking } from '@/types/booking';
 import type { User as AuthUser } from '@/types/auth';
@@ -32,25 +34,44 @@ interface AllowedDate {
     formatted: string;
 }
 
-interface Props {
+interface LapanganDetailData {
     lapangan: Lapangan;
     allowedDates: AllowedDate[];
     existingBookings: Booking[];
     relatedLapangans: Lapangan[];
 }
 
+interface Props {
+    slug?: string;
+}
+
+const emptyLapangan: Lapangan = {
+    id: '',
+    category_id: '',
+    name: '',
+    slug: '',
+    price_per_hour: 0,
+    operational_start: '00:00',
+    operational_end: '00:00',
+    slot_duration_minutes: 60,
+    is_active: false,
+};
+
 export default function LapanganShow({
-    lapangan,
-    allowedDates = [],
-    existingBookings = [],
-    relatedLapangans = [],
+    slug,
 }: Props) {
     const { auth } = usePage<{ auth: { user: AuthUser | null } }>().props;
     const currentUser = auth.user;
+    const [lapanganData, setLapanganData] = useState<Lapangan | null>(null);
+    const [allowedDates, setAllowedDates] = useState<AllowedDate[]>([]);
+    const [existingBookings, setExistingBookings] = useState<Booking[]>([]);
+    const [relatedLapangans, setRelatedLapangans] = useState<Lapangan[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [notFound, setNotFound] = useState(false);
+    const [hasError, setHasError] = useState(false);
+    const lapangan = lapanganData ?? emptyLapangan;
 
-    const [selectedDate, setSelectedDate] = useState<string>(
-        allowedDates[0]?.date || '',
-    );
+    const [selectedDate, setSelectedDate] = useState<string>('');
     const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
     const [currentTime, setCurrentTime] = useState(() => new Date());
     const galleryImages = useMemo(
@@ -67,6 +88,59 @@ export default function LapanganShow({
     const currentPhotoIndex = Math.min(activePhotoIndex, photos.length - 1);
     const dragStartRef = useRef<{ x: number; y: number } | null>(null);
     const hasDraggedRef = useRef(false);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        const detailSlug = slug ?? '';
+
+        const fetchLapangan = async () => {
+            if (!detailSlug) {
+                setHasError(true);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const response = await fetch(LapanganController.showData.url(detailSlug), {
+                    signal: controller.signal,
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (response.status === 404) {
+                    setNotFound(true);
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Gagal mengambil detail lapangan.');
+                }
+
+                const data: LapanganDetailData = await response.json();
+                setLapanganData(data.lapangan);
+                setAllowedDates(data.allowedDates);
+                setExistingBookings(data.existingBookings);
+                setRelatedLapangans(data.relatedLapangans);
+                setSelectedDate(data.allowedDates[0]?.date ?? '');
+            } catch (error) {
+                if (error instanceof DOMException && error.name === 'AbortError') {
+                    return;
+                }
+
+                setHasError(true);
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        void fetchLapangan();
+
+        return () => controller.abort();
+    }, [slug]);
 
     const showPreviousPhoto = () => {
         setActivePhotoIndex(
@@ -295,6 +369,54 @@ export default function LapanganShow({
             }),
         );
     };
+
+    if (loading) {
+        return <LapanganDetailSkeleton />;
+    }
+
+    if (notFound) {
+        return (
+            <PublicLayout>
+                <Head title="Lapangan Tidak Ditemukan" />
+                <div className="public-container flex min-h-[60vh] max-w-[1240px] items-center justify-center py-16">
+                    <div className="border-border bg-card w-full max-w-lg rounded-2xl border border-dashed p-10 text-center shadow-xs">
+                        <h1 className="text-foreground text-xl font-bold">
+                            Lapangan Tidak Ditemukan
+                        </h1>
+                        <p className="text-muted-foreground mt-2 text-sm">
+                            Lapangan yang Anda cari tidak tersedia atau sudah tidak aktif.
+                        </p>
+                        <Button asChild className="mt-5 rounded-xl">
+                            <Link href="/lapangan">Kembali ke Katalog</Link>
+                        </Button>
+                    </div>
+                </div>
+            </PublicLayout>
+        );
+    }
+
+    if (hasError) {
+        return (
+            <PublicLayout>
+                <Head title="Gagal Memuat Lapangan" />
+                <div className="public-container flex min-h-[60vh] max-w-[1240px] items-center justify-center py-16">
+                    <div role="alert" className="border-destructive/20 bg-destructive/5 text-destructive w-full max-w-lg rounded-2xl border p-10 text-center">
+                        <h1 className="text-xl font-bold">Gagal Memuat Data</h1>
+                        <p className="mt-2 text-sm">
+                            Detail lapangan belum dapat dimuat. Silakan coba lagi.
+                        </p>
+                        <Button
+                            type="button"
+                            onClick={() => window.location.reload()}
+                            className="mt-5 rounded-xl"
+                        >
+                            Coba Lagi
+                        </Button>
+                    </div>
+                </div>
+            </PublicLayout>
+        );
+    }
 
     return (
         <PublicLayout>
