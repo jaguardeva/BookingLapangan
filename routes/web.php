@@ -150,10 +150,14 @@ Route::prefix('admin')->as('admin.')->middleware(['auth', 'role:superadmin,admin
         Route::patch('/memberships/settings', [MembershipSettingController::class, 'update'])->name('memberships.settings.update');
         Route::get('/catalog', [CatalogManagementController::class, 'index'])->name('catalog.index');
         Route::post('/categories', [CategoryManagementController::class, 'store'])->name('categories.store');
+        Route::delete('/categories/bulk', [CategoryManagementController::class, 'bulkDestroy'])->name('categories.bulk-destroy');
         Route::put('/categories/{category}', [CategoryManagementController::class, 'update'])->name('categories.update');
+        Route::delete('/categories/{category}', [CategoryManagementController::class, 'destroy'])->name('categories.destroy');
         Route::post('/categories/{category}/toggle', [CategoryManagementController::class, 'toggle'])->name('categories.toggle');
         Route::post('/facilities', [FacilityManagementController::class, 'store'])->name('facilities.store');
+        Route::delete('/facilities/bulk', [FacilityManagementController::class, 'bulkDestroy'])->name('facilities.bulk-destroy');
         Route::put('/facilities/{facility}', [FacilityManagementController::class, 'update'])->name('facilities.update');
+        Route::delete('/facilities/{facility}', [FacilityManagementController::class, 'destroy'])->name('facilities.destroy');
 
         // Lapangan Management
         Route::get('/lapangans', [LapanganManagementController::class, 'index'])->name('lapangans.index');

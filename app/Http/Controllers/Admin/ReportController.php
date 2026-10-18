@@ -21,9 +21,28 @@ class ReportController extends Controller
 
         $startDate = $request->query('start_date', Carbon::today()->subDays(30)->format('Y-m-d'));
         $endDate = $request->query('end_date', Carbon::today()->format('Y-m-d'));
+        $sortColumns = [
+            'booking_code' => 'bookings.booking_code',
+            'booking_date' => 'bookings.booking_date',
+            'total_price' => 'bookings.total_price',
+            'payment_status' => 'bookings.payment_status',
+            'created_at' => 'bookings.created_at',
+        ];
+        $sort = $request->string('sort')->toString();
+        $sort = array_key_exists($sort, $sortColumns) ? $sort : 'booking_date';
+        $direction = $request->string('direction')->lower()->toString() === 'asc' ? 'asc' : 'desc';
 
         $query = Booking::with(['lapangan', 'user', 'validator'])
             ->whereBetween('booking_date', [$startDate, $endDate]);
+
+        if ($request->filled('search')) {
+            $search = $request->string('search')->toString();
+            $query->where(function ($query) use ($search): void {
+                $query->whereLike('booking_code', "%{$search}%")
+                    ->orWhereLike('customer_name', "%{$search}%")
+                    ->orWhereLike('customer_phone', "%{$search}%");
+            });
+        }
 
         if (! $isSuperAdmin) {
             $assignedIds = $user->assignedLapangans()->pluck('lapangans.id');
@@ -43,7 +62,9 @@ class ReportController extends Controller
         $approvedBookings = (clone $query)->where('payment_status', 'approved')->count();
         $cancelledBookings = (clone $query)->where('payment_status', 'cancelled')->count();
 
-        $bookings = $query->latest('booking_date')
+        $bookings = $query
+            ->orderBy($sortColumns[$sort], $direction)
+            ->orderBy('bookings.id', 'desc')
             ->paginate(Pagination::perPage($request, 10))
             ->withQueryString();
 
@@ -65,6 +86,9 @@ class ReportController extends Controller
                 'end_date' => $endDate,
                 'lapangan_id' => $request->query('lapangan_id', 'all'),
                 'status' => $request->query('status', 'all'),
+                'search' => $request->query('search', ''),
+                'sort' => $sort,
+                'direction' => $direction,
             ],
         ]);
     }
@@ -76,9 +100,28 @@ class ReportController extends Controller
 
         $startDate = $request->query('start_date', Carbon::today()->subDays(30)->format('Y-m-d'));
         $endDate = $request->query('end_date', Carbon::today()->format('Y-m-d'));
+        $sortColumns = [
+            'booking_code' => 'bookings.booking_code',
+            'booking_date' => 'bookings.booking_date',
+            'total_price' => 'bookings.total_price',
+            'payment_status' => 'bookings.payment_status',
+            'created_at' => 'bookings.created_at',
+        ];
+        $sort = $request->string('sort')->toString();
+        $sort = array_key_exists($sort, $sortColumns) ? $sort : 'booking_date';
+        $direction = $request->string('direction')->lower()->toString() === 'asc' ? 'asc' : 'desc';
 
         $query = Booking::with(['lapangan', 'user'])
             ->whereBetween('booking_date', [$startDate, $endDate]);
+
+        if ($request->filled('search')) {
+            $search = $request->string('search')->toString();
+            $query->where(function ($query) use ($search): void {
+                $query->whereLike('booking_code', "%{$search}%")
+                    ->orWhereLike('customer_name', "%{$search}%")
+                    ->orWhereLike('customer_phone', "%{$search}%");
+            });
+        }
 
         if (! $isSuperAdmin) {
             $assignedIds = $user->assignedLapangans()->pluck('lapangans.id');
@@ -93,7 +136,10 @@ class ReportController extends Controller
             $query->where('payment_status', $request->status);
         }
 
-        $bookings = $query->latest('booking_date')->get();
+        $bookings = $query
+            ->orderBy($sortColumns[$sort], $direction)
+            ->orderBy('bookings.id', 'desc')
+            ->get();
 
         $headers = [
             'Content-Type' => 'text/csv',

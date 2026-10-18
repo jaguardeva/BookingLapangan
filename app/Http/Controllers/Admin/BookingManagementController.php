@@ -150,8 +150,18 @@ class BookingManagementController extends Controller
         $user = auth()->user();
         $isSuperAdmin = $user->isSuperAdmin();
 
-        $query = Booking::with(['lapangan.category', 'user', 'validator'])
-            ->latest();
+        $sortColumns = [
+            'booking_code' => 'bookings.booking_code',
+            'booking_date' => 'bookings.booking_date',
+            'total_price' => 'bookings.total_price',
+            'payment_status' => 'bookings.payment_status',
+            'created_at' => 'bookings.created_at',
+        ];
+        $sort = $request->string('sort')->toString();
+        $sort = array_key_exists($sort, $sortColumns) ? $sort : 'created_at';
+        $direction = $request->string('direction')->lower()->toString() === 'asc' ? 'asc' : 'desc';
+
+        $query = Booking::with(['lapangan.category', 'user', 'validator']);
 
         // Scope to assigned lapangan if regular admin
         if (! $isSuperAdmin) {
@@ -180,7 +190,11 @@ class BookingManagementController extends Controller
             $query->where('booking_date', $request->date);
         }
 
-        $bookings = $query->paginate(Pagination::perPage($request, 10))->withQueryString();
+        $bookings = $query
+            ->orderBy($sortColumns[$sort], $direction)
+            ->orderBy('bookings.id', 'desc')
+            ->paginate(Pagination::perPage($request, 10))
+            ->withQueryString();
 
         $lapanganColumns = ['id', 'name', 'operational_start', 'operational_end', 'price_per_hour'];
         $lapangans = $isSuperAdmin
@@ -198,6 +212,8 @@ class BookingManagementController extends Controller
                 'status' => $request->query('status', ''),
                 'lapangan_id' => $request->query('lapangan_id', ''),
                 'date' => $request->query('date', ''),
+                'sort' => $sort,
+                'direction' => $direction,
             ],
         ]);
     }

@@ -18,13 +18,18 @@ export function HomeStatsSkeleton() {
 
 export function HomeBannerSkeleton() {
     return (
-        <div className="grid gap-4 md:grid-cols-2" aria-busy="true">
-            {Array.from({ length: 2 }).map((_, index) => (
-                <Skeleton
-                    key={index}
-                    className="min-h-48 w-full rounded-2xl"
-                />
-            ))}
+        <div className="space-y-4" aria-busy="true">
+            <div className="flex items-end justify-between">
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-32 rounded-full" />
+                    <Skeleton className="h-7 w-64 rounded-lg" />
+                </div>
+                <div className="hidden gap-2 sm:flex">
+                    <Skeleton className="size-9 rounded-full" />
+                    <Skeleton className="size-9 rounded-full" />
+                </div>
+            </div>
+            <Skeleton className="min-h-[260px] w-full rounded-3xl sm:min-h-[320px] lg:min-h-[360px]" />
         </div>
     );
 }

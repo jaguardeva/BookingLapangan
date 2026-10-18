@@ -178,7 +178,7 @@ test('superadmin can create a lapangan with multiple photos', function () {
             ],
             'facilities' => [],
         ])
-        ->assertRedirect()
+        ->assertRedirect(route('admin.lapangans.index'))
         ->assertSessionHasNoErrors();
 
     $lapangan = Lapangan::query()->where('name', 'Futsal Arena')->firstOrFail();
@@ -219,6 +219,90 @@ test('superadmin can open dedicated lapangan create and edit pages', function ()
             ->component('admin/lapangan/edit')
             ->where('lapangan.id', $lapangan->id)
             ->where('lapangan.name', 'Tennis Arena'));
+});
+
+test('updating a lapangan rejects an unsupported slot duration', function () {
+    $superadmin = User::factory()->create(['role' => 'superadmin']);
+    $category = Category::create([
+        'name' => 'Voli Indoor',
+        'slug' => 'voli-indoor',
+        'is_active' => true,
+    ]);
+    $lapangan = Lapangan::create([
+        'category_id' => $category->id,
+        'name' => 'Voli Indoor Court',
+        'slug' => 'voli-indoor-court',
+        'price_per_hour' => 100000,
+        'operational_start' => '07:00',
+        'operational_end' => '23:00',
+        'slot_duration_minutes' => 60,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($superadmin)
+        ->put(route('admin.lapangans.update', $lapangan), [
+            'name' => $lapangan->name,
+            'category_id' => $category->id,
+            'description' => '',
+            'price_per_hour' => 100000,
+            'operational_start' => '07:00',
+            'operational_end' => '23:00',
+            'slot_duration_minutes' => 45,
+            'facilities' => [],
+        ])
+        ->assertSessionHasErrors('slot_duration_minutes');
+
+    expect($lapangan->fresh()->slot_duration_minutes)->toBe(60);
+});
+
+test('superadmin can search and sort lapangans through the data table query', function () {
+    $superadmin = User::factory()->create(['role' => 'superadmin']);
+    $futsal = Category::create([
+        'name' => 'Futsal',
+        'slug' => 'futsal-datatable',
+        'is_active' => true,
+    ]);
+    $badminton = Category::create([
+        'name' => 'Badminton',
+        'slug' => 'badminton-datatable',
+        'is_active' => true,
+    ]);
+    $cheapest = Lapangan::create([
+        'category_id' => $badminton->id,
+        'name' => 'Badminton Hemat',
+        'slug' => 'badminton-hemat',
+        'description' => 'Lapangan indoor terjangkau.',
+        'price_per_hour' => 80000,
+        'operational_start' => '07:00',
+        'operational_end' => '23:00',
+        'slot_duration_minutes' => 60,
+        'is_active' => true,
+    ]);
+    Lapangan::create([
+        'category_id' => $futsal->id,
+        'name' => 'Futsal Premium',
+        'slug' => 'futsal-premium',
+        'description' => 'Lapangan futsal premium.',
+        'price_per_hour' => 150000,
+        'operational_start' => '07:00',
+        'operational_end' => '23:00',
+        'slot_duration_minutes' => 60,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($superadmin)
+        ->get(route('admin.lapangans.index', [
+            'search' => 'Badminton',
+            'sort' => 'price_per_hour',
+            'direction' => 'asc',
+        ]))
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/lapangan/index')
+            ->where('filters.search', 'Badminton')
+            ->where('filters.sort', 'price_per_hour')
+            ->where('filters.direction', 'asc')
+            ->where('lapangans.total', 1)
+            ->where('lapangans.data.0.id', $cheapest->id));
 });
 
 test('lapangan detail exposes all stored photos in their saved order', function () {
@@ -343,7 +427,7 @@ test('editing a lapangan keeps selected old photos and removes deleted stored ph
             'image_files' => [UploadedFile::fake()->image('new.jpg')],
             'facilities' => [],
         ])
-        ->assertRedirect()
+        ->assertRedirect(route('admin.lapangans.index'))
         ->assertSessionHasNoErrors();
 
     $updatedLapangan = $lapangan->fresh();
@@ -392,9 +476,112 @@ test('editing a lapangan can remove its entire photo gallery', function () {
             'image_files' => [],
             'facilities' => [],
         ])
-        ->assertRedirect()
+        ->assertRedirect(route('admin.lapangans.index'))
         ->assertSessionHasNoErrors();
 
     expect($lapangan->fresh()->images)->toBe([]);
     Storage::disk('public')->assertMissing('lapangans/only-photo.jpg');
+});
+
+test('superadmin can delete a category without lapangans', function () {
+    $superadmin = User::factory()->create(['role' => 'superadmin']);
+    $category = Category::create([
+        'name' => 'Kategori Baru',
+        'slug' => 'kategori-baru',
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($superadmin)
+        ->delete(route('admin.categories.destroy', $category))
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    expect(Category::find($category->id))->toBeNull();
+    $this->assertDatabaseHas('activity_logs', ['action' => 'category_deleted']);
+});
+
+test('superadmin cannot delete a category that has attached lapangans', function () {
+    $superadmin = User::factory()->create(['role' => 'superadmin']);
+    $category = Category::create([
+        'name' => 'Kategori Terisi',
+        'slug' => 'kategori-terisi',
+        'is_active' => true,
+    ]);
+    Lapangan::create([
+        'category_id' => $category->id,
+        'name' => 'Lapangan Test',
+        'slug' => 'lapangan-test',
+        'price_per_hour' => 100000,
+        'operational_start' => '07:00',
+        'operational_end' => '23:00',
+        'slot_duration_minutes' => 60,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($superadmin)
+        ->delete(route('admin.categories.destroy', $category))
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    expect(Category::find($category->id))->not->toBeNull();
+});
+
+test('superadmin can bulk delete categories without lapangans', function () {
+    $superadmin = User::factory()->create(['role' => 'superadmin']);
+    $cat1 = Category::create(['name' => 'Cat 1', 'slug' => 'cat-1', 'is_active' => true]);
+    $cat2 = Category::create(['name' => 'Cat 2', 'slug' => 'cat-2', 'is_active' => true]);
+
+    $this->actingAs($superadmin)
+        ->delete(route('admin.categories.bulk-destroy'), [
+            'ids' => [$cat1->id, $cat2->id],
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    expect(Category::find($cat1->id))->toBeNull()
+        ->and(Category::find($cat2->id))->toBeNull();
+    $this->assertDatabaseHas('activity_logs', ['action' => 'category_bulk_deleted']);
+});
+
+test('superadmin can delete a facility and detach it from lapangans', function () {
+    $superadmin = User::factory()->create(['role' => 'superadmin']);
+    $category = Category::create(['name' => 'Cat Facility', 'slug' => 'cat-fac', 'is_active' => true]);
+    $lapangan = Lapangan::create([
+        'category_id' => $category->id,
+        'name' => 'Lap Facility',
+        'slug' => 'lap-facility',
+        'price_per_hour' => 100000,
+        'operational_start' => '07:00',
+        'operational_end' => '23:00',
+        'slot_duration_minutes' => 60,
+        'is_active' => true,
+    ]);
+    $facility = Facility::create(['name' => 'Kantin Bersih', 'icon' => 'Coffee']);
+    $lapangan->facilities()->attach($facility->id);
+
+    $this->actingAs($superadmin)
+        ->delete(route('admin.facilities.destroy', $facility))
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    expect(Facility::find($facility->id))->toBeNull()
+        ->and($lapangan->fresh()->facilities)->toBeEmpty();
+    $this->assertDatabaseHas('activity_logs', ['action' => 'facility_deleted']);
+});
+
+test('superadmin can bulk delete facilities', function () {
+    $superadmin = User::factory()->create(['role' => 'superadmin']);
+    $fac1 = Facility::create(['name' => 'Fac 1', 'icon' => 'Wifi']);
+    $fac2 = Facility::create(['name' => 'Fac 2', 'icon' => 'Shower']);
+
+    $this->actingAs($superadmin)
+        ->delete(route('admin.facilities.bulk-destroy'), [
+            'ids' => [$fac1->id, $fac2->id],
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    expect(Facility::find($fac1->id))->toBeNull()
+        ->and(Facility::find($fac2->id))->toBeNull();
+    $this->assertDatabaseHas('activity_logs', ['action' => 'facility_bulk_deleted']);
 });

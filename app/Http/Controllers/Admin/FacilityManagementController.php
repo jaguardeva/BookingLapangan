@@ -42,4 +42,37 @@ class FacilityManagementController extends Controller
 
         return back()->with('success', "Fasilitas {$facility->name} berhasil diperbarui.");
     }
+
+    public function destroy(Facility $facility): RedirectResponse
+    {
+        $name = $facility->name;
+        $facility->lapangans()->detach();
+        $facility->delete();
+
+        ActivityLog::log('facility_deleted', "Superadmin menghapus fasilitas: {$name}", [
+            'facility_id' => $facility->id,
+        ]);
+
+        return back()->with('success', "Fasilitas {$name} berhasil dihapus.");
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'string', 'exists:facilities,id'],
+        ]);
+
+        $facilities = Facility::query()->whereIn('id', $validated['ids'])->get();
+        foreach ($facilities as $facility) {
+            $facility->lapangans()->detach();
+            $facility->delete();
+        }
+
+        ActivityLog::log('facility_bulk_deleted', "Superadmin menghapus {$facilities->count()} fasilitas.", [
+            'deleted_ids' => $validated['ids'],
+        ]);
+
+        return back()->with('success', "Berhasil menghapus {$facilities->count()} fasilitas.");
+    }
 }

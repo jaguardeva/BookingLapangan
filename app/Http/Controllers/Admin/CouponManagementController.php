@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Coupon;
+use App\Support\Pagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -14,9 +15,43 @@ use Inertia\Response;
 
 class CouponManagementController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        return Inertia::render('admin/coupons/index', ['coupons' => Coupon::query()->latest()->paginate(15)]);
+        $sortColumns = [
+            'code' => 'coupons.code',
+            'discount_value' => 'coupons.discount_value',
+            'used_count' => 'coupons.used_count',
+            'created_at' => 'coupons.created_at',
+        ];
+        $sort = $request->string('sort')->toString();
+        $sort = array_key_exists($sort, $sortColumns) ? $sort : 'created_at';
+        $direction = $request->string('direction')->lower()->toString() === 'asc' ? 'asc' : 'desc';
+        $search = $request->string('search')->trim()->toString();
+        $status = $request->string('status')->toString();
+
+        $query = Coupon::query()
+            ->when($search !== '', fn ($query) => $query->whereLike('code', "%{$search}%"))
+            ->when(in_array($status, ['active', 'inactive'], true), fn ($query) => $query->where('is_active', $status === 'active'))
+            ->orderBy($sortColumns[$sort], $direction)
+            ->orderBy('coupons.id');
+
+        $coupons = $query->paginate(Pagination::perPage($request, 15))->withQueryString();
+
+        return Inertia::render('admin/coupons/index', [
+            'coupons' => $coupons,
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
+            'stats' => [
+                'total' => Coupon::count(),
+                'active' => Coupon::where('is_active', true)->count(),
+                'inactive' => Coupon::where('is_active', false)->count(),
+                'total_usage' => (int) Coupon::sum('used_count'),
+            ],
+        ]);
     }
 
     public function store(Request $request): RedirectResponse

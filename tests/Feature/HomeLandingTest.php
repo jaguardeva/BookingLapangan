@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Banner;
 use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Lapangan;
@@ -77,4 +78,28 @@ test('landing page renders a shell without dynamic homepage data', function () {
             ->missing('banners')
             ->missing('stats'),
         );
+});
+
+test('home data endpoint returns visible promotional banners with attributes and image url', function () {
+    Banner::create([
+        'title' => 'Promo Spesial Weekend',
+        'body' => 'Diskon 20% khusus booking hari Sabtu dan Minggu.',
+        'image_path' => 'https://images.unsplash.com/photo-example',
+        'alt_text' => 'Banner Promo Weekend',
+        'link_url' => 'https://example.com/promo',
+        'is_active' => true,
+        'starts_at' => now()->subDay(),
+        'ends_at' => now()->addDays(7),
+    ]);
+
+    $response = $this->getJson(route('home.data'));
+
+    $response->assertOk()
+        ->assertJsonFragment([
+            'title' => 'Promo Spesial Weekend',
+            'body' => 'Diskon 20% khusus booking hari Sabtu dan Minggu.',
+            'alt_text' => 'Banner Promo Weekend',
+            'link_url' => 'https://example.com/promo',
+            'image_url' => 'https://images.unsplash.com/photo-example',
+        ]);
 });

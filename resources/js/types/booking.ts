@@ -50,8 +50,14 @@ export type Banner = {
     title: string;
     body?: string | null;
     image_url: string;
+    image_path?: string;
     alt_text?: string | null;
     link_url?: string | null;
+    placement?: string;
+    sort_order?: number;
+    is_active?: boolean;
+    starts_at?: string | null;
+    ends_at?: string | null;
 };
 
 export type Membership = {

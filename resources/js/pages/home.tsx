@@ -21,6 +21,7 @@ import {
     HomeStatsSkeleton,
     HomeTestimonialsSkeleton,
 } from '@/components/home-skeleton';
+import { HomePromotionalBanners } from '@/components/home-promotional-banners';
 import { PublicLayout } from '@/layouts/public-layout';
 import { toast } from 'sonner';
 import HomeController from '@/actions/App/Http/Controllers/HomeController';
@@ -324,16 +325,9 @@ export default function Home() {
                     <section className="public-container mx-auto max-w-[1240px] px-4 pt-10 sm:px-6 sm:pt-14 lg:px-8">
                         <HomeBannerSkeleton />
                     </section>
-                ) : banners.length > 0 ? (
-                    <section className="public-container mx-auto max-w-[1240px] px-4 pt-10 sm:px-6 sm:pt-14 lg:px-8">
-                        <div className="grid gap-4 md:grid-cols-2">
-                            {banners.map((banner) => {
-                                const content = <div className="relative min-h-48 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm"><img src={banner.image_url} alt={banner.alt_text ?? banner.title} className="absolute inset-0 size-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" /><div className="relative flex min-h-48 flex-col justify-end p-5 text-white"><h2 className="text-lg font-black">{banner.title}</h2>{banner.body && <p className="mt-1 max-w-lg text-xs text-white/80">{banner.body}</p>}</div></div>;
-                                return banner.link_url ? <a key={banner.id} href={banner.link_url} target="_blank" rel="noreferrer">{content}</a> : <div key={banner.id}>{content}</div>;
-                            })}
-                        </div>
-                    </section>
-                ) : null}
+                ) : (
+                    <HomePromotionalBanners banners={banners} />
+                )}
 
                 <section className="public-container mx-auto max-w-[1240px] px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
                     <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">

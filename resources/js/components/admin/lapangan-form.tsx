@@ -1,10 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, router, useForm } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import { Check, ImagePlus, Trash2 } from 'lucide-react';
 import type { Category, Facility, Lapangan } from '@/types/booking';
 import { store as storeLapangan, update as updateLapangan } from '@/actions/App/Http/Controllers/Admin/LapanganManagementController';
 import { index as catalogIndex } from '@/actions/App/Http/Controllers/Admin/CatalogManagementController';
-import { index as lapanganIndex } from '@/routes/admin/lapangans/index';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +28,16 @@ interface LapanganFormData {
     image_files: File[];
     images_to_keep: string[];
     facilities: string[];
+}
+
+function formatRupiah(value: number): string {
+    return value > 0 ? value.toLocaleString('id-ID') : '';
+}
+
+function parseRupiah(value: string): number {
+    const digits = value.replace(/\D/g, '');
+
+    return digits === '' ? 0 : Number(digits);
 }
 
 function initialData(lapangan: Lapangan | undefined, categories: Category[]): LapanganFormData {
@@ -75,15 +84,15 @@ export function LapanganForm({ mode, categories, facilities, lapangan }: Lapanga
         event.preventDefault();
         const options = {
             forceFormData: true,
-            onSuccess: () => router.visit(lapanganIndex.url()),
         };
 
         if (mode === 'edit' && lapangan) {
-            router.post(updateLapangan.url(lapangan.id), {
+            form.transform((data) => ({
+                ...data,
                 _method: 'put',
-                ...form.data,
-                images_to_keep_count: form.data.images_to_keep.length,
-            }, options);
+                images_to_keep_count: data.images_to_keep.length,
+            }));
+            form.post(updateLapangan.url(lapangan.id), options);
             return;
         }
 
@@ -95,7 +104,7 @@ export function LapanganForm({ mode, categories, facilities, lapangan }: Lapanga
             <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                     <Label htmlFor="name">Nama lapangan</Label>
-                    <Input id="name" value={form.data.name} onChange={(event) => form.setData('name', event.target.value)} required />
+                    <Input id="name" value={form.data.name} onChange={(event) => form.setData('name', event.target.value)} placeholder="Contoh: Futsal Arena" aria-invalid={Boolean(form.errors.name)} required />
                     {form.errors.name && <p className="text-xs text-destructive">{form.errors.name}</p>}
                 </div>
                 <div className="space-y-2">
@@ -108,11 +117,16 @@ export function LapanganForm({ mode, categories, facilities, lapangan }: Lapanga
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                     <Label htmlFor="description">Deskripsi</Label>
-                    <Textarea id="description" value={form.data.description} onChange={(event) => form.setData('description', event.target.value)} rows={4} />
+                    <Textarea id="description" value={form.data.description} onChange={(event) => form.setData('description', event.target.value)} placeholder="Jelaskan fasilitas, jenis lantai, dan keunggulan lapangan" rows={4} aria-invalid={Boolean(form.errors.description)} />
+                    {form.errors.description && <p className="text-xs text-destructive">{form.errors.description}</p>}
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="price_per_hour">Harga per jam</Label>
-                    <Input id="price_per_hour" type="number" min={10000} step={5000} value={form.data.price_per_hour} onChange={(event) => form.setData('price_per_hour', Number(event.target.value))} required />
+                    <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-medium text-muted-foreground">Rp</span>
+                        <Input id="price_per_hour" type="text" inputMode="numeric" value={formatRupiah(form.data.price_per_hour)} onChange={(event) => form.setData('price_per_hour', parseRupiah(event.target.value))} placeholder="Contoh: 100.000" className="pl-10" aria-describedby="price_per_hour-help" aria-invalid={Boolean(form.errors.price_per_hour)} required />
+                    </div>
+                    <p id="price_per_hour-help" className="text-xs text-muted-foreground">Masukkan angka tanpa simbol Rp. Contoh: 100.000.</p>
                     {form.errors.price_per_hour && <p className="text-xs text-destructive">{form.errors.price_per_hour}</p>}
                 </div>
                 <div className="space-y-2">
@@ -121,20 +135,24 @@ export function LapanganForm({ mode, categories, facilities, lapangan }: Lapanga
                         <SelectTrigger id="slot_duration_minutes"><SelectValue /></SelectTrigger>
                         <SelectContent>{[30, 60, 90, 120].map((value) => <SelectItem key={value} value={String(value)}>{value} menit</SelectItem>)}</SelectContent>
                     </Select>
+                    {form.errors.slot_duration_minutes && <p className="text-xs text-destructive">{form.errors.slot_duration_minutes}</p>}
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="operational_start">Jam buka</Label>
-                    <Input id="operational_start" type="time" value={form.data.operational_start} onChange={(event) => form.setData('operational_start', event.target.value)} required />
+                    <Input id="operational_start" type="time" value={form.data.operational_start} onChange={(event) => form.setData('operational_start', event.target.value)} aria-describedby="operational-hours-help" aria-invalid={Boolean(form.errors.operational_start)} required />
+                    {form.errors.operational_start && <p className="text-xs text-destructive">{form.errors.operational_start}</p>}
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="operational_end">Jam tutup</Label>
-                    <Input id="operational_end" type="time" value={form.data.operational_end} onChange={(event) => form.setData('operational_end', event.target.value)} required />
+                    <Input id="operational_end" type="time" value={form.data.operational_end} onChange={(event) => form.setData('operational_end', event.target.value)} aria-describedby="operational-hours-help" aria-invalid={Boolean(form.errors.operational_end)} required />
+                    <p id="operational-hours-help" className="text-xs text-muted-foreground">Gunakan format 24 jam, misalnya 07:00 sampai 23:00.</p>
+                    {form.errors.operational_end && <p className="text-xs text-destructive">{form.errors.operational_end}</p>}
                 </div>
             </div>
 
             <div className="space-y-3 rounded-2xl border border-border/70 p-4">
                 <div className="flex items-center justify-between gap-3">
-                    <div><Label>Foto lapangan</Label><p className="mt-1 text-xs text-muted-foreground">Tambahkan maksimal 4 foto.</p></div>
+                    <div><Label>Foto lapangan</Label><p className="mt-1 text-xs text-muted-foreground">Tambahkan maksimal 4 foto dalam format JPG, PNG, WEBP, atau GIF.</p></div>
                     <span className="text-xs text-muted-foreground">{form.data.images_to_keep.length + form.data.image_files.length} / 4</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -166,7 +184,7 @@ export function LapanganForm({ mode, categories, facilities, lapangan }: Lapanga
             </div>
 
             <div className="space-y-3 rounded-2xl border border-border/70 p-4">
-                <div className="flex items-center justify-between"><Label>Fasilitas tersedia</Label><Link href={catalogIndex.url()} className="text-xs font-medium text-primary hover:underline">Kelola fasilitas</Link></div>
+                <div className="flex items-center justify-between"><div><Label>Fasilitas tersedia</Label><p className="mt-1 text-xs text-muted-foreground">Pilih fasilitas yang tersedia di lapangan.</p></div><Link href={catalogIndex.url()} className="text-xs font-medium text-primary hover:underline">Kelola fasilitas</Link></div>
                 <div className="grid gap-2 sm:grid-cols-2">{facilities.map((facility) => { const checked = form.data.facilities.includes(String(facility.id)); return <button key={facility.id} type="button" onClick={() => toggleFacility(String(facility.id))} className={`flex items-center gap-2 rounded-xl border p-3 text-left text-sm transition ${checked ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:border-primary/40'}`}><span className={`flex size-5 items-center justify-center rounded border ${checked ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'}`}>{checked && <Check className="size-3.5" />}</span>{facility.name}</button>; })}</div>
             </div>
 

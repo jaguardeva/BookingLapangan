@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { useMemo } from 'react';
+import { createColumnHelper, rowPaginationFeature, rowSortingFeature, tableFeatures, useTable, type SortingState } from '@tanstack/react-table';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/layouts/admin-layout';
-import { Search, CheckCircle2, XCircle, Eye, Plus } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Search, CheckCircle2, XCircle, Eye, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ResetFilterButton } from '@/components/reset-filter-button';
 import { Badge } from '@/components/ui/badge';
@@ -47,7 +49,19 @@ interface Props {
         status?: string;
         lapangan_id?: string;
         date?: string;
+        sort?: string;
+        direction?: string;
     };
+}
+
+const features = tableFeatures({ rowSortingFeature, rowPaginationFeature });
+const columnHelper = createColumnHelper<typeof features, Booking>();
+
+function SortIcon({ direction }: { direction: false | 'asc' | 'desc' }) {
+    if (direction === 'asc') return <ArrowUp className="size-3.5" />;
+    if (direction === 'desc') return <ArrowDown className="size-3.5" />;
+
+    return <ArrowUpDown className="size-3.5 opacity-50" />;
 }
 
 const approve = Object.assign((id: number) => approveAction(String(id)), {
@@ -66,7 +80,13 @@ export default function AdminBookingsIndex({
     const [status, setStatus] = useState(filters.status || 'all');
     const [lapanganId, setLapanganId] = useState(filters.lapangan_id || 'all');
     const [date, setDate] = useState(filters.date ?? '');
-    const filterKey = JSON.stringify([search, status, lapanganId, date]);
+    const [sorting, setSorting] = useState<SortingState>(
+        filters.sort && filters.sort !== 'created_at'
+            ? [{ id: filters.sort, desc: filters.direction !== 'asc' }]
+            : [],
+    );
+    const [isFiltering, setIsFiltering] = useState(false);
+    const filterKey = JSON.stringify([search, status, lapanganId, date, sorting]);
     const lastKey = useRef(filterKey);
     const hasActiveFilters =
         search.trim() !== '' ||
@@ -83,28 +103,98 @@ export default function AdminBookingsIndex({
         if (lastKey.current === filterKey) return;
         const timeout = window.setTimeout(() => {
             lastKey.current = filterKey;
-            router.get(
-                bookingsIndex.url(),
-                Object.fromEntries(
-                    Object.entries({
-                        search: search.trim(),
-                        status: status === 'all' ? '' : status,
-                        lapangan_id: lapanganId === 'all' ? '' : lapanganId,
-                        date,
-                    }).filter(([, value]) => value),
-                ),
-                { preserveState: true, preserveScroll: true },
-            );
+            const activeSort = sorting[0];
+            setIsFiltering(true);
+            router.get(bookingsIndex.url({
+                query: {
+                    search: search.trim() || undefined,
+                    status: status === 'all' ? undefined : status,
+                    lapangan_id: lapanganId === 'all' ? undefined : lapanganId,
+                    date: date || undefined,
+                    sort: activeSort?.id ?? 'created_at',
+                    direction: activeSort ? (activeSort.desc ? 'desc' : 'asc') : 'desc',
+                    page: 1,
+                },
+            }), {}, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                onFinish: () => setIsFiltering(false),
+            });
         }, 300);
         return () => window.clearTimeout(timeout);
-    }, [filterKey, search, status, lapanganId, date]);
+    }, [filterKey, search, status, lapanganId, date, sorting]);
 
     const resetFilters = () => {
         setSearch('');
         setStatus('all');
         setLapanganId('all');
         setDate('');
+        setSorting([]);
     };
+
+    const columns = useMemo(() => columnHelper.columns([
+        columnHelper.accessor('booking_code', {
+            header: ({ column }) => <button type="button" onClick={() => column.toggleSorting()} className="inline-flex items-center gap-1.5 hover:text-foreground">Kode Booking <SortIcon direction={column.getIsSorted()} /></button>,
+            cell: ({ row }) => <><Link href={`/booking/${row.original.booking_code}`} target="_blank" className="font-mono font-bold hover:underline">#{row.original.booking_code}</Link><span className="text-muted-foreground block uppercase">{row.original.payment_method}</span></>,
+        }),
+        columnHelper.display({
+            id: 'source',
+            header: 'Sumber',
+            enableSorting: false,
+            cell: ({ row }) => isMembershipBooking(row.original) ? <Badge variant="secondary">Membership</Badge> : <Badge variant="outline">Booking harian</Badge>,
+        }),
+        columnHelper.accessor((row) => row.lapangan?.name ?? '', {
+            id: 'lapangan',
+            header: 'Lapangan',
+            enableSorting: false,
+            cell: ({ row }) => <><p className="font-semibold">{row.original.lapangan?.name}</p><span className="text-muted-foreground">{row.original.lapangan?.category?.name}</span></>,
+        }),
+        columnHelper.accessor('customer_name', {
+            header: 'Pemesan',
+            enableSorting: false,
+            cell: ({ row }) => <><p className="font-semibold">{row.original.customer_name}</p><span className="text-muted-foreground">{row.original.customer_phone}</span></>,
+        }),
+        columnHelper.accessor('booking_date', {
+            header: ({ column }) => <button type="button" onClick={() => column.toggleSorting()} className="inline-flex items-center gap-1.5 hover:text-foreground">Jadwal Main <SortIcon direction={column.getIsSorted()} /></button>,
+            cell: ({ row }) => <><p className="font-medium">{row.original.booking_date}</p><span className="text-muted-foreground">{row.original.start_time} - {row.original.end_time} WIB</span></>,
+        }),
+        columnHelper.accessor('total_price', {
+            header: ({ column }) => <button type="button" onClick={() => column.toggleSorting()} className="inline-flex items-center gap-1.5 hover:text-foreground">Total Bayar <SortIcon direction={column.getIsSorted()} /></button>,
+            cell: ({ row }) => <span className="text-primary font-bold">Rp {Number(row.original.total_price).toLocaleString('id-ID')}</span>,
+        }),
+        columnHelper.accessor('payment_status', {
+            header: ({ column }) => <button type="button" onClick={() => column.toggleSorting()} className="inline-flex items-center gap-1.5 hover:text-foreground">Status <SortIcon direction={column.getIsSorted()} /></button>,
+            cell: ({ row }) => statusBadge(row.original.payment_status),
+        }),
+        columnHelper.display({
+            id: 'actions',
+            header: 'Aksi',
+            enableSorting: false,
+            cell: ({ row }) => {
+                const booking = row.original;
+
+                return <div className="flex items-center gap-1.5">
+                    <Button asChild size="sm" variant="ghost"><Link href={`/booking/${booking.booking_code}`} target="_blank"><Eye className="size-4" /></Link></Button>
+                    {isMembershipBooking(booking) ? <span className="text-muted-foreground max-w-28 text-center text-[11px] leading-tight">Kelola di Membership</span> : (booking.payment_status === 'pending' || booking.payment_status === 'pending_validation') && <>
+                        <Button size="sm" onClick={() => setApproveBooking(booking)}><CheckCircle2 className="size-3.5" />Setujui</Button>
+                        <Button size="sm" variant="outline" onClick={() => setRejectBooking(booking)}><XCircle className="size-4" /></Button>
+                    </>}
+                </div>;
+            },
+        }),
+    ]), []);
+
+    const table = useTable({
+        features,
+        data: bookings.data,
+        columns,
+        state: { sorting },
+        onSortingChange: setSorting,
+        manualSorting: true,
+        manualPagination: true,
+        rowCount: bookings.total,
+    });
 
     const statusBadge = (value: string) =>
         value === 'approved' ? (
@@ -224,6 +314,7 @@ export default function AdminBookingsIndex({
                                 className="h-10 w-full shrink-0 rounded-xl md:w-auto"
                             />
                         )}
+                        {isFiltering && <span className="text-muted-foreground text-xs">Memuat data...</span>}
                     </div>
                 </div>
                 <Pagination
@@ -237,28 +328,19 @@ export default function AdminBookingsIndex({
                     className="mb-4"
                 />
 
-                <div className="border-border/80 bg-card overflow-x-auto rounded-2xl border shadow-sm">
+                <div className="border-border/80 bg-card overflow-x-auto rounded-2xl border shadow-sm" aria-busy={isFiltering}>
                     <table className="w-full text-left text-xs">
                         <thead className="border-border/60 bg-muted/50 text-muted-foreground border-b tracking-wider uppercase">
                             <tr>
-                                {[
-                                    'Kode Booking',
-                                    'Sumber',
-                                    'Lapangan',
-                                    'Pemesan',
-                                    'Jadwal Main',
-                                    'Total Bayar',
-                                    'Status',
-                                    'Aksi',
-                                ].map((heading) => (
-                                    <th key={heading} className="px-4 py-3">
-                                        {heading}
+                                {table.getHeaderGroups().map((headerGroup) => headerGroup.headers.map((header) => (
+                                    <th key={header.id} className={`px-4 py-3 ${header.column.id === 'actions' ? 'text-right' : ''}`}>
+                                        {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                                     </th>
-                                ))}
+                                )))}
                             </tr>
                         </thead>
                         <tbody className="divide-border/40 divide-y">
-                            {bookings.data.length === 0 ? (
+                            {table.getRowModel().rows.length === 0 ? (
                                 <tr>
                                     <td
                                         colSpan={8}
@@ -268,7 +350,10 @@ export default function AdminBookingsIndex({
                                     </td>
                                 </tr>
                             ) : (
-                                bookings.data.map((booking) => (
+                                table.getRowModel().rows.map((row) => {
+                                    const booking = row.original;
+
+                                    return (
                                     <tr
                                         key={booking.id}
                                         className="hover:bg-muted/30 transition-colors"
@@ -381,7 +466,8 @@ export default function AdminBookingsIndex({
                                             </div>
                                         </td>
                                     </tr>
-                                ))
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>

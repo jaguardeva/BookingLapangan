@@ -39,9 +39,40 @@ class LapanganManagementController extends Controller
 
     public function index(Request $request): Response
     {
-        $lapangans = Lapangan::with(['category', 'facilities'])
+        $search = trim($request->string('search')->toString());
+        $sort = $request->string('sort', 'created_at')->toString();
+        $direction = strtolower($request->string('direction', 'desc')->toString());
+        $sortColumns = [
+            'name' => 'lapangans.name',
+            'category' => 'categories.name',
+            'price_per_hour' => 'lapangans.price_per_hour',
+            'status' => 'lapangans.is_active',
+            'created_at' => 'lapangans.created_at',
+        ];
+
+        if (! array_key_exists($sort, $sortColumns)) {
+            $sort = 'created_at';
+        }
+
+        if (! in_array($direction, ['asc', 'desc'], true)) {
+            $direction = 'desc';
+        }
+
+        $lapangansQuery = Lapangan::query()
+            ->select('lapangans.*')
+            ->leftJoin('categories', 'categories.id', '=', 'lapangans.category_id')
+            ->with(['category', 'facilities'])
             ->withCount('bookings')
-            ->latest()
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query->where('lapangans.name', 'like', "%{$search}%")
+                        ->orWhere('lapangans.description', 'like', "%{$search}%")
+                        ->orWhere('categories.name', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy($sortColumns[$sort], $direction);
+
+        $lapangans = $lapangansQuery
             ->paginate(Pagination::perPage($request, 10))
             ->withQueryString();
 
@@ -52,6 +83,11 @@ class LapanganManagementController extends Controller
             'lapangans' => $lapangans,
             'categories' => $categories,
             'facilities' => $facilities,
+            'filters' => [
+                'search' => $search,
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
         ]);
     }
 
@@ -138,7 +174,8 @@ class LapanganManagementController extends Controller
             'lapangan_id' => $lapangan->id,
         ]);
 
-        return back()->with('success', "Lapangan {$lapangan->name} berhasil ditambahkan!");
+        return redirect()->route('admin.lapangans.index')
+            ->with('success', "Lapangan {$lapangan->name} berhasil ditambahkan!");
     }
 
     public function update(Request $request, Lapangan $lapangan): RedirectResponse
@@ -155,7 +192,7 @@ class LapanganManagementController extends Controller
             'price_per_hour' => ['required', 'integer', 'min:10000'],
             'operational_start' => ['required', 'string'],
             'operational_end' => ['required', 'string'],
-            'slot_duration_minutes' => ['required', 'integer'],
+            'slot_duration_minutes' => ['required', 'integer', 'in:30,60,90,120'],
             'image_files' => ['nullable', 'array', 'max:4'],
             'image_files.*' => ['image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
             'images_to_keep' => ['nullable', 'array', 'max:4'],
@@ -238,7 +275,8 @@ class LapanganManagementController extends Controller
             'lapangan_id' => $lapangan->id,
         ]);
 
-        return back()->with('success', "Lapangan {$lapangan->name} berhasil diperbarui!");
+        return redirect()->route('admin.lapangans.index')
+            ->with('success', "Lapangan {$lapangan->name} berhasil diperbarui!");
     }
 
     public function toggleStatus(Lapangan $lapangan): RedirectResponse

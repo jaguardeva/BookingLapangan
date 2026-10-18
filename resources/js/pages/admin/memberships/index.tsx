@@ -1,10 +1,11 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { createColumnHelper, rowPaginationFeature, rowSortingFeature, tableFeatures, useTable, type SortingState } from '@tanstack/react-table';
 import {
     AlertTriangle,
+    ArrowDown,
+    ArrowUp,
     ArrowUpDown,
     CheckCircle2,
-    ChevronDown,
-    ChevronUp,
     CircleX,
     Clock,
     Crown,
@@ -13,7 +14,7 @@ import {
     TrendingUp,
     XCircle,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import ConfirmDialog from '@/components/confirm-dialog';
 import { Pagination } from '@/components/pagination';
@@ -73,6 +74,8 @@ type Props = {
 };
 
 const weekdays = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const features = tableFeatures({ rowSortingFeature, rowPaginationFeature });
+const columnHelper = createColumnHelper<typeof features, Membership>();
 
 function formatDate(date?: string | null): string {
     if (!date) return '-';
@@ -138,41 +141,11 @@ function PaymentStatusBadge({ status }: { status?: string | null }) {
     return <Badge variant="secondary">{statusLabel(status)}</Badge>;
 }
 
-function SortableHeader({
-    label,
-    column,
-    sort,
-    direction,
-    onSort,
-}: {
-    label: string;
-    column: string;
-    sort: string;
-    direction: string;
-    onSort: (column: string) => void;
-}) {
-    const active = sort === column;
+function SortIcon({ direction }: { direction: false | 'asc' | 'desc' }) {
+    if (direction === 'asc') return <ArrowUp className="size-3.5" />;
+    if (direction === 'desc') return <ArrowDown className="size-3.5" />;
 
-    return (
-        <th className="px-4 py-3">
-            <button
-                type="button"
-                onClick={() => onSort(column)}
-                className="hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
-            >
-                {label}
-                {active ? (
-                    direction === 'asc' ? (
-                        <ChevronUp className="size-3.5" />
-                    ) : (
-                        <ChevronDown className="size-3.5" />
-                    )
-                ) : (
-                    <ArrowUpDown className="size-3.5 opacity-50" />
-                )}
-            </button>
-        </th>
-    );
+    return <ArrowUpDown className="size-3.5 opacity-50" />;
 }
 
 export default function MembershipsIndex({
@@ -186,8 +159,12 @@ export default function MembershipsIndex({
     const [search, setSearch] = useState(filters.search ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
     const [paymentStatus, setPaymentStatus] = useState(filters.payment_status ?? '');
-    const [sort, setSort] = useState(filters.sort ?? 'created_at');
-    const [direction, setDirection] = useState(filters.direction ?? 'desc');
+    const [sorting, setSorting] = useState<SortingState>(
+        filters.sort && filters.sort !== 'created_at'
+            ? [{ id: filters.sort, desc: filters.direction !== 'asc' }]
+            : [],
+    );
+    const [isFiltering, setIsFiltering] = useState(false);
     const [discountPercentage, setDiscountPercentage] = useState(membershipDiscountPercentage);
 
     // Dialog state for inline actions
@@ -196,7 +173,7 @@ export default function MembershipsIndex({
     const [cancelMembership, setCancelMembership] = useState<Membership | null>(null);
     const [reason, setReason] = useState('');
 
-    const filterKey = JSON.stringify([search, status, paymentStatus, sort, direction]);
+    const filterKey = JSON.stringify([search, status, paymentStatus, sorting]);
     const initialFilterKey = useRef(filterKey);
 
     useEffect(() => {
@@ -206,45 +183,173 @@ export default function MembershipsIndex({
         }
 
         const timeoutId = window.setTimeout(() => {
-            const query = Object.fromEntries(
-                Object.entries({ search, status, payment_status: paymentStatus, sort, direction })
-                    .filter(([, value]) => value !== ''),
-            );
+            const activeSort = sorting[0];
+            const query = {
+                search: search.trim() || undefined,
+                status: status || undefined,
+                payment_status: paymentStatus || undefined,
+                sort: activeSort?.id ?? 'created_at',
+                direction: activeSort ? (activeSort.desc ? 'desc' : 'asc') : 'desc',
+                page: 1,
+            };
 
-            router.get(membershipRoutes.index.url(), query, {
+            setIsFiltering(true);
+            router.get(membershipRoutes.index.url({ query }), {}, {
                 preserveState: true,
                 preserveScroll: true,
                 replace: true,
+                onFinish: () => setIsFiltering(false),
             });
         }, 300);
 
         return () => window.clearTimeout(timeoutId);
-    }, [direction, filterKey, paymentStatus, search, sort, status]);
+    }, [filterKey, paymentStatus, search, sorting, status]);
 
     const hasActiveFilters =
         search.trim() !== '' ||
         status !== '' ||
         paymentStatus !== '' ||
-        sort !== 'created_at' ||
-        direction !== 'desc';
+        sorting.length > 0;
 
     const resetFilters = () => {
         setSearch('');
         setStatus('');
         setPaymentStatus('');
-        setSort('created_at');
-        setDirection('desc');
+        setSorting([]);
     };
 
-    const toggleSort = (column: string) => {
-        if (sort === column) {
-            setDirection(direction === 'asc' ? 'desc' : 'asc');
-            return;
-        }
+    const columns = useMemo(() => columnHelper.columns([
+        columnHelper.accessor((row) => row.created_at ?? '', {
+            id: 'created_at',
+            header: ({ column }) => (
+                <button type="button" onClick={() => column.toggleSorting()} className="inline-flex items-center gap-1.5 hover:text-foreground">
+                    Member <SortIcon direction={column.getIsSorted()} />
+                </button>
+            ),
+            cell: ({ row }) => (
+                <div className="flex items-start gap-2">
+                    <div className="mt-0.5 rounded-lg bg-primary/10 p-1 text-primary">
+                        <Crown className="size-3.5" />
+                    </div>
+                    <div>
+                        <p className="font-semibold text-foreground">{row.original.user?.name ?? '-'}</p>
+                        <p className="text-muted-foreground mt-0.5">{row.original.user?.email ?? '-'}</p>
+                        <p className="text-muted-foreground mt-0.5 font-mono text-[10px]">{row.original.id}</p>
+                    </div>
+                </div>
+            ),
+        }),
+        columnHelper.accessor((row) => row.reservation_start_date ?? row.starts_at ?? '', {
+            id: 'reservation_start_date',
+            header: ({ column }) => (
+                <button type="button" onClick={() => column.toggleSorting()} className="inline-flex items-center gap-1.5 hover:text-foreground">
+                    Mulai <SortIcon direction={column.getIsSorted()} />
+                </button>
+            ),
+            cell: ({ row }) => <span className="font-medium whitespace-nowrap">{formatDate(row.original.reservation_start_date ?? row.original.starts_at)}</span>,
+        }),
+        columnHelper.accessor('amount', {
+            header: ({ column }) => (
+                <button type="button" onClick={() => column.toggleSorting()} className="inline-flex items-center gap-1.5 hover:text-foreground">
+                    Nominal <SortIcon direction={column.getIsSorted()} />
+                </button>
+            ),
+            cell: ({ row }) => <span className="text-primary font-bold whitespace-nowrap">{formatMoney(row.original.amount)}</span>,
+        }),
+        columnHelper.accessor('status', {
+            header: ({ column }) => (
+                <button type="button" onClick={() => column.toggleSorting()} className="inline-flex items-center gap-1.5 hover:text-foreground">
+                    Status <SortIcon direction={column.getIsSorted()} />
+                </button>
+            ),
+            cell: ({ row }) => <MembershipStatusBadge status={row.original.status} />,
+        }),
+        columnHelper.accessor('payment_status', {
+            header: ({ column }) => (
+                <button type="button" onClick={() => column.toggleSorting()} className="inline-flex items-center gap-1.5 hover:text-foreground">
+                    Pembayaran <SortIcon direction={column.getIsSorted()} />
+                </button>
+            ),
+            cell: ({ row }) => <PaymentStatusBadge status={row.original.payment_status} />,
+        }),
+        columnHelper.display({
+            id: 'schedule',
+            header: 'Jadwal',
+            enableSorting: false,
+            cell: ({ row }) => row.original.reservations?.length ? (
+                <div className="flex max-w-72 flex-col gap-1.5">
+                    {row.original.reservations.map((reservation) => (
+                        <div key={reservation.id} className="bg-muted/60 inline-flex flex-wrap items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium leading-none text-foreground">
+                            <span className="font-semibold text-primary">{reservation.lapangan?.name ?? '-'}</span>
+                            <span className="text-muted-foreground">·</span>
+                            <span>{weekdays[reservation.weekday]}</span>
+                            <span className="text-muted-foreground">·</span>
+                            <span className="font-mono text-muted-foreground">{reservation.start_time.slice(0, 5)}–{reservation.end_time.slice(0, 5)}</span>
+                            <span className="text-muted-foreground">·</span>
+                            <Badge variant="outline" className="h-4 px-1 text-[10px] font-semibold">{reservation.occurrence_count ?? 0}x</Badge>
+                        </div>
+                    ))}
+                </div>
+            ) : <span className="text-muted-foreground">-</span>,
+        }),
+        columnHelper.display({
+            id: 'actions',
+            header: 'Aksi',
+            enableSorting: false,
+            cell: ({ row }) => {
+                const membership = row.original;
+                const canApprove = membership.status === 'pending' && membership.payment_status === 'pending_validation';
+                const canReject = membership.status === 'pending' && ['pending', 'pending_validation'].includes(membership.payment_status);
+                const canCancel = membership.status === 'active' && (!membership.ends_at || new Date(membership.ends_at) > new Date());
 
-        setSort(column);
-        setDirection('asc');
-    };
+                return (
+                    <div className="flex items-center justify-end gap-1.5">
+                        <Button size="sm" variant="outline" className="h-8 px-2.5 text-xs" asChild>
+                            <Link href={membershipRoutes.show.url(membership.id)}>
+                                <Eye className="size-3.5" />
+                                <span className="hidden xl:inline">Detail</span>
+                            </Link>
+                        </Button>
+                        {canApprove && (
+                            <Button size="sm" className="h-8 bg-emerald-600 px-2.5 text-xs text-white hover:bg-emerald-700" onClick={() => setApproveMembership(membership)}>
+                                <CheckCircle2 className="size-3.5" />
+                                <span>Setujui</span>
+                            </Button>
+                        )}
+                        {canReject && (
+                            <Button size="sm" variant="outline" className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => {
+                                setRejectMembership(membership);
+                                setReason('Nominal transfer tidak sesuai dengan kode unik yang tertera.');
+                            }} title="Tolak Pengajuan">
+                                <XCircle className="size-3.5" />
+                                <span className="hidden xl:inline">Tolak</span>
+                            </Button>
+                        )}
+                        {canCancel && (
+                            <Button size="sm" variant="ghost" className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => {
+                                setCancelMembership(membership);
+                                setReason('Pembatalan atas permintaan member.');
+                            }} title="Batalkan Membership">
+                                <CircleX className="size-3.5" />
+                                <span className="hidden xl:inline">Batal</span>
+                            </Button>
+                        )}
+                    </div>
+                );
+            },
+        }),
+    ]), []);
+
+    const table = useTable({
+        features,
+        data: memberships.data,
+        columns,
+        state: { sorting },
+        onSortingChange: setSorting,
+        manualSorting: true,
+        manualPagination: true,
+        rowCount: memberships.total,
+    });
 
     const saveDiscountPercentage = () => {
         router.patch(updateMembershipSettings.url(), {
@@ -274,7 +379,7 @@ export default function MembershipsIndex({
                                 setStatus(status === 'active' ? '' : 'active');
                             }
                         }}
-                        className={`group border-border/80 bg-card hover:border-emerald-500/50 relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-l-4 border-l-emerald-500 p-4 shadow-sm transition-all hover:shadow-md ${
+                        className={`group border-border/80 bg-card hover:border-emerald-500/30 relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-4 shadow-sm transition-all ${
                             status === 'active' ? 'ring-2 ring-emerald-500/30' : ''
                         }`}
                     >
@@ -303,7 +408,7 @@ export default function MembershipsIndex({
                                 setPaymentStatus(paymentStatus === 'pending_validation' ? '' : 'pending_validation');
                             }
                         }}
-                        className={`group border-border/80 bg-card hover:border-amber-500/50 relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-l-4 border-l-amber-500 p-4 shadow-sm transition-all hover:shadow-md ${
+                        className={`group border-border/80 bg-card hover:border-amber-500/30 relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-4 shadow-sm transition-all ${
                             paymentStatus === 'pending_validation' ? 'ring-2 ring-amber-500/30' : ''
                         }`}
                     >
@@ -332,7 +437,7 @@ export default function MembershipsIndex({
                                 setStatus(status === 'active' ? '' : 'active');
                             }
                         }}
-                        className="group border-border/80 bg-card hover:border-violet-500/50 relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-l-4 border-l-violet-500 p-4 shadow-sm transition-all hover:shadow-md"
+                        className="group border-border/80 bg-card hover:border-violet-500/30 relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border p-4 shadow-sm transition-all"
                     >
                         <div className="flex items-center justify-between">
                             <span className="text-muted-foreground text-xs font-medium">Berakhir 7 hari</span>
@@ -349,7 +454,7 @@ export default function MembershipsIndex({
                     </div>
 
                     {/* Nilai Aktif Bulan Ini */}
-                    <div className="border-border/80 bg-card relative flex flex-col justify-between overflow-hidden rounded-2xl border border-l-4 border-l-blue-500 p-4 shadow-sm">
+                    <div className="border-border/80 bg-card relative flex flex-col justify-between overflow-hidden rounded-2xl border p-4 shadow-sm transition-all hover:border-blue-500/30">
                         <div className="flex items-center justify-between">
                             <span className="text-muted-foreground text-xs font-medium">Nilai aktif bulan ini</span>
                             <div className="rounded-xl bg-blue-500/10 p-2 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
@@ -443,29 +548,30 @@ export default function MembershipsIndex({
                 />
 
                 {/* Table with inline actions and highlight for pending validation */}
-                <div className="border-border/80 bg-card overflow-hidden rounded-2xl border shadow-sm">
+                <div className="border-border/80 bg-card overflow-hidden rounded-2xl border shadow-sm" aria-busy={isFiltering}>
                     <div className="overflow-x-auto">
                         <table className="w-full min-w-[1020px] text-left text-xs">
                             <thead className="border-border/60 bg-muted/50 text-muted-foreground border-b tracking-wider uppercase">
-                                <tr>
-                                    <SortableHeader label="Member" column="created_at" sort={sort} direction={direction} onSort={toggleSort} />
-                                    <SortableHeader label="Mulai" column="reservation_start_date" sort={sort} direction={direction} onSort={toggleSort} />
-                                    <SortableHeader label="Nominal" column="amount" sort={sort} direction={direction} onSort={toggleSort} />
-                                    <SortableHeader label="Status" column="status" sort={sort} direction={direction} onSort={toggleSort} />
-                                    <SortableHeader label="Pembayaran" column="payment_status" sort={sort} direction={direction} onSort={toggleSort} />
-                                    <th className="px-4 py-3">Jadwal</th>
-                                    <th className="px-4 py-3 text-right">Aksi</th>
-                                </tr>
+                                {table.getHeaderGroups().map((headerGroup) => (
+                                    <tr key={headerGroup.id}>
+                                        {headerGroup.headers.map((header) => (
+                                            <th key={header.id} className={`px-4 py-3 ${header.column.id === 'actions' ? 'text-right' : ''}`}>
+                                                {header.isPlaceholder ? null : <table.FlexRender header={header} />}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                ))}
                             </thead>
                             <tbody className="divide-border/40 divide-y">
-                                {memberships.data.length === 0 ? (
+                                {table.getRowModel().rows.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="text-muted-foreground py-12 text-center">
+                                        <td colSpan={columns.length} className="text-muted-foreground py-12 text-center">
                                             Tidak ada data membership sesuai filter.
                                         </td>
                                     </tr>
                                 ) : (
-                                    memberships.data.map((membership) => {
+                                    table.getRowModel().rows.map((row) => {
+                                        const membership = row.original;
                                         const isPendingValidation = membership.payment_status === 'pending_validation';
                                         const canApprove = membership.status === 'pending' && membership.payment_status === 'pending_validation';
                                         const canReject = membership.status === 'pending' && ['pending', 'pending_validation'].includes(membership.payment_status);

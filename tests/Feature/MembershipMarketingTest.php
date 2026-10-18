@@ -740,6 +740,52 @@ test('active scheduled banners are exposed publicly and inactive banners are hid
     $this->actingAs($user)->getJson(route('home.data'))->assertJsonPath('banners', []);
 });
 
+test('banner can be created with external image url and updated or deleted', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    // Validation error when neither image nor image_url is provided
+    $this->actingAs($admin)->post(route('admin.banners.store'), [
+        'title' => 'Promo Invalid',
+        'placement' => 'home',
+        'sort_order' => 0,
+        'is_active' => true,
+    ])->assertSessionHasErrors('image');
+
+    // Create with image_url
+    $this->actingAs($admin)->post(route('admin.banners.store'), [
+        'title' => 'Promo Website',
+        'body' => 'Gunakan URL eksternal',
+        'image_url' => 'https://images.unsplash.com/photo-1574629810360-7efbbe195018',
+        'placement' => 'home',
+        'sort_order' => 2,
+        'is_active' => true,
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $banner = Banner::where('title', 'Promo Website')->firstOrFail();
+    expect($banner->image_path)->toBe('https://images.unsplash.com/photo-1574629810360-7efbbe195018');
+
+    // Update banner
+    $this->actingAs($admin)->put(route('admin.banners.update', $banner), [
+        'title' => 'Promo Website Updated',
+        'image_url' => 'https://images.unsplash.com/photo-example',
+        'placement' => 'home',
+        'sort_order' => 5,
+        'is_active' => false,
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect($banner->fresh()->title)->toBe('Promo Website Updated')
+        ->and($banner->fresh()->image_path)->toBe('https://images.unsplash.com/photo-example')
+        ->and($banner->fresh()->is_active)->toBeFalse();
+
+    // Toggle banner
+    $this->actingAs($admin)->post(route('admin.banners.toggle', $banner))->assertRedirect();
+    expect($banner->fresh()->is_active)->toBeTrue();
+
+    // Delete banner
+    $this->actingAs($admin)->delete(route('admin.banners.destroy', $banner))->assertRedirect();
+    expect(Banner::find($banner->id))->toBeNull();
+});
+
 test('membership cannot be renewed if expiration is more than 7 days away', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
     $lapangan = marketingLapangan();

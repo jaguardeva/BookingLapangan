@@ -800,6 +800,51 @@ test('admin booking search matches code, customer name, and phone case-insensiti
     }
 });
 
+test('admin booking table supports safe sorting', function () {
+    Booking::create([
+        'booking_code' => 'BKG-SORT-EXPENSIVE',
+        'user_id' => $this->user->id,
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '10:00',
+        'end_time' => '11:00',
+        'duration_hours' => 1,
+        'base_price' => 200000,
+        'validation_code' => 123,
+        'total_price' => 200123,
+        'payment_method' => 'transfer',
+        'payment_status' => 'pending',
+        'customer_name' => 'Expensive Booking',
+        'customer_phone' => '081234567899',
+        'payment_deadline' => now()->addHours(2),
+    ]);
+    Booking::create([
+        'booking_code' => 'BKG-SORT-CHEAP',
+        'user_id' => $this->user->id,
+        'lapangan_id' => $this->lapangan->id,
+        'booking_date' => Carbon::tomorrow()->format('Y-m-d'),
+        'start_time' => '11:00',
+        'end_time' => '12:00',
+        'duration_hours' => 1,
+        'base_price' => 100000,
+        'validation_code' => 123,
+        'total_price' => 100123,
+        'payment_method' => 'transfer',
+        'payment_status' => 'pending',
+        'customer_name' => 'Cheap Booking',
+        'customer_phone' => '081234567800',
+        'payment_deadline' => now()->addHours(2),
+    ]);
+
+    $this->actingAs($this->superadmin)
+        ->get(route('admin.bookings.index', ['sort' => 'total_price', 'direction' => 'asc']))
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/bookings/index')
+            ->where('bookings.data.0.booking_code', 'BKG-SORT-CHEAP')
+            ->where('filters.sort', 'total_price')
+            ->where('filters.direction', 'asc'));
+});
+
 test('public lapangan search matches name and description case-insensitively', function () {
     $this->lapangan->update([
         'description' => 'Indoor turf arena for evening games.',

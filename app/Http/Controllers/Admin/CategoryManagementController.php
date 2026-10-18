@@ -71,4 +71,50 @@ class CategoryManagementController extends Controller
 
         return back()->with('success', "Kategori {$category->name} berhasil {$status}.");
     }
+
+    public function destroy(Category $category): RedirectResponse
+    {
+        if ($category->lapangans()->exists()) {
+            return back()->with('error', "Kategori {$category->name} tidak dapat dihapus karena masih terhubung dengan {$category->lapangans()->count()} lapangan.");
+        }
+
+        $name = $category->name;
+        $category->delete();
+
+        ActivityLog::log('category_deleted', "Superadmin menghapus kategori: {$name}", [
+            'category_id' => $category->id,
+        ]);
+
+        return back()->with('success', "Kategori {$name} berhasil dihapus.");
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'string', 'exists:categories,id'],
+        ]);
+
+        $categories = Category::query()->whereIn('id', $validated['ids'])->withCount('lapangans')->get();
+
+        $blocked = $categories->filter(fn ($cat) => $cat->lapangans_count > 0);
+        $deletable = $categories->filter(fn ($cat) => $cat->lapangans_count === 0);
+
+        if ($deletable->isEmpty()) {
+            return back()->with('error', 'Semua kategori yang dipilih masih terhubung dengan lapangan dan tidak dapat dihapus.');
+        }
+
+        $deletedCount = $deletable->count();
+        Category::query()->whereIn('id', $deletable->pluck('id'))->delete();
+
+        ActivityLog::log('category_bulk_deleted', "Superadmin menghapus {$deletedCount} kategori.", [
+            'deleted_ids' => $deletable->pluck('id')->all(),
+        ]);
+
+        if ($blocked->isNotEmpty()) {
+            return back()->with('warning', "Berhasil menghapus {$deletedCount} kategori. Sebanyak {$blocked->count()} kategori dilewati karena masih memiliki lapangan terkait.");
+        }
+
+        return back()->with('success', "Berhasil menghapus {$deletedCount} kategori.");
+    }
 }
