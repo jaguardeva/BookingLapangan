@@ -69,6 +69,7 @@ export type Membership = {
     reservation_start_date?: string | null;
     discount_value?: number;
     discount_amount?: number;
+    points_redeemed?: number;
     status: 'pending' | 'active' | 'expired' | 'rejected' | 'cancelled';
     payment_status: 'pending' | 'pending_validation' | 'approved' | 'rejected' | 'cancelled';
     validation_code: number;

@@ -153,12 +153,18 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function availablePoints(): int
     {
-        $reservedPoints = $this->bookings()
+        $reservedBookingPoints = (int) $this->bookings()
+            ->whereNull('membership_id')
             ->where('payment_method', 'transfer')
             ->whereIn('payment_status', ['pending', 'pending_validation'])
             ->sum('points_redeemed');
 
-        return max(0, $this->points_balance - $reservedPoints);
+        $reservedMembershipPoints = (int) $this->memberships()
+            ->where('payment_method', 'transfer')
+            ->whereIn('payment_status', ['pending', 'pending_validation'])
+            ->sum('points_redeemed');
+
+        return max(0, (int) $this->points_balance - ($reservedBookingPoints + $reservedMembershipPoints));
     }
 
     /**

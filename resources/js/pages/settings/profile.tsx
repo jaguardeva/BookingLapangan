@@ -1,6 +1,5 @@
 import { Form, Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { Coins } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCooldown } from '@/hooks/use-cooldown';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
@@ -15,12 +14,28 @@ import type { Auth } from '@/types';
 import { send } from '@/routes/verification';
 import { ProfileAvatarUploader } from '@/components/profile-avatar-uploader';
 import { ProfileCompletionReminder } from '@/components/profile-completion-reminder';
+import { PointsCard } from '@/components/points-card';
 import type { ProfileCompletion, UserProfile } from '@/types';
+
+type PointTransaction = {
+    id: string;
+    type: 'earned' | 'redeemed';
+    points: number;
+    balance_after: number;
+    created_at: string;
+};
+
+type PointStats = {
+    total_earned: number;
+    total_redeemed: number;
+    recent_transactions: PointTransaction[];
+};
 
 type PageProps = {
     auth: Auth;
     profile?: UserProfile | null;
     profile_completion?: ProfileCompletion | null;
+    point_stats?: PointStats | null;
 };
 
 export default function Profile({
@@ -30,7 +45,7 @@ export default function Profile({
     mustVerifyEmail: boolean;
     status?: string;
 }) {
-    const { auth, profile, profile_completion } = usePage<PageProps>().props;
+    const { auth, profile, profile_completion, point_stats } = usePage<PageProps>().props;
     const pointsBalance = auth.user.points_balance ?? 0;
     const availablePoints = auth.user.available_points ?? pointsBalance;
 
@@ -87,45 +102,11 @@ export default function Profile({
                     />
                 </div>
 
-                <div className="border-primary/30 bg-primary/10 dark:bg-primary/5 rounded-xl border p-4">
-                    <div className="flex items-start gap-3">
-                        <div className="bg-primary text-primary-foreground rounded-lg p-2">
-                            <Coins className="size-5" />
-                        </div>
-                        <div className="min-w-0 flex-1 space-y-2">
-                            <div>
-                                <h2 className="text-foreground font-semibold">
-                                    Poin Booking
-                                </h2>
-                                <p className="text-muted-foreground text-sm">
-                                    Poin diperoleh dari booking online yang
-                                    selesai dan hanya dapat digunakan sebagai
-                                    potongan harga booking.
-                                </p>
-                            </div>
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <div>
-                                    <p className="text-muted-foreground text-xs">
-                                        Total Poin Terkumpul
-                                    </p>
-                                    <p className="text-primary dark:text-primary text-xl font-bold">
-                                        {pointsBalance.toLocaleString('id-ID')}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-muted-foreground text-xs">
-                                        Poin yang Bisa Digunakan
-                                    </p>
-                                    <p className="text-foreground text-xl font-bold">
-                                        {availablePoints.toLocaleString(
-                                            'id-ID',
-                                        )}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <PointsCard
+                    pointsBalance={pointsBalance}
+                    availablePoints={availablePoints}
+                    stats={point_stats}
+                />
 
                 <Form
                     {...ProfileController.update.form()}

@@ -322,7 +322,7 @@ export default function Home() {
                 )}
 
                 {loading ? (
-                    <section className="public-container mx-auto max-w-[1240px] px-4 pt-10 sm:px-6 sm:pt-14 lg:px-8">
+                    <section className="public-container mx-auto max-w-[1240px] px-4 pt-8 sm:px-6 sm:pt-14 lg:px-8">
                         <HomeBannerSkeleton />
                     </section>
                 ) : (

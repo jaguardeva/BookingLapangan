@@ -25,11 +25,11 @@ export function HomeBannerSkeleton() {
                     <Skeleton className="h-7 w-64 rounded-lg" />
                 </div>
                 <div className="hidden gap-2 sm:flex">
-                    <Skeleton className="size-9 rounded-full" />
-                    <Skeleton className="size-9 rounded-full" />
+                    <Skeleton className="size-8 rounded-full" />
+                    <Skeleton className="size-8 rounded-full" />
                 </div>
             </div>
-            <Skeleton className="min-h-[260px] w-full rounded-3xl sm:min-h-[320px] lg:min-h-[360px]" />
+            <Skeleton className="min-h-[300px] w-full rounded-2xl sm:min-h-[340px] sm:rounded-3xl md:min-h-[380px] lg:min-h-[420px]" />
         </div>
     );
 }

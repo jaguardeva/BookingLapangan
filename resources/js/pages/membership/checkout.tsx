@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import {
     AlertCircle,
@@ -6,9 +6,11 @@ import {
     CalendarDays,
     Check,
     CheckCircle2,
+    Coins,
     CreditCard,
     Plus,
     ReceiptText,
+    Sparkles,
     Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -74,9 +76,13 @@ export default function MembershipCheckout({
         end_time: string;
     } | null>(null);
 
-    const form = useForm<{ lapangan_id: string; reservations: Reservation[] }>({
+    const { auth } = usePage<{ auth?: { user?: { available_points?: number } } }>().props;
+    const availablePoints = auth?.user?.available_points ?? 0;
+
+    const form = useForm<{ lapangan_id: string; reservations: Reservation[]; use_points: boolean }>({
         lapangan_id: lapangan.id,
         reservations: [],
+        use_points: false,
     });
 
     useEffect(() => {
@@ -236,7 +242,9 @@ export default function MembershipCheckout({
     );
     const discountPercentage = Number(membershipDiscountPercentage ?? 0);
     const discountAmount = discountPercentage > 0 ? Math.floor((subtotal * discountPercentage) / 100) : 0;
-    const finalAmount = Math.max(0, subtotal - discountAmount);
+    const netSubtotal = Math.max(0, subtotal - discountAmount);
+    const pointsDiscount = form.data.use_points ? Math.min(availablePoints, netSubtotal) : 0;
+    const finalAmount = Math.max(0, netSubtotal - pointsDiscount);
 
     const formErrors = form.errors as Record<string, string | undefined>;
     const membershipError = formErrors.membership;
@@ -640,6 +648,47 @@ export default function MembershipCheckout({
                                 </div>
                             )}
 
+                            {availablePoints > 0 && (
+                                <div className="border-primary/20 bg-primary/[0.04] rounded-xl border p-3.5 text-xs space-y-2">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <div className="flex items-center gap-1.5 font-bold text-foreground">
+                                                <Coins className="size-3.5 text-amber-500" />
+                                                <span>Gunakan Poin</span>
+                                            </div>
+                                            <p className="text-muted-foreground mt-0.5 text-[11px] leading-relaxed">
+                                                Saldo tersedia: <strong className="text-foreground">{availablePoints.toLocaleString('id-ID')}</strong> poin.
+                                            </p>
+                                        </div>
+                                        <div className="flex shrink-0 gap-1.5">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant={form.data.use_points ? 'default' : 'outline'}
+                                                className="h-7 px-2.5 text-xs font-bold"
+                                                onClick={() => form.setData('use_points', true)}
+                                            >
+                                                Ya
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant={!form.data.use_points ? 'default' : 'outline'}
+                                                className="h-7 px-2.5 text-xs font-bold"
+                                                onClick={() => form.setData('use_points', false)}
+                                            >
+                                                Tidak
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    {form.data.use_points && pointsDiscount > 0 && (
+                                        <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                                            Hemat Rp {pointsDiscount.toLocaleString('id-ID')} dengan memotong {pointsDiscount.toLocaleString('id-ID')} poin.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="border-border/60 border-t pt-4 space-y-2">
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="text-muted-foreground">Subtotal</span>
@@ -662,8 +711,35 @@ export default function MembershipCheckout({
                                     </div>
                                 )}
 
+                                {pointsDiscount > 0 && (
+                                    <div className="flex items-center justify-between text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                                        <span className="flex items-center gap-1.5">
+                                            <Coins className="size-3 text-amber-500" />
+                                            Potongan Poin
+                                        </span>
+                                        <span className="font-bold">
+                                            - Rp {pointsDiscount.toLocaleString('id-ID')}
+                                        </span>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                        <span>Kode Unik 3 Digit</span>
+                                        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-foreground font-mono font-semibold">
+                                            + 3 Digit
+                                        </span>
+                                    </span>
+                                    <span className="text-[11px] font-medium text-primary">
+                                        Dihitung saat invoice
+                                    </span>
+                                </div>
+
                                 <div className="border-border/60 flex items-baseline justify-between border-t pt-2.5">
-                                    <span className="text-xs font-bold text-muted-foreground">Total Pembayaran</span>
+                                    <div>
+                                        <span className="text-xs font-bold text-muted-foreground block">Estimasi Tagihan</span>
+                                        <span className="text-[10px] text-muted-foreground">+ kode unik transfer</span>
+                                    </div>
                                     <span className="text-primary text-xl font-black">
                                         Rp {finalAmount.toLocaleString('id-ID')}
                                     </span>
@@ -671,13 +747,13 @@ export default function MembershipCheckout({
                             </div>
 
                             {/* Payment Method Callout */}
-                            <div className="bg-muted/30 border-border/60 rounded-xl border p-3 text-xs space-y-1">
+                            <div className="bg-muted/30 border-border/60 rounded-xl border p-3 text-xs space-y-1.5">
                                 <div className="flex items-center gap-1.5 font-bold text-foreground">
                                     <CreditCard className="size-3.5 text-primary" />
                                     <span>Metode: Transfer Bank</span>
                                 </div>
                                 <p className="text-muted-foreground text-[11px] leading-relaxed">
-                                    Nomor rekening tujuan dan kode unik verifikasi akan digenerate pada lembar invoice pembayaran setelah konfirmasi.
+                                    Nomor rekening dan 3 digit kode unik akan digenerate di invoice. <strong>3 digit kode unik tersebut akan langsung dimasukkan ke saldo poin akun Anda</strong> setelah pembayaran diverifikasi admin.
                                 </p>
                             </div>
 

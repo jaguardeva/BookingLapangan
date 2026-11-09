@@ -16,6 +16,8 @@ import {
     X,
     UserPlus,
     Palette,
+    Coins,
+    ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NotificationCenter } from '@/components/notification-center';
@@ -341,34 +343,60 @@ export function Navbar() {
                                     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
                                         {/* User Profile or Guest Card */}
                                         {user ? (
-                                            <div className="space-y-2.5 rounded-2xl border border-border/80 bg-card p-3.5 shadow-xs">
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar className="size-11 shrink-0 rounded-xl border border-border">
+                                            <div className="space-y-3 rounded-2xl border border-border/80 bg-card p-4 shadow-xs">
+                                                <div className="flex items-center gap-3.5">
+                                                    <Avatar className="size-11 shrink-0 rounded-xl border border-border shadow-xs">
                                                         <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
                                                         <AvatarFallback className="rounded-xl bg-primary/10 text-xs font-bold text-primary">
                                                             {getInitials(user.name)}
                                                         </AvatarFallback>
                                                     </Avatar>
-                                                    <div className="min-w-0 flex-1">
+                                                    <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
                                                         <div className="flex items-center gap-1.5">
-                                                            <p className="truncate text-sm font-bold text-foreground">
+                                                            <p className="truncate text-sm font-bold tracking-tight text-foreground leading-snug">
                                                                 {user.name}
                                                             </p>
                                                             {isStaff ? (
-                                                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold tracking-wide uppercase text-primary">
+                                                                <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold tracking-wide uppercase text-primary">
                                                                     Admin
                                                                 </span>
                                                             ) : (
-                                                                <span className="rounded-full bg-muted px-2 py-0.5 text-[9px] font-medium tracking-wide uppercase text-muted-foreground">
+                                                                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[9px] font-medium tracking-wide uppercase text-muted-foreground">
                                                                     Member
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <p className="truncate text-xs text-muted-foreground">
+                                                        <p className="truncate text-xs text-muted-foreground leading-normal pb-0.5">
                                                             {user.email}
                                                         </p>
                                                     </div>
                                                 </div>
+
+                                                {/* Mobile Points Card */}
+                                                <Link
+                                                    href="/points/history"
+                                                    onClick={() => setIsMobileMenuOpen(false)}
+                                                    className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-2.5 transition-colors hover:bg-primary/10 active:bg-primary/15"
+                                                >
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                                                            <Coins className="size-4" />
+                                                        </div>
+                                                        <div className="text-left">
+                                                            <p className="text-[10px] font-medium leading-none text-muted-foreground">
+                                                                Poin Dapat Digunakan
+                                                            </p>
+                                                            <p className="mt-1 text-xs font-bold leading-tight text-primary">
+                                                                {(user.available_points ?? user.points_balance ?? 0).toLocaleString('id-ID')} Poin
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 text-[11px] font-semibold text-primary">
+                                                        Riwayat
+                                                        <ChevronRight className="size-3.5" />
+                                                    </div>
+                                                </Link>
+
                                                 <div className="grid grid-cols-2 gap-2 border-t border-border/50 pt-2">
                                                     <Link
                                                         href={editProfile()}
@@ -437,7 +465,7 @@ export function Navbar() {
                                                 >
                                                     <span className="flex items-center gap-3">
                                                         <span
-                                                            className={`flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                                                             className={`flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
                                                                 active
                                                                     ? 'bg-primary text-primary-foreground shadow-xs shadow-primary/20'
                                                                     : 'bg-muted text-muted-foreground group-hover:bg-background group-hover:text-foreground'
@@ -452,6 +480,36 @@ export function Navbar() {
                                                     )}
                                                 </Link>
                                             ))}
+
+                                            {user && (
+                                                <Link
+                                                    href="/points/history"
+                                                    prefetch
+                                                    onClick={() => setIsMobileMenuOpen(false)}
+                                                    aria-current={isCurrentUrl('/points/history') ? 'page' : undefined}
+                                                    className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                                                        isCurrentUrl('/points/history')
+                                                            ? 'bg-primary/10 font-semibold text-primary'
+                                                            : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                                    }`}
+                                                >
+                                                    <span className="flex items-center gap-3">
+                                                        <span
+                                                            className={`flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                                                                isCurrentUrl('/points/history')
+                                                                    ? 'bg-primary text-primary-foreground shadow-xs shadow-primary/20'
+                                                                    : 'bg-muted text-muted-foreground group-hover:bg-background group-hover:text-foreground'
+                                                            }`}
+                                                        >
+                                                            <Coins className="size-4" aria-hidden="true" />
+                                                        </span>
+                                                        <span>Riwayat Poin</span>
+                                                    </span>
+                                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                                        {(user.available_points ?? user.points_balance ?? 0).toLocaleString('id-ID')} Poin
+                                                    </span>
+                                                </Link>
+                                            )}
 
                                             {user && (
                                                 <Link
@@ -568,24 +626,50 @@ export function Navbar() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent
                                             align="end"
-                                            className="border-border w-56 rounded-xl shadow-lg"
+                                            className="border-border w-64 rounded-xl p-1.5 shadow-lg"
                                         >
-                                            <DropdownMenuLabel className="p-3 pb-2 font-normal">
-                                                <div className="flex flex-col space-y-1">
-                                                    <p className="text-sm leading-none font-semibold">
+                                            <DropdownMenuLabel className="px-3 pt-3 pb-2 font-normal">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <p className="truncate text-sm font-bold tracking-tight text-foreground leading-snug">
                                                         {user.name}
                                                     </p>
-                                                    <p className="text-muted-foreground text-xs leading-none">
+                                                    <p className="truncate text-xs text-muted-foreground leading-normal pb-0.5">
                                                         {user.email}
                                                     </p>
                                                 </div>
                                             </DropdownMenuLabel>
+
+                                            {/* Desktop Available Points Card */}
+                                            <div className="px-1.5 pb-1.5">
+                                                <Link
+                                                    href="/points/history"
+                                                    className="flex items-center justify-between gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-2.5 transition-colors hover:bg-primary/10"
+                                                >
+                                                    <div className="flex min-w-0 items-center gap-2">
+                                                        <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                                                            <Coins className="size-3.5" />
+                                                        </div>
+                                                        <div className="min-w-0 text-left">
+                                                            <p className="text-[10px] font-medium leading-none text-muted-foreground">
+                                                                Poin Dapat Digunakan
+                                                            </p>
+                                                            <p className="mt-0.5 truncate text-xs font-bold leading-tight text-primary">
+                                                                {(user.available_points ?? user.points_balance ?? 0).toLocaleString('id-ID')} Poin
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <span className="shrink-0 text-[10px] font-semibold text-primary">
+                                                        Riwayat &rarr;
+                                                    </span>
+                                                </Link>
+                                            </div>
+
                                             <DropdownMenuSeparator />
                                             {isStaff && (
                                                 <DropdownMenuItem asChild>
                                                     <Link
                                                         href={adminDashboard()}
-                                                        className="text-primary dark:text-primary flex cursor-pointer items-center gap-2 font-medium"
+                                                        className="flex cursor-pointer items-center gap-2 font-medium text-primary dark:text-primary"
                                                     >
                                                         <LayoutDashboard className="size-4" />
                                                         Dashboard Admin
@@ -603,11 +687,25 @@ export function Navbar() {
                                             </DropdownMenuItem>
                                             <DropdownMenuItem asChild>
                                                 <Link
+                                                    href="/points/history"
+                                                    className="flex cursor-pointer items-center justify-between"
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        <Coins className="size-4 text-primary" />
+                                                        Riwayat Poin
+                                                    </span>
+                                                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                                        {(user.available_points ?? user.points_balance ?? 0).toLocaleString('id-ID')}
+                                                    </span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem asChild>
+                                                <Link
                                                     href={editProfile()}
                                                     className="flex cursor-pointer items-center gap-2"
                                                 >
                                                     <UserIcon className="size-4" />
-                                                    Pengaturan Akun
+                                                    Profil Saya
                                                 </Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem asChild>

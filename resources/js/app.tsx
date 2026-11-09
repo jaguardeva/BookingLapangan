@@ -27,6 +27,7 @@ void createInertiaApp({
             case name === 'lapangan/index':
             case name.startsWith('booking/'):
             case name.startsWith('notifications/'):
+            case name.startsWith('points/'):
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;

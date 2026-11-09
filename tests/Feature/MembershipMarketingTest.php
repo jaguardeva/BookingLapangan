@@ -175,6 +175,7 @@ test('membership payment expiry releases its held occurrences', function () {
 });
 
 test('membership reservations use lapangan pricing, optional discount, and lock occurrences', function () {
+    Carbon::setTestNow('2026-10-18 10:00:00');
     $admin = User::factory()->create(['role' => 'admin']);
     $user = User::factory()->create(['email_verified_at' => now()]);
     $lapangan = marketingLapangan();
@@ -202,8 +203,9 @@ test('membership reservations use lapangan pricing, optional discount, and lock 
 
     $membership->refresh();
     expect($membership->discount_amount)->toBe((int) floor($membership->subtotal * 0.1))
-        ->and($membership->amount)->toBe($membership->subtotal - $membership->discount_amount)
+        ->and($membership->amount)->toBe($membership->subtotal - $membership->discount_amount + $membership->validation_code)
         ->and(Booking::query()->where('membership_id', $membership->id)->count())->toBe($occurrences);
+    Carbon::setTestNow();
 });
 
 test('membership allows unlimited recurring schedules without a membership plan', function () {
@@ -913,7 +915,7 @@ test('membership store applies configured discount immediately to invoice and bo
     $membership = $user->memberships()->latest()->firstOrFail();
     $expectedSubtotal = $membership->subtotal;
     $expectedDiscount = (int) floor($expectedSubtotal * 0.20);
-    $expectedAmount = $expectedSubtotal - $expectedDiscount;
+    $expectedAmount = $expectedSubtotal - $expectedDiscount + $membership->validation_code;
 
     expect($membership->discount_value)->toBe(20)
         ->and($membership->discount_amount)->toBe($expectedDiscount)

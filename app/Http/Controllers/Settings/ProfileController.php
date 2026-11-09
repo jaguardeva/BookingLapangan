@@ -21,13 +21,24 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
-        $page = $request->user()->isAdmin() || $request->user()->isSuperAdmin()
+        $user = $request->user();
+
+        $page = $user->isAdmin() || $user->isSuperAdmin()
             ? 'settings/profile'
             : 'profile';
 
         return Inertia::render($page, [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'point_stats' => [
+                'total_earned' => (int) $user->pointTransactions()->where('type', 'earned')->sum('points'),
+                'total_redeemed' => (int) abs($user->pointTransactions()->where('type', 'redeemed')->sum('points')),
+                'recent_transactions' => $user->pointTransactions()
+                    ->with(['booking.lapangan', 'membership'])
+                    ->latest()
+                    ->take(5)
+                    ->get(),
+            ],
         ]);
     }
 

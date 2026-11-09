@@ -7,6 +7,8 @@ use App\Models\ActivityLog;
 use App\Models\Booking;
 use App\Models\Membership;
 use App\Models\MembershipSetting;
+use App\Models\PointTransaction;
+use App\Models\User;
 use App\Services\MembershipOccurrenceService;
 use App\Support\Pagination;
 use Carbon\Carbon;
@@ -137,11 +139,59 @@ class MembershipManagementController extends Controller
                 }
             }
 
+            if ($membership->user_id) {
+                $memberUser = User::query()->lockForUpdate()->findOrFail($membership->user_id);
+
+                if ($membership->points_redeemed > $memberUser->points_balance) {
+                    throw ValidationException::withMessages([
+                        'membership' => 'Saldo poin pengguna tidak mencukupi untuk menyelesaikan transaksi membership ini.',
+                    ]);
+                }
+
+                if ($membership->points_redeemed > 0) {
+                    $memberUser->decrement('points_balance', $membership->points_redeemed);
+                    $memberUser->refresh();
+
+                    PointTransaction::create([
+                        'user_id' => $memberUser->id,
+                        'membership_id' => $membership->id,
+                        'type' => 'redeemed',
+                        'points' => $membership->points_redeemed,
+                        'balance_after' => $memberUser->points_balance,
+                    ]);
+                }
+
+                if ($membership->validation_code > 0) {
+                    $memberUser->increment('points_balance', $membership->validation_code);
+                    $memberUser->refresh();
+
+                    PointTransaction::create([
+                        'user_id' => $memberUser->id,
+                        'membership_id' => $membership->id,
+                        'type' => 'earned',
+                        'points' => $membership->validation_code,
+                        'balance_after' => $memberUser->points_balance,
+                    ]);
+                }
+            }
+
+            $finalAmount = $membership->amount;
+            if ($membership->discount_amount === 0 && $discountAmount > 0) {
+                $finalAmount = $subtotal - $discountAmount - (int) $membership->points_redeemed + (int) $membership->validation_code;
+            }
+
             $membership->update([
-                'status' => 'active', 'payment_status' => 'approved', 'validated_by' => auth()->id(),
-                'validated_at' => now(), 'approved_at' => now(), 'starts_at' => $startDate,
-                'ends_at' => $startDate->copy()->addDays(30)->subSecond(), 'renewal_notified_at' => null,
-                'discount_value' => $discountValue, 'discount_amount' => $discountAmount, 'amount' => $subtotal - $discountAmount,
+                'status' => 'active',
+                'payment_status' => 'approved',
+                'validated_by' => auth()->id(),
+                'validated_at' => now(),
+                'approved_at' => now(),
+                'starts_at' => $startDate,
+                'ends_at' => $startDate->copy()->addDays(30)->subSecond(),
+                'renewal_notified_at' => null,
+                'discount_value' => $discountValue,
+                'discount_amount' => $discountAmount,
+                'amount' => $finalAmount,
             ]);
 
             foreach ($membership->reservations as $reservation) {

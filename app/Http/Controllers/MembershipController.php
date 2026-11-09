@@ -130,6 +130,7 @@ class MembershipController extends Controller
             'reservations.*.weekday' => ['required', 'integer', 'between:0,6'],
             'reservations.*.start_time' => ['required', 'date_format:H:i'],
             'reservations.*.duration_hours' => ['required', 'integer', 'min:1', 'max:6'],
+            'use_points' => ['nullable', 'boolean'],
         ], [
             'reservations.required' => 'Pilih minimal satu jadwal membership.',
             'reservations.min' => 'Pilih minimal satu jadwal membership.',
@@ -152,8 +153,10 @@ class MembershipController extends Controller
         }
 
         $periodEnd = $startDate->copy()->addDays(30)->subSecond();
+        $usePoints = $request->boolean('use_points');
 
-        $membership = DB::transaction(function () use ($user, $startDate, $periodEnd, $validated): Membership {
+        $membership = DB::transaction(function () use ($user, $startDate, $periodEnd, $validated, $usePoints): Membership {
+            $user = User::query()->lockForUpdate()->findOrFail($user->id);
             $prepared = $this->prepareReservations($validated['reservations'], $startDate, $periodEnd);
             $subtotal = collect($prepared)->sum(fn (array $reservation): int => $reservation['price_per_occurrence'] * $reservation['occurrence_count']);
             $discountPercentage = MembershipSetting::query()->firstOrCreate(
@@ -161,7 +164,14 @@ class MembershipController extends Controller
                 ['membership_discount_percentage' => 0],
             )->membership_discount_percentage;
             $discountAmount = (int) floor($subtotal * $discountPercentage / 100);
-            $amount = $subtotal - $discountAmount;
+            $netSubtotal = $subtotal - $discountAmount;
+
+            $pointsRedeemed = $usePoints
+                ? min($user->availablePoints(), $netSubtotal)
+                : 0;
+
+            $validationCode = Membership::generateValidationCode();
+            $amount = $netSubtotal - $pointsRedeemed + $validationCode;
 
             $membership = Membership::create([
                 'user_id' => $user->id,
@@ -170,10 +180,11 @@ class MembershipController extends Controller
                 'subtotal' => $subtotal,
                 'discount_value' => $discountPercentage,
                 'discount_amount' => $discountAmount,
+                'points_redeemed' => $pointsRedeemed,
                 'status' => 'pending',
                 'payment_method' => 'transfer',
                 'payment_status' => 'pending',
-                'validation_code' => Membership::generateValidationCode(),
+                'validation_code' => $validationCode,
                 'payment_deadline' => now()->addDay(),
             ]);
 
@@ -234,7 +245,7 @@ class MembershipController extends Controller
         return back()->with('success', 'Konfirmasi pembayaran membership berhasil dikirim.');
     }
 
-    public function renew(string $membership): RedirectResponse
+    public function renew(Request $request, string $membership): RedirectResponse
     {
         $user = auth()->user();
         $previous = $user->memberships()->with('reservations')->whereKey($membership)->firstOrFail();
@@ -264,7 +275,10 @@ class MembershipController extends Controller
             throw ValidationException::withMessages(['membership' => 'Bulan perpanjangan tidak memiliki occurrence yang tersedia.']);
         }
         $periodEnd = $startDate->copy()->addDays(30)->subSecond();
-        $renewed = DB::transaction(function () use ($user, $reservations, $startDate, $periodEnd): Membership {
+        $usePoints = $request->boolean('use_points');
+
+        $renewed = DB::transaction(function () use ($user, $reservations, $startDate, $periodEnd, $usePoints): Membership {
+            $user = User::query()->lockForUpdate()->findOrFail($user->id);
             $prepared = $this->prepareReservations($reservations, $startDate, $periodEnd);
             $subtotal = collect($prepared)->sum(fn (array $reservation): int => $reservation['price_per_occurrence'] * $reservation['occurrence_count']);
             $discountPercentage = MembershipSetting::query()->firstOrCreate(
@@ -272,7 +286,14 @@ class MembershipController extends Controller
                 ['membership_discount_percentage' => 0],
             )->membership_discount_percentage;
             $discountAmount = (int) floor($subtotal * $discountPercentage / 100);
-            $amount = $subtotal - $discountAmount;
+            $netSubtotal = $subtotal - $discountAmount;
+
+            $pointsRedeemed = $usePoints
+                ? min($user->availablePoints(), $netSubtotal)
+                : 0;
+
+            $validationCode = Membership::generateValidationCode();
+            $amount = $netSubtotal - $pointsRedeemed + $validationCode;
 
             $membership = Membership::create([
                 'user_id' => $user->id,
@@ -281,10 +302,11 @@ class MembershipController extends Controller
                 'subtotal' => $subtotal,
                 'discount_value' => $discountPercentage,
                 'discount_amount' => $discountAmount,
+                'points_redeemed' => $pointsRedeemed,
                 'status' => 'pending',
                 'payment_method' => 'transfer',
                 'payment_status' => 'pending',
-                'validation_code' => Membership::generateValidationCode(),
+                'validation_code' => $validationCode,
                 'payment_deadline' => now()->addDay(),
             ]);
             foreach ($prepared as $reservation) {

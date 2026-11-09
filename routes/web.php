@@ -22,6 +22,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LapanganController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PointHistoryController;
 use App\Http\Controllers\ReviewController;
 use App\Support\InternalRedirect;
 use Illuminate\Http\Request;
@@ -117,6 +118,11 @@ Route::middleware(['auth', 'admin.workspace'])->group(function () {
     });
 
     Route::get('/booking/checkout/{lapangan:slug}', [BookingController::class, 'checkout'])->name('booking.checkout');
+});
+
+// Points history (accessible to all authenticated users)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/points/history', [PointHistoryController::class, 'index'])->name('points.history');
 });
 
 // --- Admin & Superadmin Workspace ---

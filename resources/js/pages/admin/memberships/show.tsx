@@ -89,7 +89,9 @@ export default function MembershipsShow({ membership }: Props) {
                             <div><p className="text-muted-foreground">Batas pembayaran</p><p className="font-medium">{formatDateTime(membership.payment_deadline)}</p></div>
                             <div><p className="text-muted-foreground">Subtotal</p><p className="font-medium">{formatMoney(membership.subtotal)}</p></div>
                             <div><p className="text-muted-foreground">Diskon membership</p><p className="font-medium">{membership.discount_value ?? 0}% ({formatMoney(membership.discount_amount)})</p></div>
-                            <div><p className="text-muted-foreground">Total akhir</p><p className="text-primary text-lg font-bold">{formatMoney(membership.amount)}</p></div>
+                            {Number(membership.points_redeemed ?? 0) > 0 && <div><p className="text-muted-foreground">Potongan poin</p><p className="font-medium text-emerald-600 dark:text-emerald-400">- {formatMoney(membership.points_redeemed)}</p></div>}
+                            {membership.validation_code > 0 && <div><p className="text-muted-foreground">Kode unik (3 digit)</p><p className="font-medium text-foreground">+ Rp {membership.validation_code} <span className="text-xs text-muted-foreground">(masuk ke poin saat disetujui)</span></p></div>}
+                            <div><p className="text-muted-foreground">Total tagihan akhir</p><p className="text-primary text-lg font-bold">{formatMoney(membership.amount)}</p></div>
                             <div><p className="text-muted-foreground">Validator</p><p className="font-medium">{membership.validator?.name ?? '-'}</p></div>
                         </div>
                         {membership.rejection_reason && <div className="bg-destructive/10 text-destructive mt-5 rounded-xl p-3 text-sm">{membership.rejection_reason}</div>}

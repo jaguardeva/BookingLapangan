@@ -8,6 +8,7 @@ import {
     Check,
     CheckCircle2,
     Clock,
+    Coins,
     Copy,
     CreditCard,
     FileText,
@@ -449,9 +450,9 @@ export default function MembershipInvoice({ membership, bankAccounts }: Props) {
                                         ) : (
                                             <p className="italic">Rekening transfer terdaftar di sistem.</p>
                                         )}
-                                        {isPendingPayment && membership.validation_code && (
+                                        {membership.validation_code > 0 && (
                                             <p className="text-[11px] text-primary font-semibold pt-1 print:text-slate-800">
-                                                *Sertakan Kode Validasi transfer: <strong>{membership.validation_code}</strong>
+                                                *Transfer tepat hingga digit terakhir. 3 digit kode unik (<strong>Rp {membership.validation_code}</strong>) otomatis dikembalikan ke saldo poin Anda setelah disetujui.
                                             </p>
                                         )}
                                     </div>
@@ -475,12 +476,22 @@ export default function MembershipInvoice({ membership, bankAccounts }: Props) {
                                         </div>
                                     )}
 
-                                    {membership.payment_method === 'transfer' && membership.validation_code > 0 && isPendingPayment && (
+                                    {Number(membership.points_redeemed ?? 0) > 0 && (
+                                        <div className="flex flex-col justify-between gap-1 font-medium text-emerald-600 sm:flex-row sm:items-baseline dark:text-emerald-400 print:text-emerald-800">
+                                            <span className="flex items-center gap-1.5">
+                                                <Coins className="size-3.5 text-amber-500" />
+                                                Potongan Poin
+                                            </span>
+                                            <span>- Rp {Number(membership.points_redeemed).toLocaleString('id-ID')}</span>
+                                        </div>
+                                    )}
+
+                                    {membership.payment_method === 'transfer' && membership.validation_code > 0 && (
                                         <div className="flex flex-col justify-between gap-1 text-muted-foreground sm:flex-row sm:items-baseline print:text-slate-700">
                                             <span className="flex items-center gap-1">
                                                 Kode Unik Transfer
                                                 <span className="rounded bg-muted px-1.5 py-0.2 text-[10px] print:hidden">
-                                                    Otomatis
+                                                    {isPaid ? 'Masuk ke Poin' : 'Ditampung di Poin'}
                                                 </span>
                                             </span>
                                             <span className="font-medium text-foreground print:text-slate-900">
@@ -563,8 +574,9 @@ export default function MembershipInvoice({ membership, bankAccounts }: Props) {
                                 <p className="text-muted-foreground text-xs leading-relaxed">
                                     Silakan transfer ke salah satu rekening resmi kami di bawah ini dengan nominal tepat{' '}
                                     <strong className="text-primary font-bold">
-                                        Rp {membership.amount.toLocaleString('id-ID')}
-                                    </strong>.
+                                        Rp {Number(membership.amount).toLocaleString('id-ID')}
+                                    </strong>{' '}
+                                    (termasuk 3 digit kode unik). Anda tidak perlu mengisi berita transfer karena verifikasi dilakukan melalui kode unik, dan nominal 3 digit kode unik (<strong>Rp {membership.validation_code}</strong>) akan otomatis dikembalikan ke saldo poin Anda.
                                 </p>
 
                                 <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-3">

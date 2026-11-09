@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'user_id', 'reservation_month', 'reservation_start_date', 'amount', 'subtotal',
-    'discount_value', 'discount_amount', 'status', 'payment_method', 'payment_status',
+    'discount_value', 'discount_amount', 'points_redeemed', 'status', 'payment_method', 'payment_status',
     'validation_code', 'user_submitted_code', 'rejection_reason', 'validated_by', 'validated_at',
     'payment_deadline', 'starts_at', 'ends_at', 'renewal_notified_at', 'approved_at',
 ])]
@@ -28,6 +28,7 @@ class Membership extends Model
             'subtotal' => 'integer',
             'discount_value' => 'integer',
             'discount_amount' => 'integer',
+            'points_redeemed' => 'integer',
             'validation_code' => 'integer',
             'user_submitted_code' => 'integer',
             'validated_at' => 'datetime',
@@ -66,6 +67,12 @@ class Membership extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    /** @return HasMany<PointTransaction, $this> */
+    public function pointTransactions(): HasMany
+    {
+        return $this->hasMany(PointTransaction::class);
     }
 
     public function isActive(): bool
